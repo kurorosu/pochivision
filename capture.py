@@ -1,9 +1,25 @@
+import json
+
 import cv2
-import numpy as np
 import dearpygui.dearpygui as dpg
-import time
+
+from capturelib import CaptureManager
+from processors import BaseProcessor
+from processors.registry import PROCESSOR_REGISTRY
+
 
 WIDTH, HEIGHT = 640, 480
+capture_manager = CaptureManager()
+
+# 設定ファイルから処理を読み込む
+with open("config.json", "r") as f:
+    config = json.load(f)
+
+processors: list[BaseProcessor] = []
+for name in config["processors"]:
+    cls = PROCESSOR_REGISTRY[name]
+    processor = cls(name=name, save_dir=capture_manager.get_processing_dir(name), config=config.get(name, {}))
+    processors.append(processor)
 
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
@@ -16,23 +32,19 @@ latest_frame = None
 with dpg.texture_registry():
     texture_id = dpg.add_dynamic_texture(WIDTH, HEIGHT, [0] * WIDTH * HEIGHT * 4)
 
-# カメラ映像用ウィンドウ（スクロールあり）
 with dpg.window(label="Frame1", pos=(10, 10), width=WIDTH + 20, height=HEIGHT + 60):
     dpg.add_image(texture_id)
 
-# コントロールウィンドウ（スクロールなし、ボタン専用）
 with dpg.window(label="Controls", pos=(WIDTH + 40, 10), width=130, height=100, no_scrollbar=True, no_resize=True):
     dpg.add_button(label="Frame1 capture", callback=lambda: take_snapshot())
 
-# 撮影処理
 def take_snapshot():
     global latest_frame
     if latest_frame is not None:
-        filename = f"snapshot_{int(time.time())}.bmp" 
-        cv2.imwrite(filename, latest_frame)
-        print(f"写真を保存しました（無圧縮BMP）: {filename}")
+        for processor in processors:
+            result = processor.process(latest_frame)
+            processor.save(result)
 
-# ToDo:リサイズ前をlatest_frameにする
 def update():
     global latest_frame
     ret, frame = cap.read()
