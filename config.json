@@ -4,5 +4,7 @@
   "blur": {
     "kernel_size": [15, 15],
     "sigma": 0
-  }
+  },
+  "mode": "pipeline"
 }
+
