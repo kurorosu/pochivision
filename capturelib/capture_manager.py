@@ -2,7 +2,7 @@ from pathlib import Path
 from datetime import datetime
 
 
-class CaptureManager(object):
+class CaptureManager:
     """
     保存用ディレクトリの管理を行うクラス。
 
@@ -11,7 +11,7 @@ class CaptureManager(object):
         capture_dir (Path): 実際に画像を保存するセッション単位のサブディレクトリ。
     """
 
-    def __init__(self, base_dir="capture"):
+    def __init__(self, base_dir: str = "capture") -> None:
         """
         CaptureManager のコンストラクタ。
 
@@ -21,7 +21,7 @@ class CaptureManager(object):
         self.base_dir = Path(base_dir)
         self.capture_dir = self._create_capture_subdir()
 
-    def _create_capture_subdir(self):
+    def _create_capture_subdir(self) -> Path:
         """
         日付ごとにユニークなサブディレクトリを作成。
 
@@ -40,7 +40,7 @@ class CaptureManager(object):
         final_path.mkdir(parents=True, exist_ok=True)
         return final_path
 
-    def get_processing_dir(self, process_name):
+    def get_processing_dir(self, process_name: str) -> Path:
         """
         指定されたプロセッサ名に対応するサブディレクトリを取得または作成。
 

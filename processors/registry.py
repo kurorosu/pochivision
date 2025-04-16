@@ -1,4 +1,6 @@
-# processors/registry.py
+from typing import Callable, Type
+
+from processors import BaseProcessor
 
 """
 画像処理プロセッサのレジストリモジュール。
@@ -13,10 +15,10 @@
 """
 
 # 名前とクラスのマッピングを保持する辞書
-PROCESSOR_REGISTRY = {}
+PROCESSOR_REGISTRY: dict[str, Type[BaseProcessor]] = {}
 
 
-def register_processor(name):
+def register_processor(name: str) -> Callable[[Type[BaseProcessor]], Type[BaseProcessor]]:
     """
     画像処理プロセッサクラスを名前付きで登録するためのデコレータ。
 
@@ -26,7 +28,7 @@ def register_processor(name):
     Returns:
         Callable: デコレートされたクラスをそのまま返す
     """
-    def decorator(cls):
+    def decorator(cls: Type[BaseProcessor]) -> Type[BaseProcessor]:
         PROCESSOR_REGISTRY[name] = cls
         return cls
     return decorator

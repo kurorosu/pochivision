@@ -1,9 +1,12 @@
 import cv2
+import numpy as np
 
 from processors.registry import PROCESSOR_REGISTRY
+from processors import BaseProcessor
+from capturelib import CaptureManager
 
 
-class PipelineExecutor(object):
+class PipelineExecutor:
     """
     画像処理プロセッサ群を管理し、処理と保存を行うパイプライン実行クラス。
 
@@ -13,7 +16,7 @@ class PipelineExecutor(object):
         mode (str): 実行モード。"parallel" または "pipeline"。
     """
 
-    def __init__(self, processors, capture_manager, mode="parallel"):
+    def __init__(self, processors: list[BaseProcessor], capture_manager: CaptureManager, mode: str = "parallel") -> None:
         """
         PipelineExecutor のコンストラクタ。
 
@@ -27,7 +30,7 @@ class PipelineExecutor(object):
         self.mode = mode
 
     @classmethod
-    def from_config(cls, config, capture_manager):
+    def from_config(cls, config: dict, capture_manager: CaptureManager) -> "PipelineExecutor":
         """
         設定ファイル（辞書）からインスタンスを生成。
 
@@ -38,7 +41,7 @@ class PipelineExecutor(object):
         Returns:
             PipelineExecutor: 構成済みの PipelineExecutor インスタンス。
         """
-        processors = []
+        processors: list[BaseProcessor] = []
         for name in config["processors"]:
             processor_cls = PROCESSOR_REGISTRY[name]
             processor = processor_cls(name=name, config=config.get(name, {}))
@@ -49,7 +52,7 @@ class PipelineExecutor(object):
             mode=config.get("mode", "parallel")
         )
 
-    def run(self, image):
+    def run(self, image: np.ndarray) -> None:
         """
         指定された画像に対してプロセッサを適用し、処理結果を保存する。
 
@@ -67,7 +70,7 @@ class PipelineExecutor(object):
                 result = processor.process(result)
             self._save(result, self.processors[-1].name)
 
-    def _save(self, image, processor_name):
+    def _save(self, image: np.ndarray, processor_name: str) -> None:
         """
         処理された画像を保存する内部メソッド。
 

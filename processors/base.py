@@ -1,7 +1,9 @@
 import abc
 
+import numpy as np
 
-class BaseProcessor(object):
+
+class BaseProcessor:
     """
     すべての画像処理プロセッサの基底クラス。
 
@@ -10,7 +12,7 @@ class BaseProcessor(object):
         config (dict): プロセッサ固有の設定。
     """
 
-    def __init__(self, name, config=None):
+    def __init__(self, name: str, config: dict = None) -> None:
         """
         BaseProcessor のコンストラクタ。
 
@@ -22,7 +24,7 @@ class BaseProcessor(object):
         self.config = config or {}
 
     @abc.abstractmethod
-    def process(self, image):
+    def process(self, image: np.ndarray) -> np.ndarray:
         """
         画像処理の本体。各プロセッサでオーバーライドして実装する。
 
