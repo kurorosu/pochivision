@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from processors.base import BaseProcessor
+from base import BaseProcessor
 from processors.registry import register_processor
 
 
