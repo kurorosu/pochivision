@@ -1,24 +1,37 @@
 import cv2
-import numpy as np
-
 from processors.base import BaseProcessor
+from processors.registry import register_processor
 
 
+@register_processor("blur")
 class BlurProcessor(BaseProcessor):
     """
-    ぼかし画像処理クラス。
+    ガウシアンぼかしを適用する画像処理プロセッサ。
+
+    このプロセッサは、入力画像に対してガウシアンフィルタを用いた
+    ぼかし処理を実行します。設定ファイルでカーネルサイズやシグマ値を
+    指定することができます。
+
+    登録名:
+        "blur"
+
+    設定例:
+        {
+            "kernel_size": [15, 15],
+            "sigma": 0
+        }
     """
 
-    def process(self, image: np.ndarray) -> np.ndarray:
+    def process(self, image):
         """
-        画像にガウシアンぼかしを適用します。
+        ガウシアンぼかし処理を実行します。
 
-        Parameters:
-            image (np.ndarray): 入力画像
+        Args:
+            image (np.ndarray): 入力画像（BGR形式）
 
         Returns:
-            np.ndarray: ぼかし処理後の画像
+            np.ndarray: ガウシアンぼかしを適用した画像
         """
-        kernel_size = self.config.get("kernel_size", (15, 15))
+        kernel_size = tuple(self.config.get("kernel_size", [15, 15]))
         sigma = self.config.get("sigma", 0)
         return cv2.GaussianBlur(image, kernel_size, sigma)
