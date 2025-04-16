@@ -1,4 +1,5 @@
 import cv2
+
 from processors.registry import PROCESSOR_REGISTRY
 
 
