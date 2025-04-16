@@ -1,31 +1,33 @@
 import cv2
 import json
+
 import dearpygui.dearpygui as dpg
 
 from capturelib.capture_manager import CaptureManager
 from core import PipelineExecutor
 
-
 with open("config.json", "r") as f:
     config = json.load(f)
 
 capture_manager = CaptureManager()
-pipeline = PipelineExecutor.from_config(config=config, capture_manager=capture_manager)
+pipeline = PipelineExecutor.from_config(
+    config=config, capture_manager=capture_manager)
 
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 # 幅と高さを設定（例: 1920x1080）
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # 幅を設定
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # 高さを設定
 
-
 WIDTH, HEIGHT = 640, 480
 dpg.create_context()
-dpg.create_viewport(title='Camera Viewer', width=WIDTH + 200, height=HEIGHT + 100)
+dpg.create_viewport(title='Camera Viewer',
+                    width=WIDTH + 200,
+                    height=HEIGHT + 100)
 dpg.setup_dearpygui()
 
-
 with dpg.texture_registry():
-    texture_id = dpg.add_dynamic_texture(WIDTH, HEIGHT, [0] * WIDTH * HEIGHT * 4)
+    texture_id = dpg.add_dynamic_texture(
+        WIDTH, HEIGHT, [0] * WIDTH * HEIGHT * 4)
 
 with dpg.window(label="Frame", pos=(10, 10), width=WIDTH + 20, height=HEIGHT + 60):
     dpg.add_image(texture_id)
