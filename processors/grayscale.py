@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 from processors.base import BaseProcessor
 from processors.registry import register_processor
@@ -21,7 +22,7 @@ class GrayscaleProcessor(BaseProcessor):
         }
     """
 
-    def process(self, image):
+    def process(self, image: np.ndarray) -> np.ndarray:
         """
         グレースケール変換を実行します。
 
