@@ -1,10 +1,10 @@
 import cv2
 import json
-
 import dearpygui.dearpygui as dpg
 
 from capturelib.capture_manager import CaptureManager
 from core import PipelineExecutor
+
 
 with open("config.json", "r") as f:
     config = json.load(f)
@@ -13,16 +13,16 @@ capture_manager = CaptureManager()
 pipeline = PipelineExecutor.from_config(
     config=config, capture_manager=capture_manager)
 
-cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-# 幅と高さを設定（例: 1920x1080）
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # 幅を設定
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # 高さを設定
+latest_frame = None
 
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 3264)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2448)
 WIDTH, HEIGHT = 640, 480
+
 dpg.create_context()
-dpg.create_viewport(title='Camera Viewer',
-                    width=WIDTH + 200,
-                    height=HEIGHT + 100)
+dpg.create_viewport(title='Camera Viewer', width=WIDTH +
+                    200, height=HEIGHT + 100)
 dpg.setup_dearpygui()
 
 with dpg.texture_registry():
@@ -37,23 +37,24 @@ with dpg.window(label="Controls", pos=(WIDTH + 40, 10), width=130, height=100, n
 
 
 def take_snapshot():
-    ret, frame = cap.read()  # フレームを直接取得
+    global latest_frame
+    ret, frame = cap.read()
     if ret:
-        latest_frame = frame.copy()  # 最新のフレームを保存
-        pipeline.run(latest_frame)  # パイプライン実行
+        latest_frame = frame.copy()
+        pipeline.run(latest_frame)
 
 
 def update():
+    # global latest_frame
     ret, frame = cap.read()
     if ret:
-        frame = cv2.resize(frame, (WIDTH, HEIGHT))
-        rgba = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+        frame_resized = cv2.resize(frame, (WIDTH, HEIGHT))
+        rgba = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2RGBA)
         rgba = rgba.flatten() / 255.0
         dpg.set_value(texture_id, rgba.tolist())
 
 
 dpg.show_viewport()
-
 while dpg.is_dearpygui_running():
     update()
     dpg.render_dearpygui_frame()
