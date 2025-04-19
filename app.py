@@ -1,6 +1,4 @@
 # cap_app.py
-import cv2
-
 from capture_runner import LivePreviewRunner
 from core import PipelineExecutor
 from capturelib.capture_manager import CaptureManager
@@ -73,8 +71,5 @@ except Exception as e:
     logger.error(f"Error during execution: {e}")
 
 finally:
-    # リソースのクリーンアップ
-    logger.info("Releasing resources")
-    cap.release()
-    cv2.destroyAllWindows()
+    # アプリケーション終了ログ
     logger.info("Application shutdown complete")

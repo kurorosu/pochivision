@@ -3,8 +3,7 @@ import time
 import cv2
 import numpy as np
 
-from capturelib import CaptureManager
-from capturelib import LogManager
+from capturelib import CaptureManager, LogManager
 from processors import BaseProcessor
 from processors.registry import PROCESSOR_REGISTRY
 
