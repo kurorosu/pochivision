@@ -5,5 +5,20 @@
     "kernel_size": [15, 15],
     "sigma": 0
   },
-  "mode": "pipeline"
+  "mode": "pipeline",
+  "cameras": {
+    "0": {
+      "width": 3264,
+      "height": 2448,
+      "fps": 30,
+      "backend": "DSHOW"
+    },
+    "1": {
+      "width": 1920,
+      "height": 1080,
+      "fps": 60,
+      "backend": "DSHOW"
+    }
+  },
+  "selected_camera_index": 0
 }

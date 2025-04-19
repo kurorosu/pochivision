@@ -1,33 +1,17 @@
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 
 class CaptureManager:
     """
-    保存用ディレクトリの管理を行うクラス。
-
-    Attributes:
-        base_dir (Path): 保存のベースディレクトリ。
-        capture_dir (Path): 実際に画像を保存するセッション単位のサブディレクトリ。
+    出力ディレクトリの管理のみを担当。
     """
 
     def __init__(self, base_dir: str = "capture") -> None:
-        """
-        CaptureManager のコンストラクタ。
-
-        Args:
-            base_dir (str): ベースとなるディレクトリ名。デフォルトは 'capture'。
-        """
         self.base_dir = Path(base_dir)
         self.capture_dir = self._create_capture_subdir()
 
     def _create_capture_subdir(self) -> Path:
-        """
-        日付ごとにユニークなサブディレクトリを作成。
-
-        Returns:
-            Path: 作成されたディレクトリのパス。
-        """
         date_str = datetime.now().strftime("%Y%m%d")
         base_path = self.base_dir / date_str
         index = 0
@@ -40,16 +24,19 @@ class CaptureManager:
         final_path.mkdir(parents=True, exist_ok=True)
         return final_path
 
+    def get_output_dir(self) -> Path:
+        return self.capture_dir
+
     def get_processing_dir(self, process_name: str) -> Path:
-        """
-        指定されたプロセッサ名に対応するサブディレクトリを取得または作成。
-
-        Args:
-            process_name (str): プロセッサの名前。
-
-        Returns:
-            Path: 対応する保存先ディレクトリのパス。
-        """
         path = self.capture_dir / process_name
         path.mkdir(parents=True, exist_ok=True)
         return path
+
+    def get_log_file_path(self) -> Path:
+        """
+        ログファイルのパスを取得する。
+
+        Returns:
+            Path: ログファイルのパス。
+        """
+        return self.capture_dir / "capture.log"

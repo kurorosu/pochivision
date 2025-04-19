@@ -1,9 +1,12 @@
+import time
+
 import cv2
 import numpy as np
 
-from processors.registry import PROCESSOR_REGISTRY
-from processors import BaseProcessor
 from capturelib import CaptureManager
+from capturelib import LogManager
+from processors import BaseProcessor
+from processors.registry import PROCESSOR_REGISTRY
 
 
 class PipelineExecutor:
@@ -28,6 +31,12 @@ class PipelineExecutor:
         self.processors = processors
         self.capture_manager = capture_manager
         self.mode = mode
+        self.logger = LogManager().get_logger()
+
+        # プロセッサ情報をログに記録
+        self.logger.info(f"Pipeline mode: {mode}")
+        self.logger.info(
+            f"Processors: {', '.join([p.name for p in processors])}")
 
     @classmethod
     def from_config(cls, config: dict, capture_manager: CaptureManager) -> "PipelineExecutor":
@@ -59,16 +68,29 @@ class PipelineExecutor:
         Args:
             image (np.ndarray): 入力画像。
         """
+        start_time = time.time()
+
         if self.mode == "parallel":
             for processor in self.processors:
+                proc_start = time.time()
                 result = processor.process(image)
+                proc_time = time.time() - proc_start
+                self.logger.info(
+                    f"Processing time ({processor.name}): {proc_time:.3f} sec")
                 self._save(result, processor.name)
 
         elif self.mode == "pipeline":
             result = image
             for processor in self.processors:
+                proc_start = time.time()
                 result = processor.process(result)
+                proc_time = time.time() - proc_start
+                self.logger.info(
+                    f"Processing time ({processor.name}): {proc_time:.3f} sec")
             self._save(result, self.processors[-1].name)
+
+        total_time = time.time() - start_time
+        self.logger.info(f"Total processing time: {total_time:.3f} sec")
 
     def _save(self, image: np.ndarray, processor_name: str) -> None:
         """
@@ -81,5 +103,12 @@ class PipelineExecutor:
         save_dir = self.capture_manager.get_processing_dir(processor_name)
         filename = f"snapshot_{processor_name}_{int(cv2.getTickCount())}.bmp"
         path = save_dir / filename
-        cv2.imwrite(str(path), image)
-        print(f"[{processor_name}] 保存しました: {path}")
+
+        save_start = time.time()
+        try:
+            cv2.imwrite(str(path), image)
+            save_time = time.time() - save_start
+            self.logger.info(
+                f"Image saved ({processor_name}): {path} ({image.shape[1]}x{image.shape[0]}, {save_time:.3f} sec)")
+        except Exception as e:
+            self.logger.error(f"Failed to save image ({processor_name}): {e}")
