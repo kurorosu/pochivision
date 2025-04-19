@@ -1,8 +1,7 @@
 import cv2
 from typing import Dict, Any
 
-from capturelib.config_handler import CameraConfigError
-from capturelib.log_manager import LogManager
+from capturelib.config_handler import CameraConfigError, LogManager
 
 
 class CameraSetup:
