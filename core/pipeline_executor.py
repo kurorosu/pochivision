@@ -16,9 +16,10 @@ class PipelineExecutor:
         processors (list): 実行対象の画像処理プロセッサのリスト。
         capture_manager (CaptureManager): 処理結果の保存先ディレクトリを管理するオブジェクト。
         mode (str): 実行モード。"parallel" または "pipeline"。
+        camera_index (int): このパイプラインが対応するカメラのインデックス。
     """
 
-    def __init__(self, processors: list[BaseProcessor], capture_manager: CaptureManager, mode: str = "parallel") -> None:
+    def __init__(self, processors: list[BaseProcessor], capture_manager: CaptureManager, mode: str = "parallel", camera_index: int = 0) -> None:
         """
         PipelineExecutor のコンストラクタ。
 
@@ -26,10 +27,12 @@ class PipelineExecutor:
             processors (list): 画像処理プロセッサのインスタンス群。
             capture_manager (CaptureManager): 保存先ディレクトリ管理。
             mode (str): 実行モード（"parallel" または "pipeline"）。デフォルトは "parallel"。
+            camera_index (int): このパイプラインが対応するカメラのインデックス。
         """
         self.processors = processors
         self.capture_manager = capture_manager
         self.mode = mode
+        self.camera_index = camera_index
         self.logger = LogManager().get_logger()
 
         # プロセッサ情報をログに記録
@@ -38,13 +41,14 @@ class PipelineExecutor:
             f"Processors: {', '.join([p.name for p in processors])}")
 
     @classmethod
-    def from_config(cls, config: dict, capture_manager: CaptureManager) -> "PipelineExecutor":
+    def from_config(cls, config: dict, capture_manager: CaptureManager, camera_index: int = 0) -> "PipelineExecutor":
         """
         設定ファイル（辞書）からインスタンスを生成。
 
         Args:
             config (dict): JSON等から読み込んだ設定辞書。
             capture_manager (CaptureManager): 保存用のディレクトリ管理インスタンス。
+            camera_index (int): このパイプラインが対応するカメラのインデックス。
 
         Returns:
             PipelineExecutor: 構成済みの PipelineExecutor インスタンス。
@@ -57,7 +61,8 @@ class PipelineExecutor:
         return cls(
             processors=processors,
             capture_manager=capture_manager,
-            mode=config.get("mode", "parallel")
+            mode=config.get("mode", "parallel"),
+            camera_index=camera_index
         )
 
     def run(self, image: np.ndarray) -> None:
@@ -99,7 +104,8 @@ class PipelineExecutor:
             image (np.ndarray): 処理済み画像。
             processor_name (str): 処理に使われたプロセッサの名前。
         """
-        save_dir = self.capture_manager.get_processing_dir(processor_name)
+        save_dir = self.capture_manager.get_processing_dir(
+            processor_name, self.camera_index)
         filename = f"snapshot_{processor_name}_{int(cv2.getTickCount())}.bmp"
         path = save_dir / filename
 
