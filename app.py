@@ -98,8 +98,15 @@ if __name__ == "__main__":
         logger.info(
             f"Capture manager initialized for camera {camera_setup.camera_index}")
 
-        # 設定をキャプチャディレクトリに保存
-        ConfigHandler.save(config, capture_manager.get_output_dir(
+        # 実際に使用したプロファイルのみを含むconfigを作成
+        used_profile = camera_setup.profile_name
+        minimal_config = {
+            "cameras": {
+                used_profile: config["cameras"][used_profile]
+            },
+            "selected_camera_index": camera_setup.camera_index
+        }
+        ConfigHandler.save(minimal_config, capture_manager.get_output_dir(
             camera_index=camera_setup.camera_index))
 
         # パイプラインエグゼキューターの初期化（カメラインデックスとプロファイル名を渡す）
