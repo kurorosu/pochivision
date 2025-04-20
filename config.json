@@ -13,9 +13,15 @@
       "fps": 30,
       "backend": "DSHOW"
     },
-    "1": {
-      "width": 1920,
-      "height": 1080,
+    "high_res": {
+      "width": 3840,
+      "height": 2160,
+      "fps": 30,
+      "backend": "DSHOW"
+    },
+    "high_fps": {
+      "width": 1280,
+      "height": 720,
       "fps": 60,
       "backend": "DSHOW"
     }

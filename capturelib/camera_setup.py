@@ -1,5 +1,5 @@
 import cv2
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from capturelib.config_handler import CameraConfigError, LogManager
 
@@ -9,18 +9,23 @@ class CameraSetup:
     カメラの設定と初期化を担当するクラス。
     """
 
-    def __init__(self, config: Dict[str, Any], log_manager: LogManager):
+    def __init__(self, config: Dict[str, Any], log_manager: LogManager,
+                 camera_index: Optional[int] = None,
+                 profile_name: Optional[str] = None):
         """
         CameraSetupクラスのコンストラクタ。
 
         Args:
             config (Dict[str, Any]): アプリケーション設定。
             log_manager (LogManager): ロギングマネージャー。
+            camera_index (Optional[int]): 使用するカメラのインデックス。None の場合は設定ファイルの値を使用。
+            profile_name (Optional[str]): 使用するカメラプロファイル名。None の場合はカメラインデックスに対応する設定を使用。
         """
         self.config = config
         self.log_manager = log_manager
         self.logger = log_manager.get_logger()
-        self.camera_index = 0
+        self.camera_index = camera_index
+        self.profile_name = profile_name
         self.width = 0
         self.height = 0
         self.fps = 30
@@ -28,16 +33,26 @@ class CameraSetup:
 
     def load_camera_config(self) -> None:
         """
-        設定からカメラ設定を読み込む。
+        設定からカメラ設定を読み込む。CLIで指定されたカメラインデックスとプロファイル名を優先する。
         """
         try:
-            # 選択されたカメラインデックスを取得
-            self.camera_index = self.config.get("selected_camera_index", 0)
+            # カメラインデックスが指定されていない場合は設定ファイルから取得
+            if self.camera_index is None:
+                self.camera_index = self.config.get("selected_camera_index", 0)
+
+            # カメラプロファイルが指定されていない場合は常にプロファイル "0" を使用
+            if self.profile_name is None:
+                self.profile_name = "0"
+
+            # プロファイルキーを設定
+            profile_key = self.profile_name
 
             # カメラの設定をcameras辞書から取得
-            camera_index_str = str(self.camera_index)
-            camera_config = self.config.get(
-                "cameras", {}).get(camera_index_str, {})
+            camera_config = self.config.get("cameras", {}).get(profile_key, {})
+
+            if not camera_config:
+                self.logger.warning(
+                    f"Camera profile '{profile_key}' not found in config, using default settings")
 
             # カメラの解像度設定を取得
             self.width = camera_config.get("width", 640)
@@ -46,7 +61,7 @@ class CameraSetup:
             self.backend = camera_config.get("backend", None)
 
             self.logger.info(f"Camera configuration loaded: Camera Index={self.camera_index}, "
-                             f"Width={self.width}, Height={self.height}, "
+                             f"Profile={profile_key}, Width={self.width}, Height={self.height}, "
                              f"FPS={self.fps}, Backend={self.backend}")
         except Exception as e:
             self.logger.error(f"Error loading camera config: {e}")
