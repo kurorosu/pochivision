@@ -128,9 +128,11 @@ class PipelineExecutor:
             image (np.ndarray): 処理済み画像。
             processor_name (str): 処理に使われたプロセッサの名前。
         """
+        # パイプラインモード時は"pipeline"ディレクトリに保存
+        save_dir_name = "pipeline" if self.mode == "pipeline" else processor_name
         save_dir = self.capture_manager.get_processing_dir(
-            processor_name, self.camera_index)
-        filename = f"snapshot_{processor_name}_{int(cv2.getTickCount())}.bmp"
+            save_dir_name, self.camera_index)
+        filename = f"snapshot_{save_dir_name}_{int(cv2.getTickCount())}.bmp"
         path = save_dir / filename
 
         save_start = time.time()
@@ -138,6 +140,6 @@ class PipelineExecutor:
             cv2.imwrite(str(path), image)
             save_time = time.time() - save_start
             self.logger.info(
-                f"Image saved ({processor_name}): {path} ({image.shape[1]}x{image.shape[0]}, {save_time:.3f} sec)")
+                f"Image saved ({save_dir_name}): {path} ({image.shape[1]}x{image.shape[0]}, {save_time:.3f} sec)")
         except Exception as e:
-            self.logger.error(f"Failed to save image ({processor_name}): {e}")
+            self.logger.error(f"Failed to save image ({save_dir_name}): {e}")
