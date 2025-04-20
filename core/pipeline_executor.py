@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 
 from capturelib import CaptureManager, LogManager
+from capturelib.config_handler import CameraConfigHandler
 from processors import BaseProcessor
 from processors.registry import PROCESSOR_REGISTRY
 
@@ -41,29 +42,52 @@ class PipelineExecutor:
             f"Processors: {', '.join([p.name for p in processors])}")
 
     @classmethod
-    def from_config(cls, config: dict, capture_manager: CaptureManager, camera_index: int = 0) -> "PipelineExecutor":
+    def from_config(cls, config: dict, capture_manager: CaptureManager, camera_index: int = 0, profile_name: str = "0") -> "PipelineExecutor":
         """
         設定ファイル（辞書）からインスタンスを生成。
+        カメラプロファイルごとの画像処理設定を使用します。
 
         Args:
             config (dict): JSON等から読み込んだ設定辞書。
             capture_manager (CaptureManager): 保存用のディレクトリ管理インスタンス。
             camera_index (int): このパイプラインが対応するカメラのインデックス。
+            profile_name (str): 使用するカメラプロファイル名。
 
         Returns:
             PipelineExecutor: 構成済みの PipelineExecutor インスタンス。
+
+        Raises:
+            Exception: カメラプロファイルのプロセッサ設定が取得できない場合。
         """
-        processors: list[BaseProcessor] = []
-        for name in config["processors"]:
-            processor_cls = PROCESSOR_REGISTRY[name]
-            processor = processor_cls(name=name, config=config.get(name, {}))
-            processors.append(processor)
-        return cls(
-            processors=processors,
-            capture_manager=capture_manager,
-            mode=config.get("mode", "parallel"),
-            camera_index=camera_index
-        )
+        try:
+            # カメラプロファイルからプロセッサ設定を取得
+            processor_names, processor_configs, mode = CameraConfigHandler.get_camera_processors(
+                config, profile_name)
+
+            # プロセッサインスタンスの生成
+            processors: list[BaseProcessor] = []
+            for name in processor_names:
+                if name not in PROCESSOR_REGISTRY:
+                    raise ValueError(f"Processor '{name}' is not registered")
+
+                processor_cls = PROCESSOR_REGISTRY[name]
+                processor = processor_cls(
+                    name=name,
+                    config=processor_configs.get(name, {})
+                )
+                processors.append(processor)
+
+            # インスタンス生成
+            return cls(
+                processors=processors,
+                capture_manager=capture_manager,
+                mode=mode,
+                camera_index=camera_index
+            )
+        except Exception as e:
+            logger = LogManager().get_logger()
+            logger.error(f"Failed to create pipeline from config: {e}")
+            raise
 
     def run(self, image: np.ndarray) -> None:
         """

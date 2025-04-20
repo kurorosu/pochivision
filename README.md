@@ -64,51 +64,86 @@ python app.py --config "my_config.json"
 
 ## Configuration
 
-The application uses a JSON configuration file to define camera profiles and processing pipelines.
+The application uses a JSON configuration file to define camera profiles and processing pipelines. Each camera profile has independent settings for image processing algorithms and parameters.
 
-### Example Configuration
+### Configuration File Structure
 
 ```json
 {
-  "processors": ["grayscale", "blur"],
-  "grayscale": {},
-  "blur": {
-    "kernel_size": [15, 15],
-    "sigma": 0
-  },
-  "mode": "pipeline",
   "cameras": {
     "0": {
       "width": 3200,
       "height": 2400,
       "fps": 30,
-      "backend": "DSHOW"
+      "backend": "DSHOW",
+      "processors": ["blur", "grayscale"],
+      "mode": "parallel",
+      "blur": {
+        "kernel_size": [15, 15],
+        "sigma": 0
+      },
+      "grayscale": {}
     },
     "high_res": {
       "width": 3840,
       "height": 2160,
       "fps": 30,
-      "backend": "DSHOW"
+      "backend": "DSHOW",
+      "processors": ["blur"],
+      "mode": "parallel",
+      "blur": {
+        "kernel_size": [31, 31],
+        "sigma": 0
+      }
     },
     "high_fps": {
       "width": 1280,
       "height": 720,
       "fps": 60,
-      "backend": "DSHOW"
+      "backend": "DSHOW",
+      "processors": ["grayscale"],
+      "mode": "pipeline",
+      "grayscale": {}
     }
   },
   "selected_camera_index": 0
 }
 ```
 
-### Camera Profiles
+### Required and Optional Parameters
 
-Camera profiles can be named with numbers or custom strings (e.g., "high_res", "high_fps"). 
+**Global settings (required)**:
+- `cameras`: Object defining camera profiles (required)
+- `selected_camera_index`: Camera index used when not specified on command line (required)
 
-**Important Note**: 
-- When specifying only `--camera` without `--profile`, the application will always use profile "0" regardless of the camera index.
-- If neither camera index nor profile is specified, the app will use the `selected_camera_index` value from the config file.
-- Make sure your config.json has a profile named "0" when using `--camera` without `--profile`.
+**For each camera profile (in `cameras`)**:
+
+Required parameters:
+- `processors`: Array of processor names to use (required, must not be empty)
+
+Optional parameters with default values:
+- `width`: Camera resolution width (optional, default: 640)
+- `height`: Camera resolution height (optional, default: 480)
+- `fps`: Frame rate (optional, default: 30)
+- `backend`: Camera backend type (optional, default: none)
+- `mode`: Processing mode (optional, default: "parallel")
+  - `"parallel"`: Each processor processes the original image independently
+  - `"pipeline"`: Each processor receives the output of the previous processor
+- Processor settings: Objects with processor name as key (optional, default: empty object)
+
+**Example processor settings**:
+- `blur`: Blur processing parameters
+  - `kernel_size`: Kernel size (e.g., [15, 15])
+  - `sigma`: Sigma value (e.g., 0)
+- `grayscale`: Grayscale conversion (no parameters)
+
+### Camera Profile Notes
+
+- Profile names that are numbers (e.g., "0") must match the `--camera` argument on the command line
+- When only `--camera` is specified on the command line, profile "0" will be used
+- Each camera profile can specify different processors and settings
+- The `processors` list in each profile is required and must not be empty
+- Specifying an unregistered processor will result in an error
 
 ## Architecture
 
@@ -118,6 +153,27 @@ Vision Capture Core follows SOLID principles with a modular architecture:
 - **CaptureLib**: Camera and system management
 - **Processors**: Image processing modules
 - **Capture Runner**: UI and application control
+
+## Available Processors
+
+The following processors are currently available:
+
+1. **grayscale**: Converts color images to grayscale
+   - Parameters: none
+   ```json
+   "grayscale": {}
+   ```
+
+2. **blur**: Applies Gaussian blur
+   - Parameters:
+     - `kernel_size`: Blur kernel size (e.g., [15, 15])
+     - `sigma`: Gaussian blur sigma value (e.g., 0)
+   ```json
+   "blur": {
+     "kernel_size": [15, 15],
+     "sigma": 0
+   }
+   ```
 
 ## Contributing
 
