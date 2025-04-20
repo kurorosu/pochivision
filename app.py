@@ -93,15 +93,18 @@ if __name__ == "__main__":
     try:
         # キャプチャマネージャを初期化し、ファイルへのロギングを設定
         capture_manager = CaptureManager()
-        log_manager.setup_file_logging(capture_manager.get_log_file_path())
-        logger.info("Capture manager initialized")
+        log_manager.setup_file_logging(capture_manager.get_log_file_path(
+            camera_index=camera_setup.camera_index))
+        logger.info(
+            f"Capture manager initialized for camera {camera_setup.camera_index}")
 
         # 設定をキャプチャディレクトリに保存
-        ConfigHandler.save(config, capture_manager.get_output_dir())
+        ConfigHandler.save(config, capture_manager.get_output_dir(
+            camera_index=camera_setup.camera_index))
 
-        # パイプラインエグゼキューターの初期化
+        # パイプラインエグゼキューターの初期化（カメラインデックスを渡す）
         pipeline = PipelineExecutor.from_config(
-            config, capture_manager=capture_manager)
+            config, capture_manager=capture_manager, camera_index=camera_setup.camera_index)
 
         # アプリケーションの作成と実行
         app = LivePreviewRunner(cap, pipeline)

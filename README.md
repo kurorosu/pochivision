@@ -79,8 +79,8 @@ The application uses a JSON configuration file to define camera profiles and pro
   "mode": "pipeline",
   "cameras": {
     "0": {
-      "width": 3264,
-      "height": 2448,
+      "width": 3200,
+      "height": 2400,
       "fps": 30,
       "backend": "DSHOW"
     },

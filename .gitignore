@@ -5,3 +5,4 @@ capture/
 .repomix.yml
 repomix-output.xml
 .cursorrules
+cameratest.py
