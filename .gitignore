@@ -6,3 +6,4 @@ capture/
 repomix-output.xml
 .cursorrules
 cameratest.py
+capture.py

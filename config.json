@@ -1,29 +1,38 @@
 {
-  "processors": ["blur","grayscale"],
-  "grayscale": {},
-  "blur": {
-    "kernel_size": [15, 15],
-    "sigma": 0
-  },
-  "mode": "parallel",
   "cameras": {
     "0": {
       "width": 3200,
       "height": 2400,
       "fps": 30,
-      "backend": "DSHOW"
+      "backend": "DSHOW",
+      "processors": ["blur", "grayscale"],
+      "mode": "parallel",
+      "blur": {
+        "kernel_size": [15, 15],
+        "sigma": 0
+      },
+      "grayscale": {}
     },
     "high_res": {
       "width": 3840,
       "height": 2160,
       "fps": 30,
-      "backend": "DSHOW"
+      "backend": "DSHOW",
+      "processors": ["blur"],
+      "mode": "parallel",
+      "blur": {
+        "kernel_size": [31, 31],
+        "sigma": 0
+      }
     },
     "high_fps": {
       "width": 1280,
       "height": 720,
       "fps": 60,
-      "backend": "DSHOW"
+      "backend": "DSHOW",
+      "processors": ["grayscale"],
+      "mode": "pipeline",
+      "grayscale": {}
     }
   },
   "selected_camera_index": 0

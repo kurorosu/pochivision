@@ -102,9 +102,13 @@ if __name__ == "__main__":
         ConfigHandler.save(config, capture_manager.get_output_dir(
             camera_index=camera_setup.camera_index))
 
-        # パイプラインエグゼキューターの初期化（カメラインデックスを渡す）
+        # パイプラインエグゼキューターの初期化（カメラインデックスとプロファイル名を渡す）
         pipeline = PipelineExecutor.from_config(
-            config, capture_manager=capture_manager, camera_index=camera_setup.camera_index)
+            config,
+            capture_manager=capture_manager,
+            camera_index=camera_setup.camera_index,
+            profile_name=camera_setup.profile_name
+        )
 
         # アプリケーションの作成と実行
         app = LivePreviewRunner(cap, pipeline)
