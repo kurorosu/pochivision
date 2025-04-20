@@ -5,13 +5,16 @@
       "height": 2400,
       "fps": 30,
       "backend": "DSHOW",
-      "processors": ["blur", "grayscale"],
-      "mode": "parallel",
+      "processors": ["blur", "grayscale", "binarization"],
+      "mode": "pipeline",
       "blur": {
         "kernel_size": [15, 15],
         "sigma": 0
       },
-      "grayscale": {}
+      "grayscale": {},
+      "binarization": {
+        "threshold": 128
+      }
     },
     "high_res": {
       "width": 3840,
