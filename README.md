@@ -76,22 +76,25 @@ The application uses a JSON configuration file to define camera profiles and pro
       "height": 2400,
       "fps": 30,
       "backend": "DSHOW",
-      "processors": ["blur", "grayscale"],
+      "processors": ["gaussian_blur", "grayscale", "standard_binarization"],
       "mode": "parallel",
-      "blur": {
+      "gaussian_blur": {
         "kernel_size": [15, 15],
         "sigma": 0
       },
-      "grayscale": {}
+      "grayscale": {},
+      "standard_binarization": {
+        "threshold": 128
+      }
     },
     "high_res": {
       "width": 3840,
       "height": 2160,
       "fps": 30,
       "backend": "DSHOW",
-      "processors": ["blur"],
+      "processors": ["gaussian_blur"],
       "mode": "parallel",
-      "blur": {
+      "gaussian_blur": {
         "kernel_size": [31, 31],
         "sigma": 0
       }
@@ -132,10 +135,12 @@ Optional parameters with default values:
 - Processor settings: Objects with processor name as key (optional, default: empty object)
 
 **Example processor settings**:
-- `blur`: Blur processing parameters
+- `gaussian_blur`: Gaussian Blur processing parameters
   - `kernel_size`: Kernel size (e.g., [15, 15])
-  - `sigma`: Sigma value (e.g., 0)
+  - `sigma`: Gaussian blur sigma value (e.g., 0)
 - `grayscale`: Grayscale conversion (no parameters)
+- `standard_binarization`: Standard (threshold-based) binarization parameters
+  - `threshold`: Binarization threshold value (e.g., 128)
 
 ### Camera Profile Notes
 
@@ -164,14 +169,23 @@ The following processors are currently available:
    "grayscale": {}
    ```
 
-2. **blur**: Applies Gaussian blur
+2. **gaussian_blur**: Applies Gaussian blur
    - Parameters:
      - `kernel_size`: Blur kernel size (e.g., [15, 15])
      - `sigma`: Gaussian blur sigma value (e.g., 0)
    ```json
-   "blur": {
+   "gaussian_blur": {
      "kernel_size": [15, 15],
      "sigma": 0
+   }
+   ```
+
+3. **standard_binarization**: Applies standard (threshold-based) binarization
+   - Parameters:
+     - `threshold`: Binarization threshold value (e.g., 128)
+   ```json
+   "standard_binarization": {
+     "threshold": 128
    }
    ```
 

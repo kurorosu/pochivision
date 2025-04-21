@@ -1,24 +1,26 @@
 import cv2
 import numpy as np
 import logging
+
 from processors import BaseProcessor
 from processors.registry import register_processor
+from processors.validators.binarization import StandardBinarizationValidator
 
 
-@register_processor("binarization")
-class BinarizationProcessor(BaseProcessor):
+@register_processor("standard_binarization")
+class StandardBinarizationProcessor(BaseProcessor):
     """
-    スタンダードな2値化処理を行う画像処理プロセッサ。
+    スタンダードな2値化（しきい値による通常の2値化）を行う画像処理プロセッサ。
 
     入力画像がグレースケールまたはカラーかを自動判別し、
-    適切に2値化処理を行います。
+    適切に2値化処理（cv2.threshold）を行います。
 
     登録名:
-        "binarization"
+        "standard_binarization"
 
     設定例:
         {
-            "binarization": {
+            "standard_binarization": {
                 "threshold": 128
             }
         }
@@ -28,7 +30,7 @@ class BinarizationProcessor(BaseProcessor):
 
     def __init__(self, name: str, config: dict = None) -> None:
         """
-        BinarizationProcessorのコンストラクタ。
+        StandardBinarizationProcessorのコンストラクタ。
 
         Args:
             name (str): プロセッサ名。
@@ -40,7 +42,7 @@ class BinarizationProcessor(BaseProcessor):
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
-        画像を2値化します。
+        通常の2値化処理（cv2.threshold）を実行します。
 
         Args:
             image (np.ndarray): 入力画像。
@@ -51,6 +53,7 @@ class BinarizationProcessor(BaseProcessor):
         Raises:
             ValueError: サポート外の画像形式の場合。
         """
+        StandardBinarizationValidator(self.config, image).validate()
         if image.ndim == 2:
             gray = image
             self.logger.debug("Input image is grayscale.")

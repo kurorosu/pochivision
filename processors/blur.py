@@ -3,19 +3,20 @@ import numpy as np
 
 from processors import BaseProcessor
 from processors.registry import register_processor
+from processors.validators.blur.gaussian import GaussianBlurConfigValidator
 
 
-@register_processor("blur")
-class BlurProcessor(BaseProcessor):
+@register_processor("gaussian_blur")
+class GaussianBlurProcessor(BaseProcessor):
     """
-    ガウシアンぼかしを適用する画像処理プロセッサ。
+    ガウシアンぼかし（Gaussian Blur）を適用する画像処理プロセッサ。
 
     このプロセッサは、入力画像に対してガウシアンフィルタを用いた
-    ぼかし処理を実行します。設定ファイルでカーネルサイズやシグマ値を
+    ぼかし処理（Gaussian Blur）を実行します。設定ファイルでカーネルサイズやシグマ値を
     指定することができます。
 
     登録名:
-        "blur"
+        "gaussian_blur"
 
     設定例:
         {
@@ -26,7 +27,7 @@ class BlurProcessor(BaseProcessor):
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
-        ガウシアンぼかし処理を実行します。
+        ガウシアンぼかし処理（Gaussian Blur）を実行します。
 
         Args:
             image (np.ndarray): 入力画像（BGR形式）
@@ -34,6 +35,7 @@ class BlurProcessor(BaseProcessor):
         Returns:
             np.ndarray: ガウシアンぼかしを適用した画像
         """
+        GaussianBlurConfigValidator(self.config, image).validate()
         kernel_size = tuple(self.config.get("kernel_size", [15, 15]))
         sigma = self.config.get("sigma", 0)
         return cv2.GaussianBlur(image, kernel_size, sigma)
