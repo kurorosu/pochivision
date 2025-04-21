@@ -98,6 +98,18 @@ class PipelineExecutor:
         """
         start_time = time.time()
 
+        # オリジナル画像を保存
+        original_dir = self.capture_manager.get_processing_dir(
+            'original', self.camera_index)
+        original_filename = f"snapshot_original_{int(cv2.getTickCount())}.bmp"
+        original_path = original_dir / original_filename
+        try:
+            cv2.imwrite(str(original_path), image)
+            self.logger.info(
+                f"Original image saved: {original_path} ({image.shape[1]}x{image.shape[0]})")
+        except Exception as e:
+            self.logger.error(f"Failed to save original image: {e}")
+
         if self.mode == "parallel":
             for processor in self.processors:
                 proc_start = time.time()
