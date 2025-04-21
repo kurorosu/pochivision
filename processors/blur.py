@@ -4,6 +4,7 @@ import numpy as np
 from processors import BaseProcessor
 from processors.registry import register_processor
 from processors.validators.blur.gaussian import GaussianBlurConfigValidator
+from processors.validators.blur.average import AverageBlurValidator
 
 
 @register_processor("gaussian_blur")
@@ -39,3 +40,34 @@ class GaussianBlurProcessor(BaseProcessor):
         kernel_size = tuple(self.config.get("kernel_size", [15, 15]))
         sigma = self.config.get("sigma", 0)
         return cv2.GaussianBlur(image, kernel_size, sigma)
+
+
+@register_processor("average_blur")
+class AverageBlurProcessor(BaseProcessor):
+    """
+    平均値ブラー（Average Blur）を適用する画像処理プロセッサ。
+
+    入力画像に対してカーネルサイズで指定した範囲の平均値でぼかし処理を行います。
+
+    登録名:
+        "average_blur"
+
+    設定例:
+        {
+            "kernel_size": [5, 5]
+        }
+    """
+
+    def process(self, image: np.ndarray) -> np.ndarray:
+        """
+        平均値ブラー処理（cv2.blur）を実行します。
+
+        Args:
+            image (np.ndarray): 入力画像（BGR形式）
+
+        Returns:
+            np.ndarray: 平均値ブラーを適用した画像
+        """
+        AverageBlurValidator(self.config, image).validate()
+        kernel_size = tuple(self.config.get("kernel_size", [5, 5]))
+        return cv2.blur(image, kernel_size)
