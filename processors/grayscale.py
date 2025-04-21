@@ -3,6 +3,7 @@ import numpy as np
 
 from processors import BaseProcessor
 from processors.registry import register_processor
+from processors.validators.grayscale.grayscale import GrayscaleInputValidator
 
 
 @register_processor("grayscale")
@@ -32,4 +33,5 @@ class GrayscaleProcessor(BaseProcessor):
         Returns:
             np.ndarray: グレースケールに変換された画像
         """
+        GrayscaleInputValidator(image).validate()
         return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

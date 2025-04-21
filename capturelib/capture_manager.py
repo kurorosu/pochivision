@@ -12,7 +12,7 @@ class CaptureManager:
         camera{camera_index}/
             YYYYMMDD_{suffix}/  # suffixは0から始まり、同じ日付のディレクトリが存在する場合にインクリメント
                 image.bmp
-                blur/
+                gaussian_blur/
                 grayscale/
 
     Attributes:
@@ -108,7 +108,7 @@ class CaptureManager:
         ディレクトリが存在しない場合は新規作成します。
 
         Args:
-            process_name (str): 処理の名前（例：'grayscale', 'blur'）
+            process_name (str): 処理の名前（例：'grayscale', 'gaussian_blur'）
             camera_index (int): カメラのインデックス。デフォルトは0
 
         Returns:
