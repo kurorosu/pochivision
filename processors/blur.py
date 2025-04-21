@@ -5,6 +5,7 @@ from processors import BaseProcessor
 from processors.registry import register_processor
 from processors.validators.blur.gaussian import GaussianBlurConfigValidator
 from processors.validators.blur.average import AverageBlurValidator
+from processors.validators.blur.median import MedianBlurValidator
 
 
 @register_processor("gaussian_blur")
@@ -71,3 +72,35 @@ class AverageBlurProcessor(BaseProcessor):
         AverageBlurValidator(self.config, image).validate()
         kernel_size = tuple(self.config.get("kernel_size", [5, 5]))
         return cv2.blur(image, kernel_size)
+
+
+@register_processor("median_blur")
+class MedianBlurProcessor(BaseProcessor):
+    """
+    メディアンブラー（Median Blur）を適用する画像処理プロセッサ。
+
+    入力画像に対してカーネルサイズで指定した範囲の中央値でぼかし処理を行います。
+    塩胡椒ノイズ除去に有効です。
+
+    登録名:
+        "median_blur"
+
+    設定例:
+        {
+            "kernel_size": 5
+        }
+    """
+
+    def process(self, image: np.ndarray) -> np.ndarray:
+        """
+        メディアンブラー処理（cv2.medianBlur）を実行します。
+
+        Args:
+            image (np.ndarray): 入力画像（BGR形式またはグレースケール）
+
+        Returns:
+            np.ndarray: メディアンブラーを適用した画像
+        """
+        MedianBlurValidator(self.config, image).validate()
+        kernel_size = self.config.get("kernel_size", 5)
+        return cv2.medianBlur(image, kernel_size)
