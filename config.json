@@ -1,23 +1,64 @@
 {
-  "processors": ["grayscale", "blur"],
-  "grayscale": {},
-  "blur": {
-    "kernel_size": [15, 15],
-    "sigma": 0
-  },
-  "mode": "pipeline",
   "cameras": {
     "0": {
-      "width": 3264,
-      "height": 2448,
+      "width": 3200,
+      "height": 2400,
       "fps": 30,
-      "backend": "DSHOW"
+      "backend": "DSHOW",
+      "processors": ["motion_blur","gaussian_blur","grayscale", "standard_binarization"],
+      "mode": "pipeline",
+      "gaussian_blur": {
+        "kernel_size": [16, 16],
+        "sigma": 0
+      },
+      "average_blur": {
+        "kernel_size": [5, 5]
+      },
+      "median_blur": {
+        "kernel_size": 5
+      },
+      "grayscale": {},
+      "standard_binarization": {
+        "threshold": 128
+      },
+      "bilateral_filter": {
+        "d": 9,
+        "sigmaColor": 75,
+        "sigmaSpace": 75
+      },
+      "motion_blur": {
+        "kernel_size": 15,
+        "angle": 0
+      }
     },
-    "1": {
-      "width": 1920,
-      "height": 1080,
+    "all_para": {
+      "width": 3200,
+      "height": 2400,
+      "fps": 30,
+      "backend": "DSHOW",
+      "processors": [
+        "motion_blur",
+        "bilateral_filter",
+        "median_blur",
+        "gaussian_blur",
+        "average_blur",
+        "grayscale",
+        "standard_binarization"
+      ],
+      "mode": "parallel",
+      "gaussian_blur": {
+        "kernel_size": [31, 31],
+        "sigma": 0
+      }
+    },
+    "high_fps": {
+      "width": 1280,
+      "height": 720,
       "fps": 60,
-      "backend": "DSHOW"
+      "backend": "DSHOW",
+      "processors": ["grayscale"],
+      "mode": "pipeline",
+      "grayscale": {}
     }
   },
   "selected_camera_index": 0
