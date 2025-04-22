@@ -6,6 +6,7 @@ from processors.registry import register_processor
 from processors.validators.blur.gaussian import GaussianBlurConfigValidator
 from processors.validators.blur.average import AverageBlurValidator
 from processors.validators.blur.median import MedianBlurValidator
+from processors.validators.blur.bilateral import BilateralFilterValidator
 
 
 @register_processor("gaussian_blur")
@@ -104,3 +105,39 @@ class MedianBlurProcessor(BaseProcessor):
         MedianBlurValidator(self.config, image).validate()
         kernel_size = self.config.get("kernel_size", 5)
         return cv2.medianBlur(image, kernel_size)
+
+
+@register_processor("bilateral_filter")
+class BilateralFilterProcessor(BaseProcessor):
+    """
+    バイラテラルフィルタ（Bilateral Filter）を適用する画像処理プロセッサ。
+
+    エッジを保ちながらぼかし処理を行います。
+    d, sigmaColor, sigmaSpaceの3つのパラメータで調整可能です。
+
+    登録名:
+        "bilateral_filter"
+
+    設定例:
+        {
+            "d": 9,
+            "sigmaColor": 75,
+            "sigmaSpace": 75
+        }
+    """
+
+    def process(self, image: np.ndarray) -> np.ndarray:
+        """
+        バイラテラルフィルタ処理（cv2.bilateralFilter）を実行します。
+
+        Args:
+            image (np.ndarray): 入力画像（BGR形式またはグレースケール）
+
+        Returns:
+            np.ndarray: バイラテラルフィルタを適用した画像
+        """
+        BilateralFilterValidator(self.config, image).validate()
+        d = self.config.get("d", 9)
+        sigmaColor = self.config.get("sigmaColor", 75)
+        sigmaSpace = self.config.get("sigmaSpace", 75)
+        return cv2.bilateralFilter(image, d, sigmaColor, sigmaSpace)

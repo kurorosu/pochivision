@@ -189,6 +189,28 @@ The following processors are currently available:
    }
    ```
 
+4. **median_blur**: Applies median blur
+   - Parameters:
+     - `kernel_size`: Kernel size (odd integer, e.g., 5)
+   ```json
+   "median_blur": {
+     "kernel_size": 5
+   }
+   ```
+
+5. **bilateral_filter**: Applies bilateral filter (edge-preserving blur)
+   - Parameters:
+     - `d`: Diameter of each pixel neighborhood (e.g., 9)
+     - `sigmaColor`: Filter sigma in the color space (e.g., 75)
+     - `sigmaSpace`: Filter sigma in the coordinate space (e.g., 75)
+   ```json
+   "bilateral_filter": {
+     "d": 9,
+     "sigmaColor": 75,
+     "sigmaSpace": 75
+   }
+   ```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

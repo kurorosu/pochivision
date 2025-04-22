@@ -5,7 +5,7 @@
       "height": 2400,
       "fps": 30,
       "backend": "DSHOW",
-      "processors": ["median_blur", "grayscale", "standard_binarization"],
+      "processors": ["bilateral_filter", "grayscale", "standard_binarization"],
       "mode": "pipeline",
       "gaussian_blur": {
         "kernel_size": [15, 15],
@@ -20,6 +20,11 @@
       "grayscale": {},
       "standard_binarization": {
         "threshold": 128
+      },
+      "bilateral_filter": {
+        "d": 9,
+        "sigmaColor": 75,
+        "sigmaSpace": 75
       }
     },
     "high_res": {
@@ -27,7 +32,14 @@
       "height": 2400,
       "fps": 30,
       "backend": "DSHOW",
-      "processors": ["median_blur","gaussian_blur", "average_blur", "grayscale", "standard_binarization"],
+      "processors": [
+        "bilateral_filter",
+        "median_blur",
+        "gaussian_blur",
+        "average_blur",
+        "grayscale",
+        "standard_binarization"
+      ],
       "mode": "parallel",
       "gaussian_blur": {
         "kernel_size": [31, 31],
