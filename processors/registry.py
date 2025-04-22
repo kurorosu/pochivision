@@ -1,4 +1,4 @@
-from typing import Callable, Type
+from typing import Callable, Type, Dict
 
 from processors import BaseProcessor
 
@@ -15,7 +15,7 @@ from processors import BaseProcessor
 """
 
 # 名前とクラスのマッピングを保持する辞書
-PROCESSOR_REGISTRY: dict[str, Type[BaseProcessor]] = {}
+PROCESSOR_REGISTRY: Dict[str, Type[BaseProcessor]] = {}
 
 
 def register_processor(name: str) -> Callable[[Type[BaseProcessor]], Type[BaseProcessor]]:
