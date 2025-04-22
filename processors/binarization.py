@@ -5,6 +5,7 @@ import logging
 from processors import BaseProcessor
 from processors.registry import register_processor
 from processors.validators.binarization import StandardBinarizationValidator
+from exceptions import ProcessorRuntimeError
 
 
 @register_processor("standard_binarization")
@@ -51,9 +52,14 @@ class StandardBinarizationProcessor(BaseProcessor):
             np.ndarray: 2値化後の画像。
 
         Raises:
-            ValueError: サポート外の画像形式の場合。
+            ProcessorRuntimeError: サポート外の画像形式の場合やバリデーション失敗時。
         """
-        StandardBinarizationValidator(self.config, image).validate()
+        try:
+            StandardBinarizationValidator(self.config, image).validate()
+        except Exception as e:
+            raise ProcessorRuntimeError(
+                f"StandardBinarization validation failed: {e}")
+
         if image.ndim == 2:
             gray = image
             self.logger.debug("Input image is grayscale.")
@@ -62,7 +68,7 @@ class StandardBinarizationProcessor(BaseProcessor):
             self.logger.debug("Input image is color. Converted to grayscale.")
         else:
             self.logger.error(f"Unsupported image format: shape={image.shape}")
-            raise ValueError(
+            raise ProcessorRuntimeError(
                 "Unsupported image format. Only 2D or 3D (BGR/BGRA) images are supported.")
 
         _, binary = cv2.threshold(gray, self.threshold, 255, cv2.THRESH_BINARY)

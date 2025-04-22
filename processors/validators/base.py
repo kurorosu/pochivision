@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 import numpy as np
+from exceptions import ProcessorValidationError
 
 
 class BaseValidator(ABC):
@@ -15,7 +16,7 @@ class BaseValidator(ABC):
         バリデーションを実行する抽象メソッド。
 
         Raises:
-            ValueError: バリデーションに失敗した場合
+            ProcessorValidationError: バリデーションに失敗した場合
         """
         pass
 
@@ -28,9 +29,10 @@ class BaseValidator(ABC):
             image (Any): 入力画像
 
         Raises:
-            ValueError: 型不正または空画像の場合
+            ProcessorValidationError: 型不正または空画像の場合
         """
         if not isinstance(image, np.ndarray):
-            raise ValueError("image must be of type numpy.ndarray")
+            raise ProcessorValidationError(
+                "image must be of type numpy.ndarray")
         if image.size == 0:
-            raise ValueError("input image is empty")
+            raise ProcessorValidationError("input image is empty")
