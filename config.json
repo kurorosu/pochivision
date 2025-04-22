@@ -5,10 +5,10 @@
       "height": 2400,
       "fps": 30,
       "backend": "DSHOW",
-      "processors": ["motion_blur","grayscale", "standard_binarization"],
+      "processors": ["motion_blur","gaussian_blur","grayscale", "standard_binarization"],
       "mode": "pipeline",
       "gaussian_blur": {
-        "kernel_size": [15, 15],
+        "kernel_size": [16, 16],
         "sigma": 0
       },
       "average_blur": {
@@ -27,7 +27,7 @@
         "sigmaSpace": 75
       },
       "motion_blur": {
-        "kernel_size": -15,
+        "kernel_size": 15,
         "angle": 0
       }
     },
