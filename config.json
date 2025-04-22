@@ -5,7 +5,7 @@
       "height": 2400,
       "fps": 30,
       "backend": "DSHOW",
-      "processors": ["bilateral_filter", "grayscale", "standard_binarization"],
+      "processors": ["motion_blur","grayscale", "standard_binarization"],
       "mode": "pipeline",
       "gaussian_blur": {
         "kernel_size": [15, 15],
@@ -25,14 +25,19 @@
         "d": 9,
         "sigmaColor": 75,
         "sigmaSpace": 75
+      },
+      "motion_blur": {
+        "kernel_size": 15,
+        "angle": 0
       }
     },
-    "high_res": {
+    "all_para": {
       "width": 3200,
       "height": 2400,
       "fps": 30,
       "backend": "DSHOW",
       "processors": [
+        "motion_blur",
         "bilateral_filter",
         "median_blur",
         "gaussian_blur",

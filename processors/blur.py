@@ -7,6 +7,7 @@ from processors.validators.blur.gaussian import GaussianBlurConfigValidator
 from processors.validators.blur.average import AverageBlurValidator
 from processors.validators.blur.median import MedianBlurValidator
 from processors.validators.blur.bilateral import BilateralFilterValidator
+from processors.validators.blur.motion import MotionBlurValidator
 
 
 @register_processor("gaussian_blur")
@@ -141,3 +142,48 @@ class BilateralFilterProcessor(BaseProcessor):
         sigmaColor = self.config.get("sigmaColor", 75)
         sigmaSpace = self.config.get("sigmaSpace", 75)
         return cv2.bilateralFilter(image, d, sigmaColor, sigmaSpace)
+
+
+@register_processor("motion_blur")
+class MotionBlurProcessor(BaseProcessor):
+    """
+    モーションブラー（Motion Blur）を適用する画像処理プロセッサ。
+
+    指定した長さと角度で直線的な動きのブラーを適用します。
+
+    登録名:
+        "motion_blur"
+
+    設定例:
+        {
+            "kernel_size": 15,
+            "angle": 0
+        }
+    """
+
+    def process(self, image: np.ndarray) -> np.ndarray:
+        """
+        モーションブラー処理（cv2.filter2D）を実行します。
+
+        Args:
+            image (np.ndarray): 入力画像（BGR形式またはグレースケール）
+
+        Returns:
+            np.ndarray: モーションブラーを適用した画像
+        """
+        MotionBlurValidator(self.config, image).validate()
+        kernel_size = self.config.get("kernel_size", 15)
+        angle = self.config.get("angle", 0)
+        # カーネル生成
+        kernel = np.zeros((kernel_size, kernel_size), dtype=np.float32)
+        center = kernel_size // 2
+        rad = np.deg2rad(angle)
+        cos_a = np.cos(rad)
+        sin_a = np.sin(rad)
+        for i in range(kernel_size):
+            x = int(center + (i - center) * cos_a)
+            y = int(center + (i - center) * sin_a)
+            if 0 <= x < kernel_size and 0 <= y < kernel_size:
+                kernel[y, x] = 1
+        kernel /= np.sum(kernel)
+        return cv2.filter2D(image, -1, kernel)

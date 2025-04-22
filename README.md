@@ -211,6 +211,17 @@ The following processors are currently available:
    }
    ```
 
+6. **motion_blur**: Applies motion blur (linear motion effect)
+   - Parameters:
+     - `kernel_size`: Length of the motion blur (odd integer, e.g., 15)
+     - `angle`: Angle of the motion blur in degrees (0-359, e.g., 0)
+   ```json
+   "motion_blur": {
+     "kernel_size": 15,
+     "angle": 0
+   }
+   ```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
