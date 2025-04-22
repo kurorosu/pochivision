@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import logging
+from typing import Dict
 
 from processors import BaseProcessor
 from processors.registry import register_processor
@@ -29,7 +30,7 @@ class StandardBinarizationProcessor(BaseProcessor):
         threshold (int): 2値化の閾値（0-255, デフォルト128）
     """
 
-    def __init__(self, name: str, config: dict = None) -> None:
+    def __init__(self, name: str, config: Dict[str, int] = None) -> None:
         """
         StandardBinarizationProcessorのコンストラクタ。
 
