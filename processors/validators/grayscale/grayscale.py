@@ -1,4 +1,4 @@
-from typing import Any
+import numpy as np
 from processors.validators.base import BaseValidator
 from exceptions import ProcessorValidationError
 
@@ -14,7 +14,7 @@ class GrayscaleInputValidator(BaseValidator):
         ProcessorValidationError: 不正な画像が渡された場合
     """
 
-    def __init__(self, image: Any) -> None:
+    def __init__(self, image: np.ndarray) -> None:
         self.image = image
 
     def validate(self) -> None:

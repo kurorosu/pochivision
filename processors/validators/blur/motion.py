@@ -1,4 +1,5 @@
-from typing import Any, Dict
+from typing import Dict
+import numpy as np
 from processors.validators.base import BaseValidator
 from exceptions import ProcessorValidationError
 
@@ -15,7 +16,7 @@ class MotionBlurValidator(BaseValidator):
         ProcessorValidationError: 不正なパラメータや画像が検出された場合
     """
 
-    def __init__(self, config: Dict[str, Any], image: Any) -> None:
+    def __init__(self, config: Dict[str, int], image: np.ndarray) -> None:
         self.config = config
         self.image = image
 

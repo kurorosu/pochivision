@@ -1,4 +1,5 @@
 import time
+from typing import TYPE_CHECKING, List, Dict, Any
 
 import cv2
 import numpy as np
@@ -20,7 +21,7 @@ class PipelineExecutor:
         camera_index (int): このパイプラインが対応するカメラのインデックス。
     """
 
-    def __init__(self, processors: list[BaseProcessor], capture_manager: CaptureManager, mode: str = "parallel", camera_index: int = 0) -> None:
+    def __init__(self, processors: List[BaseProcessor], capture_manager: CaptureManager, mode: str = "parallel", camera_index: int = 0) -> None:
         """
         PipelineExecutor のコンストラクタ。
 
@@ -42,7 +43,7 @@ class PipelineExecutor:
             f"Processors: {', '.join([p.name for p in processors])}")
 
     @classmethod
-    def from_config(cls, config: dict, capture_manager: CaptureManager, camera_index: int = 0, profile_name: str = "0") -> "PipelineExecutor":
+    def from_config(cls, config: Dict[str, Any], capture_manager: CaptureManager, camera_index: int = 0, profile_name: str = "0") -> "PipelineExecutor":
         """
         設定ファイル（辞書）からインスタンスを生成。
         カメラプロファイルごとの画像処理設定を使用します。
@@ -65,7 +66,7 @@ class PipelineExecutor:
                 config, profile_name)
 
             # プロセッサインスタンスの生成
-            processors: list[BaseProcessor] = []
+            processors: List[BaseProcessor] = []
             for name in processor_names:
                 if name not in PROCESSOR_REGISTRY:
                     raise ValueError(f"Processor '{name}' is not registered")

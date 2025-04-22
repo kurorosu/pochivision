@@ -1,4 +1,5 @@
 import abc
+from typing import Dict, Any
 
 import numpy as np
 
@@ -12,7 +13,7 @@ class BaseProcessor:
         config (dict): プロセッサ固有の設定。
     """
 
-    def __init__(self, name: str, config: dict = None) -> None:
+    def __init__(self, name: str, config: Dict[str, Any] = None) -> None:
         """
         BaseProcessor のコンストラクタ。
 
