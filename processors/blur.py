@@ -8,6 +8,7 @@ from processors.validators.blur.average import AverageBlurValidator
 from processors.validators.blur.median import MedianBlurValidator
 from processors.validators.blur.bilateral import BilateralFilterValidator
 from processors.validators.blur.motion import MotionBlurValidator
+from exceptions import ProcessorRuntimeError
 
 
 @register_processor("gaussian_blur")
@@ -171,7 +172,11 @@ class MotionBlurProcessor(BaseProcessor):
         Returns:
             np.ndarray: モーションブラーを適用した画像
         """
-        MotionBlurValidator(self.config, image).validate()
+        try:
+            MotionBlurValidator(self.config, image).validate()
+        except Exception as e:
+            # バリデータ例外をProcessorRuntimeErrorにラップ
+            raise ProcessorRuntimeError(f"MotionBlur validation failed: {e}")
         kernel_size = self.config.get("kernel_size", 15)
         angle = self.config.get("angle", 0)
         # カーネル生成

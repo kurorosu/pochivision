@@ -1,5 +1,6 @@
 from typing import Any, Dict
 from processors.validators.base import BaseValidator
+from exceptions import ProcessorValidationError
 
 
 class MotionBlurValidator(BaseValidator):
@@ -11,7 +12,7 @@ class MotionBlurValidator(BaseValidator):
         image (np.ndarray): 入力画像
 
     Raises:
-        ValueError: 不正なパラメータや画像が検出された場合
+        ProcessorValidationError: 不正なパラメータや画像が検出された場合
     """
 
     def __init__(self, config: Dict[str, Any], image: Any) -> None:
@@ -23,17 +24,20 @@ class MotionBlurValidator(BaseValidator):
         設定値と画像のバリデーションを実行する。
 
         Raises:
-            ValueError: 不正なパラメータや画像が検出された場合
+            ProcessorValidationError: 不正なパラメータや画像が検出された場合
         """
         # 共通バリデーション
-        self.validate_image_type_and_nonempty(self.image)
+        try:
+            self.validate_image_type_and_nonempty(self.image)
+        except ValueError as e:
+            raise ProcessorValidationError(f"Image validation failed: {e}")
         # kernel_size: 正の奇数整数
         kernel_size = self.config.get("kernel_size", 15)
         if not (isinstance(kernel_size, int) and kernel_size > 0 and kernel_size % 2 == 1):
-            raise ValueError(
+            raise ProcessorValidationError(
                 "kernel_size must be a positive odd integer. Example: 15")
         # angle: 0-359の整数
         angle = self.config.get("angle", 0)
         if not (isinstance(angle, int) and 0 <= angle < 360):
-            raise ValueError(
+            raise ProcessorValidationError(
                 "angle must be an integer between 0 and 359. Example: 0")
