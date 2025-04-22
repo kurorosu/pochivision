@@ -3,6 +3,8 @@ import numpy as np
 
 from processors import BaseProcessor
 from processors.registry import register_processor
+from processors.validators.grayscale.grayscale import GrayscaleInputValidator
+from exceptions import ProcessorRuntimeError
 
 
 @register_processor("grayscale")
@@ -31,5 +33,12 @@ class GrayscaleProcessor(BaseProcessor):
 
         Returns:
             np.ndarray: グレースケールに変換された画像
+
+        Raises:
+            ProcessorRuntimeError: 入力画像の検証に失敗した場合
         """
+        try:
+            GrayscaleInputValidator(image).validate()
+        except Exception as e:
+            raise ProcessorRuntimeError(f"Grayscale validation failed: {e}")
         return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

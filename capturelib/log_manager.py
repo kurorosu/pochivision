@@ -74,7 +74,8 @@ class LogManager:
         self._logger.info(f"OpenCV: {cv2.__version__}")
 
     def log_camera_info(self, cap: cv2.VideoCapture, camera_id: int,
-                        requested_width: int, requested_height: int) -> None:
+                        requested_width: int, requested_height: int,
+                        profile_name: Optional[str] = None) -> None:
         """
         カメラの情報をログに記録する。
 
@@ -83,9 +84,11 @@ class LogManager:
             camera_id (int): カメラID
             requested_width (int): 要求した幅
             requested_height (int): 要求した高さ
+            profile_name (Optional[str]): 使用しているカメラプロファイル名
         """
+        profile_info = f", Profile: {profile_name}" if profile_name else ""
         self._logger.info(
-            f"Initializing camera (ID: {camera_id}, Resolution: {requested_width}x{requested_height})")
+            f"Initializing camera (ID: {camera_id}{profile_info}, Resolution: {requested_width}x{requested_height})")
 
         if not cap.isOpened():
             self._logger.error("Failed to initialize camera.")
