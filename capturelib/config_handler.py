@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Any, Tuple
 
 from .log_manager import LogManager
 
@@ -28,7 +28,7 @@ class ConfigHandler:
     _logger = LogManager().get_logger()
 
     @staticmethod
-    def load(path: str) -> dict:
+    def load(path: str) -> Dict[str, Any]:
         """
         設定ファイルを読み込む。
 
@@ -50,7 +50,7 @@ class ConfigHandler:
             raise ConfigLoadError(f"Failed to decode JSON configuration: {e}")
 
     @staticmethod
-    def save(config: dict, output_dir: Path) -> None:
+    def save(config: Dict[str, Any], output_dir: Path) -> None:
         """
         設定をファイルに保存する。
 
@@ -78,7 +78,7 @@ class CameraConfigHandler:
     _logger = LogManager().get_logger()
 
     @staticmethod
-    def get_camera_config(config: dict, camera_index: int = None) -> dict:
+    def get_camera_config(config: Dict[str, Any], camera_index: int = None) -> Dict[str, Any]:
         """
         指定されたカメラインデックスの設定を取得する。
         カメラインデックスが指定されていない場合はselected_camera_indexの設定を使用。
@@ -111,7 +111,7 @@ class CameraConfigHandler:
         return config["cameras"][camera_id_str]
 
     @staticmethod
-    def get_camera_processors(config: dict, profile_name: str) -> tuple:
+    def get_camera_processors(config: Dict[str, Any], profile_name: str) -> Tuple:
         """
         指定されたカメラプロファイルのプロセッサ設定を取得する。
 
@@ -158,7 +158,7 @@ class CameraConfigHandler:
         return processors, processor_configs, mode
 
     @staticmethod
-    def get_all_camera_indices(config: dict) -> List[int]:
+    def get_all_camera_indices(config: Dict[str, Any]) -> List[int]:
         """
         設定ファイルに定義されているすべてのカメラインデックスを取得する。
 
@@ -178,7 +178,7 @@ class CameraConfigHandler:
         return [int(camera_id) for camera_id in config["cameras"].keys()]
 
     @staticmethod
-    def get_selected_camera_index(config: dict) -> int:
+    def get_selected_camera_index(config: Dict[str, Any]) -> int:
         """
         選択されたカメラインデックスを取得する。
 
