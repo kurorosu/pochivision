@@ -40,7 +40,10 @@ class GaussianBlurProcessor(BaseProcessor):
         Returns:
             np.ndarray: ガウシアンぼかしを適用した画像
         """
-        GaussianBlurConfigValidator(self.config, image).validate()
+        try:
+            GaussianBlurConfigValidator(self.config, image).validate()
+        except Exception as e:
+            raise ProcessorRuntimeError(f"GaussianBlur validation failed: {e}")
         kernel_size = tuple(self.config.get("kernel_size", [15, 15]))
         sigma = self.config.get("sigma", 0)
         return cv2.GaussianBlur(image, kernel_size, sigma)
@@ -72,7 +75,10 @@ class AverageBlurProcessor(BaseProcessor):
         Returns:
             np.ndarray: 平均値ブラーを適用した画像
         """
-        AverageBlurValidator(self.config, image).validate()
+        try:
+            AverageBlurValidator(self.config, image).validate()
+        except Exception as e:
+            raise ProcessorRuntimeError(f"AverageBlur validation failed: {e}")
         kernel_size = tuple(self.config.get("kernel_size", [5, 5]))
         return cv2.blur(image, kernel_size)
 
@@ -104,7 +110,10 @@ class MedianBlurProcessor(BaseProcessor):
         Returns:
             np.ndarray: メディアンブラーを適用した画像
         """
-        MedianBlurValidator(self.config, image).validate()
+        try:
+            MedianBlurValidator(self.config, image).validate()
+        except Exception as e:
+            raise ProcessorRuntimeError(f"MedianBlur validation failed: {e}")
         kernel_size = self.config.get("kernel_size", 5)
         return cv2.medianBlur(image, kernel_size)
 
@@ -138,7 +147,11 @@ class BilateralFilterProcessor(BaseProcessor):
         Returns:
             np.ndarray: バイラテラルフィルタを適用した画像
         """
-        BilateralFilterValidator(self.config, image).validate()
+        try:
+            BilateralFilterValidator(self.config, image).validate()
+        except Exception as e:
+            raise ProcessorRuntimeError(
+                f"BilateralFilter validation failed: {e}")
         d = self.config.get("d", 9)
         sigmaColor = self.config.get("sigmaColor", 75)
         sigmaSpace = self.config.get("sigmaSpace", 75)
