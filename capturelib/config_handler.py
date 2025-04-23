@@ -42,11 +42,17 @@ class ConfigHandler:
             ConfigLoadError: 設定ファイルが見つからない、またはJSONデコードに失敗した場合。
         """
         try:
+            logger = LogManager().get_logger()
+            logger.debug(f"Loading configuration file: {path}")
             with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                config = json.load(f)
+            logger.info(f"Configuration file loaded successfully: {path}")
+            return config
         except FileNotFoundError:
+            logger.error(f"Configuration file not found: {path}")
             raise ConfigLoadError(f"Configuration file not found: {path}")
         except json.JSONDecodeError as e:
+            logger.error(f"Failed to decode JSON configuration: {e}")
             raise ConfigLoadError(f"Failed to decode JSON configuration: {e}")
 
     @staticmethod

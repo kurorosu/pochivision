@@ -8,7 +8,7 @@
       "processors": ["motion_blur","gaussian_blur","grayscale", "standard_binarization"],
       "mode": "pipeline",
       "gaussian_blur": {
-        "kernel_size": [16, 16],
+        "kernel_size": [15, 15],
         "sigma": 0
       },
       "average_blur": {
