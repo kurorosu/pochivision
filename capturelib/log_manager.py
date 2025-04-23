@@ -9,7 +9,7 @@ import cv2
 
 class LogManager:
     """
-    アプリケーション全体のロギングを管理するクラス。
+    ロギング管理クラス（粒度・出力先分離対応版）
     シングルトンパターンを採用し、複数箇所から同じインスタンスにアクセスできるようにする。
     """
     _instance: Optional['LogManager'] = None
@@ -23,18 +23,19 @@ class LogManager:
     def __init__(self):
         if self._initialized:
             return
-
-        self._logger = logging.getLogger('vision-capture')
+        self._logger = logging.getLogger('vision-capture-core')
+        self._logger.setLevel(logging.DEBUG)
         self._initialized = True
-        self._log_file_handler = None
 
-        # デフォルトのログレベルと標準出力へのハンドラを設定
-        self._logger.setLevel(logging.INFO)
+        # コンソールハンドラ（INFO以上）
         console_handler = logging.StreamHandler()
-        console_handler.setFormatter(logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        ))
+        console_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter(
+            '[%(asctime)s][%(levelname)s][%(name)s] %(message)s')
+        console_handler.setFormatter(formatter)
         self._logger.addHandler(console_handler)
+
+        self._file_handler = None
 
     def setup_file_logging(self, log_file_path: Path) -> None:
         """
@@ -43,16 +44,15 @@ class LogManager:
         Args:
             log_file_path (Path): ログファイルのパス。
         """
-        # 既存のファイルハンドラがあれば削除
-        if self._log_file_handler is not None:
-            self._logger.removeHandler(self._log_file_handler)
-
-        # 新しいファイルハンドラを追加
-        self._log_file_handler = logging.FileHandler(log_file_path)
-        self._log_file_handler.setFormatter(logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        ))
-        self._logger.addHandler(self._log_file_handler)
+        if self._file_handler:
+            self._logger.removeHandler(self._file_handler)
+        self._file_handler = logging.FileHandler(
+            log_file_path, encoding='utf-8')
+        self._file_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            '[%(asctime)s][%(levelname)s][%(name)s] %(message)s')
+        self._file_handler.setFormatter(formatter)
+        self._logger.addHandler(self._file_handler)
         self._logger.info(f"Log file configured: {log_file_path}")
 
     def get_logger(self) -> logging.Logger:
