@@ -9,3 +9,4 @@ cameratest.py
 capture.py
 tmp.txt
 mypy_report.txt
+.mypy_cache
