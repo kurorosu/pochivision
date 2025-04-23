@@ -40,7 +40,6 @@ if __name__ == "__main__":
 
     # システム情報のログ出力
     log_manager.log_system_info()
-
     # 設定ファイルの読み込み
     try:
         config = ConfigHandler.load(args.config)
@@ -91,12 +90,17 @@ if __name__ == "__main__":
 
     # キャプチャマネージャとパイプラインの作成
     try:
-        # キャプチャマネージャを初期化し、ファイルへのロギングを設定
+        # ここで初期化＆ログファイル設定
         capture_manager = CaptureManager()
-        log_manager.setup_file_logging(capture_manager.get_log_file_path(
-            camera_index=camera_setup.camera_index))
+        log_manager.setup_file_logging(
+            capture_manager.get_log_file_path(
+                camera_index=camera_setup.camera_index)
+        )
         logger.info(
             f"Capture manager initialized for camera {camera_setup.camera_index}")
+
+        # システム情報のログ出力（ここに移動）
+        log_manager.log_system_info()
 
         # 実際に使用したプロファイルのみを含むconfigを作成
         used_profile = camera_setup.profile_name
