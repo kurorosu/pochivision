@@ -6,6 +6,7 @@ from capturelib.capture_manager import CaptureManager
 from capturelib.log_manager import LogManager
 from capturelib.config_handler import ConfigHandler, CameraConfigHandler
 from capturelib.camera_setup import CameraSetup
+from exceptions.config import ConfigValidationError
 
 
 def parse_arguments():
@@ -53,6 +54,10 @@ if __name__ == "__main__":
                 print(f"Profile: {profile}, Resolution: {profile_config.get('width', 'default')}x{profile_config.get('height', 'default')}, FPS: {profile_config.get('fps', 'default')}")
             exit(0)
 
+    except ConfigValidationError as e:
+        logger.error(str(e))
+        print("設定ファイルに誤りがあります。詳細はログを確認してください。")
+        exit(1)
     except Exception as e:
         logger.error(f"Failed to load configuration: {e}")
         exit(1)
