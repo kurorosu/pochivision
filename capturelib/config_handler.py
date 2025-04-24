@@ -4,6 +4,9 @@ from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
 from .log_manager import LogManager
+from capturelib.config_schema import ConfigModel
+from exceptions.config import ConfigValidationError
+from pydantic import ValidationError
 
 
 class ConfigLoadError(Exception):
@@ -47,6 +50,12 @@ class ConfigHandler:
             with open(path, "r", encoding="utf-8") as f:
                 config = json.load(f)
             logger.info(f"Configuration file loaded successfully: {path}")
+            # バリデーション追加
+            try:
+                ConfigModel(**config)
+            except ValidationError as e:
+                logger.error(f"Config validation failed: {e}")
+                raise ConfigValidationError(f"設定ファイルのバリデーションに失敗: {e}")
             return config
         except FileNotFoundError:
             logger.error(f"Configuration file not found: {path}")
