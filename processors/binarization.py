@@ -33,7 +33,7 @@ class StandardBinarizationProcessor(BaseProcessor):
         threshold (int): 2値化の閾値（0-255, デフォルト128）
     """
 
-    def __init__(self, name: str, config: Dict[str, int] = None) -> None:
+    def __init__(self, name: str, config: Dict[str, int]) -> None:
         """
         StandardBinarizationProcessorのコンストラクタ.
 
