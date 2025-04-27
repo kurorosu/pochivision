@@ -4,7 +4,7 @@ from capture_runner import LivePreviewRunner
 from core import PipelineExecutor
 from capturelib.capture_manager import CaptureManager
 from capturelib.log_manager import LogManager
-from capturelib.config_handler import ConfigHandler, CameraConfigHandler
+from capturelib.config_handler import ConfigHandler
 from capturelib.camera_setup import CameraSetup
 from exceptions.config import ConfigValidationError
 
@@ -39,8 +39,6 @@ if __name__ == "__main__":
     logger = log_manager.get_logger()
     logger.info("Starting Vision Capture Core application")
 
-    # システム情報のログ出力
-    log_manager.log_system_info()
     # 設定ファイルの読み込み
     try:
         config = ConfigHandler.load(args.config)

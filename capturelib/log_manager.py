@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 import cv2
+import colorlog
 
 
 class LogManager:
@@ -23,16 +24,24 @@ class LogManager:
     def __init__(self):
         if self._initialized:
             return
-        self._logger = logging.getLogger('vision-capture-core')
+        self._logger = logging.getLogger('vcc')
         self._logger.setLevel(logging.DEBUG)
         self._initialized = True
 
         # コンソールハンドラ（INFO以上）
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.INFO)
-        formatter = logging.Formatter(
-            '[%(asctime)s][%(levelname)s][%(name)s] %(message)s')
-        console_handler.setFormatter(formatter)
+        color_formatter = colorlog.ColoredFormatter(
+            '[%(asctime)s][%(log_color)s%(levelname)s%(reset)s][%(name)s][%(log_color)s%(filename)s:%(lineno)d%(reset)s] %(message)s',
+            log_colors={
+                'DEBUG':    'cyan',
+                'INFO':     'green',
+                'WARNING':  'yellow',
+                'ERROR':    'red',
+                'CRITICAL': 'bold_red',
+            }
+        )
+        console_handler.setFormatter(color_formatter)
         self._logger.addHandler(console_handler)
 
         self._file_handler = None
@@ -50,7 +59,7 @@ class LogManager:
             log_file_path, encoding='utf-8')
         self._file_handler.setLevel(logging.DEBUG)
         formatter = logging.Formatter(
-            '[%(asctime)s][%(levelname)s][%(name)s] %(message)s')
+            '[%(asctime)s][%(levelname)s][%(name)s][%(filename)s:%(lineno)d] %(message)s')
         self._file_handler.setFormatter(formatter)
         self._logger.addHandler(self._file_handler)
         self._logger.info(f"Log file configured: {log_file_path}")
