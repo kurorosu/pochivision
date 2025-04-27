@@ -1,24 +1,26 @@
+"""各種ブラー（ぼかし）処理プロセッサの実装を提供するモジュール."""
+
 import cv2
 import numpy as np
 
+from exceptions import ProcessorRuntimeError
 from processors import BaseProcessor
 from processors.registry import register_processor
-from processors.validators.blur.gaussian import GaussianBlurConfigValidator
 from processors.validators.blur.average import AverageBlurValidator
-from processors.validators.blur.median import MedianBlurValidator
 from processors.validators.blur.bilateral import BilateralFilterValidator
+from processors.validators.blur.gaussian import GaussianBlurConfigValidator
+from processors.validators.blur.median import MedianBlurValidator
 from processors.validators.blur.motion import MotionBlurValidator
-from exceptions import ProcessorRuntimeError
 
 
 @register_processor("gaussian_blur")
 class GaussianBlurProcessor(BaseProcessor):
     """
-    ガウシアンぼかし（Gaussian Blur）を適用する画像処理プロセッサ。
+    ガウシアンぼかし（Gaussian Blur）を適用する画像処理プロセッサ.
 
     このプロセッサは、入力画像に対してガウシアンフィルタを用いた
-    ぼかし処理（Gaussian Blur）を実行します。設定ファイルでカーネルサイズやシグマ値を
-    指定することができます。
+    ぼかし処理（Gaussian Blur）を実行します. 設定ファイルでカーネルサイズやシグマ値を
+    指定することができます.
 
     登録名:
         "gaussian_blur"
@@ -32,13 +34,13 @@ class GaussianBlurProcessor(BaseProcessor):
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
-        ガウシアンぼかし処理（Gaussian Blur）を実行します。
+        ガウシアンぼかし処理（Gaussian Blur）を実行します.
 
         Args:
-            image (np.ndarray): 入力画像（BGR形式）
+            image (np.ndarray): 入力画像（BGR形式）.
 
         Returns:
-            np.ndarray: ガウシアンぼかしを適用した画像
+            np.ndarray: ガウシアンぼかしを適用した画像.
         """
         try:
             GaussianBlurConfigValidator(self.config, image).validate()
@@ -52,9 +54,10 @@ class GaussianBlurProcessor(BaseProcessor):
 @register_processor("average_blur")
 class AverageBlurProcessor(BaseProcessor):
     """
-    平均値ブラー（Average Blur）を適用する画像処理プロセッサ。
+    平均値ブラー（Average Blur）を適用する画像処理プロセッサ.
 
-    入力画像に対してカーネルサイズで指定した範囲の平均値でぼかし処理を行います。
+    入力画像に対してカーネルサイズで指定した範囲の平均値でぼかし処理を行います.
+    設定ファイルでカーネルサイズを指定することができます.
 
     登録名:
         "average_blur"
@@ -67,13 +70,13 @@ class AverageBlurProcessor(BaseProcessor):
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
-        平均値ブラー処理（cv2.blur）を実行します。
+        平均値ブラー処理（cv2.blur）を実行します.
 
         Args:
-            image (np.ndarray): 入力画像（BGR形式）
+            image (np.ndarray): 入力画像(BGR形式).
 
         Returns:
-            np.ndarray: 平均値ブラーを適用した画像
+            np.ndarray: 平均値ブラーを適用した画像.
         """
         try:
             AverageBlurValidator(self.config, image).validate()
@@ -86,10 +89,11 @@ class AverageBlurProcessor(BaseProcessor):
 @register_processor("median_blur")
 class MedianBlurProcessor(BaseProcessor):
     """
-    メディアンブラー（Median Blur）を適用する画像処理プロセッサ。
+    メディアンブラー（Median Blur）を適用する画像処理プロセッサ.
 
-    入力画像に対してカーネルサイズで指定した範囲の中央値でぼかし処理を行います。
-    塩胡椒ノイズ除去に有効です。
+    入力画像に対してカーネルサイズで指定した範囲の中央値でぼかし処理を行います.
+    塩胡椒ノイズ除去に有効です.
+    設定ファイルでカーネルサイズを指定することができます.
 
     登録名:
         "median_blur"
@@ -102,13 +106,13 @@ class MedianBlurProcessor(BaseProcessor):
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
-        メディアンブラー処理（cv2.medianBlur）を実行します。
+        メディアンブラー処理（cv2.medianBlur）を実行します.
 
         Args:
-            image (np.ndarray): 入力画像（BGR形式またはグレースケール）
+            image (np.ndarray): 入力画像(BGR形式またはグレースケール).
 
         Returns:
-            np.ndarray: メディアンブラーを適用した画像
+            np.ndarray: メディアンブラーを適用した画像.
         """
         try:
             MedianBlurValidator(self.config, image).validate()
@@ -121,10 +125,10 @@ class MedianBlurProcessor(BaseProcessor):
 @register_processor("bilateral_filter")
 class BilateralFilterProcessor(BaseProcessor):
     """
-    バイラテラルフィルタ（Bilateral Filter）を適用する画像処理プロセッサ。
+    バイラテラルフィルタ（Bilateral Filter）を適用する画像処理プロセッサ.
 
-    エッジを保ちながらぼかし処理を行います。
-    d, sigmaColor, sigmaSpaceの3つのパラメータで調整可能です。
+    エッジを保ちながらぼかし処理を行います.
+    d, sigmaColor, sigmaSpaceの3つのパラメータで調整可能です.
 
     登録名:
         "bilateral_filter"
@@ -139,19 +143,18 @@ class BilateralFilterProcessor(BaseProcessor):
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
-        バイラテラルフィルタ処理（cv2.bilateralFilter）を実行します。
+        バイラテラルフィルタ処理（cv2.bilateralFilter）を実行します.
 
         Args:
-            image (np.ndarray): 入力画像（BGR形式またはグレースケール）
+            image (np.ndarray): 入力画像(BGR形式またはグレースケール).
 
         Returns:
-            np.ndarray: バイラテラルフィルタを適用した画像
+            np.ndarray: バイラテラルフィルタを適用した画像.
         """
         try:
             BilateralFilterValidator(self.config, image).validate()
         except Exception as e:
-            raise ProcessorRuntimeError(
-                f"BilateralFilter validation failed: {e}")
+            raise ProcessorRuntimeError(f"BilateralFilter validation failed: {e}")
         d = self.config.get("d", 9)
         sigmaColor = self.config.get("sigmaColor", 75)
         sigmaSpace = self.config.get("sigmaSpace", 75)
@@ -161,9 +164,9 @@ class BilateralFilterProcessor(BaseProcessor):
 @register_processor("motion_blur")
 class MotionBlurProcessor(BaseProcessor):
     """
-    モーションブラー（Motion Blur）を適用する画像処理プロセッサ。
+    モーションブラー（Motion Blur）を適用する画像処理プロセッサ.
 
-    指定した長さと角度で直線的な動きのブラーを適用します。
+    指定した長さと角度で直線的な動きのブラーを適用します.
 
     登録名:
         "motion_blur"
@@ -177,13 +180,13 @@ class MotionBlurProcessor(BaseProcessor):
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
-        モーションブラー処理（cv2.filter2D）を実行します。
+        モーションブラー処理（cv2.filter2D）を実行します.
 
         Args:
-            image (np.ndarray): 入力画像（BGR形式またはグレースケール）
+            image (np.ndarray): 入力画像(BGR形式またはグレースケール).
 
         Returns:
-            np.ndarray: モーションブラーを適用した画像
+            np.ndarray: モーションブラーを適用した画像.
         """
         try:
             MotionBlurValidator(self.config, image).validate()
