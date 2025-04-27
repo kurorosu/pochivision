@@ -1,5 +1,7 @@
+"""画像処理パイプラインの実行・管理を行うモジュール."""
+
 import time
-from typing import TYPE_CHECKING, List, Dict, Any
+from typing import Any, Dict, List
 
 import cv2
 import numpy as np
@@ -12,7 +14,7 @@ from processors.registry import PROCESSOR_REGISTRY
 
 class PipelineExecutor:
     """
-    画像処理プロセッサ群を管理し、処理と保存を行うパイプライン実行クラス。
+    画像処理プロセッサ群を管理し、処理と保存を行うパイプライン実行クラス.
 
     Attributes:
         processors (list): 実行対象の画像処理プロセッサのリスト。
@@ -21,9 +23,15 @@ class PipelineExecutor:
         camera_index (int): このパイプラインが対応するカメラのインデックス。
     """
 
-    def __init__(self, processors: List[BaseProcessor], capture_manager: CaptureManager, mode: str = "parallel", camera_index: int = 0) -> None:
+    def __init__(
+        self,
+        processors: List[BaseProcessor],
+        capture_manager: CaptureManager,
+        mode: str = "parallel",
+        camera_index: int = 0,
+    ) -> None:
         """
-        PipelineExecutor のコンストラクタ。
+        PipelineExecutorのコンストラクタ.
 
         Args:
             processors (list): 画像処理プロセッサのインスタンス群。
@@ -39,13 +47,19 @@ class PipelineExecutor:
 
         # プロセッサ情報をログに記録
         self.logger.info(f"Pipeline mode: {mode}")
-        self.logger.info(
-            f"Processors: {', '.join([p.name for p in processors])}")
+        self.logger.info(f"Processors: {', '.join([p.name for p in processors])}")
 
     @classmethod
-    def from_config(cls, config: Dict[str, Any], capture_manager: CaptureManager, camera_index: int = 0, profile_name: str = "0") -> "PipelineExecutor":
+    def from_config(
+        cls,
+        config: Dict[str, Any],
+        capture_manager: CaptureManager,
+        camera_index: int = 0,
+        profile_name: str = "0",
+    ) -> "PipelineExecutor":
         """
-        設定ファイル（辞書）からインスタンスを生成。
+        設定ファイル（辞書）からインスタンスを生成.
+
         カメラプロファイルごとの画像処理設定を使用します。
 
         Args:
@@ -62,8 +76,9 @@ class PipelineExecutor:
         """
         try:
             # カメラプロファイルからプロセッサ設定を取得
-            processor_names, processor_configs, mode = CameraConfigHandler.get_camera_processors(
-                config, profile_name)
+            processor_names, processor_configs, mode = (
+                CameraConfigHandler.get_camera_processors(config, profile_name)
+            )
 
             # プロセッサインスタンスの生成
             processors: List[BaseProcessor] = []
@@ -73,8 +88,7 @@ class PipelineExecutor:
 
                 processor_cls = PROCESSOR_REGISTRY[name]
                 processor = processor_cls(
-                    name=name,
-                    config=processor_configs.get(name, {})
+                    name=name, config=processor_configs.get(name, {})
                 )
                 processors.append(processor)
 
@@ -83,7 +97,7 @@ class PipelineExecutor:
                 processors=processors,
                 capture_manager=capture_manager,
                 mode=mode,
-                camera_index=camera_index
+                camera_index=camera_index,
             )
         except Exception as e:
             logger = LogManager().get_logger()
@@ -92,7 +106,7 @@ class PipelineExecutor:
 
     def run(self, image: np.ndarray) -> None:
         """
-        指定された画像に対してプロセッサを適用し、処理結果を保存する。
+        指定された画像に対してプロセッサを適用し、処理結果を保存する.
 
         Args:
             image (np.ndarray): 入力画像。
@@ -101,13 +115,16 @@ class PipelineExecutor:
 
         # オリジナル画像を保存
         original_dir = self.capture_manager.get_processing_dir(
-            'original', self.camera_index)
+            "original", self.camera_index
+        )
         original_filename = f"snapshot_original_{int(cv2.getTickCount())}.bmp"
         original_path = original_dir / original_filename
         try:
             cv2.imwrite(str(original_path), image)
             self.logger.info(
-                f"Original image saved: {original_path} ({image.shape[1]}x{image.shape[0]})")
+                f"Original image saved: {original_path} "
+                f"({image.shape[1]}x{image.shape[0]})"
+            )
         except Exception as e:
             self.logger.error(f"Failed to save original image: {e}")
 
@@ -117,7 +134,8 @@ class PipelineExecutor:
                 result = processor.process(image)
                 proc_time = time.time() - proc_start
                 self.logger.info(
-                    f"Processing time ({processor.name}): {proc_time:.3f} sec")
+                    f"Processing time ({processor.name}): {proc_time:.3f} sec"
+                )
                 self._save(result, processor.name)
 
         elif self.mode == "pipeline":
@@ -127,7 +145,8 @@ class PipelineExecutor:
                 result = processor.process(result)
                 proc_time = time.time() - proc_start
                 self.logger.info(
-                    f"Processing time ({processor.name}): {proc_time:.3f} sec")
+                    f"Processing time ({processor.name}): {proc_time:.3f} sec"
+                )
             self._save(result, self.processors[-1].name)
 
         total_time = time.time() - start_time
@@ -135,7 +154,7 @@ class PipelineExecutor:
 
     def _save(self, image: np.ndarray, processor_name: str) -> None:
         """
-        処理された画像を保存する内部メソッド。
+        処理された画像を保存する内部メソッド.
 
         Args:
             image (np.ndarray): 処理済み画像。
@@ -144,7 +163,8 @@ class PipelineExecutor:
         # パイプラインモード時は"pipeline"ディレクトリに保存
         save_dir_name = "pipeline" if self.mode == "pipeline" else processor_name
         save_dir = self.capture_manager.get_processing_dir(
-            save_dir_name, self.camera_index)
+            save_dir_name, self.camera_index
+        )
         filename = f"snapshot_{save_dir_name}_{int(cv2.getTickCount())}.bmp"
         path = save_dir / filename
 
@@ -153,6 +173,8 @@ class PipelineExecutor:
             cv2.imwrite(str(path), image)
             save_time = time.time() - save_start
             self.logger.info(
-                f"Image saved ({save_dir_name}): {path} ({image.shape[1]}x{image.shape[0]}, {save_time:.3f} sec)")
+                f"Image saved ({save_dir_name}): {path} "
+                f"({image.shape[1]}x{image.shape[0]}, {save_time:.3f} sec)"
+            )
         except Exception as e:
             self.logger.error(f"Failed to save image ({save_dir_name}): {e}")

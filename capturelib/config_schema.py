@@ -1,40 +1,63 @@
-from typing import List, Optional, Dict
-from pydantic import BaseModel, Field, StrictInt, StrictStr, StrictFloat
+"""
+設定ファイルのスキーマ（pydanticモデル）を定義するモジュール.
+
+各種画像処理パラメータやカメラプロファイル、全体設定の構造を型安全に管理します。
+"""
+
+from typing import Dict, List, Optional
+
+from pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
 
 
 class GaussianBlurParams(BaseModel):
+    """ガウシアンブラーのパラメータスキーマ."""
+
     kernel_size: List[StrictInt]
     sigma: StrictFloat
 
 
 class AverageBlurParams(BaseModel):
+    """平均化ブラーのパラメータスキーマ."""
+
     kernel_size: List[StrictInt]
 
 
 class MedianBlurParams(BaseModel):
+    """メディアンブラーのパラメータスキーマ."""
+
     kernel_size: StrictInt
 
 
 class GrayscaleParams(BaseModel):
+    """グレースケール変換のパラメータスキーマ（パラメータなし）."""
+
     pass  # パラメータなし
 
 
 class StandardBinarizationParams(BaseModel):
+    """標準2値化のパラメータスキーマ."""
+
     threshold: StrictInt
 
 
 class BilateralFilterParams(BaseModel):
+    """バイラテラルフィルタのパラメータスキーマ."""
+
     d: StrictInt
     sigmaColor: StrictInt
     sigmaSpace: StrictInt
 
 
 class MotionBlurParams(BaseModel):
+    """モーションブラーのパラメータスキーマ."""
+
     kernel_size: StrictInt
     angle: StrictFloat
 
 
 class CameraProfile(BaseModel):
+    """カメラプロファイルのスキーマ."""
+
     width: StrictInt
     height: StrictInt
     fps: StrictInt
@@ -51,5 +74,7 @@ class CameraProfile(BaseModel):
 
 
 class ConfigModel(BaseModel):
+    """全体設定（カメラ一覧・選択インデックス）のスキーマ."""
+
     cameras: Dict[str, CameraProfile]
     selected_camera_index: StrictInt
