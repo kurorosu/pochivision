@@ -12,3 +12,4 @@ mypy_report.txt
 .mypy_cache
 pydocstyle_report.txt
 flake8_report.txt
+CONTRIBUTING.md

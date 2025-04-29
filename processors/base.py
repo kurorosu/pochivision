@@ -15,7 +15,7 @@ class BaseProcessor:
         config (dict): プロセッサ固有の設定.
     """
 
-    def __init__(self, name: str, config: Dict[str, Any] = None) -> None:
+    def __init__(self, name: str, config: Dict[str, Any]) -> None:
         """
         BaseProcessorのコンストラクタ.
 

@@ -1,6 +1,6 @@
 """カメラの設定・初期化を行うためのユーティリティモジュール."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import cv2
 
@@ -14,8 +14,8 @@ class CameraSetup:
         self,
         config: Dict[str, Any],
         log_manager: LogManager,
-        camera_index: Optional[int] = None,
-        profile_name: Optional[str] = None,
+        camera_index: int,
+        profile_name: str,
     ):
         """
         CameraSetupクラスのコンストラクタ.
@@ -40,6 +40,7 @@ class CameraSetup:
         """設定からカメラ設定を読み込む. CLIで指定されたカメラインデックスとプロファイル名を優先する."""
         try:
             # カメラインデックスが指定されていない場合は設定ファイルから取得
+            # argsでデフォルト0にしたから不要かも
             if self.camera_index is None:
                 self.camera_index = self.config.get("selected_camera_index", 0)
 

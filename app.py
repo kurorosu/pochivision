@@ -31,7 +31,7 @@ def parse_arguments():
         "-c",
         type=int,
         help="カメラインデックス（接続するカメラのデバイス番号）",
-        default=None,
+        default=0,
     )
     parser.add_argument(
         "--profile",
