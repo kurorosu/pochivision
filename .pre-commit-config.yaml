@@ -23,4 +23,13 @@ repos:
     rev: v1.10.0
     hooks:
       - id: mypy
-        language_version: python3 
+        language_version: python3
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        types: [python]
+        pass_filenames: false
+ 
