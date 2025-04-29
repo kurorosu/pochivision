@@ -37,7 +37,6 @@ Vision Capture Core provides a flexible command-line interface:
 
 ```bash
 # Use a specific camera device (by index)
-# This will use camera 1 with profile "0"
 python app.py --camera 1
 
 # Use a specific camera profile from config
@@ -221,10 +220,6 @@ The following processors are currently available:
      "angle": 0
    }
    ```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
