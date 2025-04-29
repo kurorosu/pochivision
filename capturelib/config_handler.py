@@ -103,9 +103,7 @@ class CameraConfigHandler:
     _logger = LogManager().get_logger()
 
     @staticmethod
-    def get_camera_config(
-        config: Dict[str, Any], camera_index: int = None
-    ) -> Dict[str, Any]:
+    def get_camera_config(config: Dict[str, Any], camera_index: int) -> Dict[str, Any]:
         """
         指定されたカメラインデックスの設定を取得する.
 
