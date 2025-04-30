@@ -10,6 +10,7 @@ from exceptions import ProcessorRuntimeError
 from processors import BaseProcessor
 from processors.registry import register_processor
 from processors.validators.binarization import StandardBinarizationValidator
+from utils.image import to_grayscale
 
 
 @register_processor("standard_binarization")
@@ -63,19 +64,19 @@ class StandardBinarizationProcessor(BaseProcessor):
         except Exception as e:
             raise ProcessorRuntimeError(f"StandardBinarization validation failed: {e}")
 
-        if image.ndim == 2:
-            gray = image
-            self.logger.debug("Input image is grayscale.")
-        elif image.ndim == 3 and image.shape[2] in (3, 4):
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            self.logger.debug("Input image is color. Converted to grayscale.")
-        else:
-            self.logger.error(f"Unsupported image format: shape={image.shape}")
-            raise ProcessorRuntimeError(
-                "Unsupported image format. "
-                "Only 2D or 3D (BGR/BGRA) images are supported."
+        try:
+            # utils.imageの共通関数を使用してグレースケール変換
+            gray = to_grayscale(image)
+            self.logger.debug(
+                "Processing input image: original shape=%s, "
+                "after grayscale conversion=%s",
+                image.shape,
+                gray.shape,
             )
+        except ValueError as e:
+            self.logger.error("Image conversion failed: %s", str(e))
+            raise ProcessorRuntimeError(f"Image conversion failed: {e}")
 
         _, binary = cv2.threshold(gray, self.threshold, 255, cv2.THRESH_BINARY)
-        self.logger.info(f"Applied binarization with threshold {self.threshold}.")
+        self.logger.info(f"Applied binarization with threshold {self.threshold}")
         return binary
