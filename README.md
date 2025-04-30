@@ -4,6 +4,10 @@
 
 Real-time image capture & preprocessing engine for AI vision applications, featuring a plugin-based processor architecture for easy extensibility.
 
+## Requirements
+
+- Python 3.12.3 (developed and tested)
+
 ## Features
 
 - Multiple camera support with configurable profiles
@@ -21,6 +25,14 @@ cd vision-capture-core
 
 # Install dependencies
 pip install -r requirements.txt
+```
+
+## For Developers
+
+To install all dependencies including development, testing, and linting tools:
+
+```bash
+pip install -r requirements-dev.txt
 ```
 
 ## Quick Start
