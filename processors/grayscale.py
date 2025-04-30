@@ -1,12 +1,12 @@
 """グレースケール変換プロセッサの実装を提供するモジュール."""
 
-import cv2
 import numpy as np
 
 from exceptions import ProcessorRuntimeError
 from processors import BaseProcessor
 from processors.registry import register_processor
 from processors.validators.grayscale.grayscale import GrayscaleInputValidator
+from utils.image import to_grayscale
 
 
 @register_processor("grayscale")
@@ -43,4 +43,9 @@ class GrayscaleProcessor(BaseProcessor):
             GrayscaleInputValidator(image).validate()
         except Exception as e:
             raise ProcessorRuntimeError(f"Grayscale validation failed: {e}")
-        return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        try:
+            # utils.imageの共通関数を使用してグレースケール変換
+            return to_grayscale(image)
+        except ValueError as e:
+            raise ProcessorRuntimeError(f"Grayscale conversion failed: {e}")
