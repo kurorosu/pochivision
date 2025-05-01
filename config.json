@@ -7,6 +7,7 @@
       "backend": "DSHOW",
       "processors": ["motion_blur","gaussian_blur","grayscale", "standard_binarization"],
       "mode": "pipeline",
+      "id_interval": 4,
       "gaussian_blur": {
         "kernel_size": [15, 15],
         "sigma": 0
@@ -46,6 +47,7 @@
         "standard_binarization"
       ],
       "mode": "parallel",
+      "id_interval": 10,
       "gaussian_blur": {
         "kernel_size": [31, 31],
         "sigma": 0
@@ -61,5 +63,6 @@
       "grayscale": {}
     }
   },
-  "selected_camera_index": 0
+  "selected_camera_index": 0,
+  "id_interval": 1
 }
