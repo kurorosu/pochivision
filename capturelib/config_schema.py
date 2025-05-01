@@ -6,7 +6,7 @@
 
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, StrictFloat, StrictInt, StrictStr
+from pydantic import BaseModel, Field, StrictFloat, StrictInt, StrictStr
 
 
 class GaussianBlurParams(BaseModel):
@@ -64,6 +64,7 @@ class CameraProfile(BaseModel):
     backend: StrictStr
     processors: List[StrictStr]
     mode: StrictStr
+    id_interval: Optional[StrictInt] = Field(default=None)
     gaussian_blur: Optional[GaussianBlurParams] = None
     average_blur: Optional[AverageBlurParams] = None
     median_blur: Optional[MedianBlurParams] = None
@@ -78,3 +79,4 @@ class ConfigModel(BaseModel):
 
     cameras: Dict[str, CameraProfile]
     selected_camera_index: StrictInt
+    id_interval: Optional[StrictInt] = Field(default=None)
