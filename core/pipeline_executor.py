@@ -10,6 +10,7 @@ from capturelib import CaptureManager, LogManager
 from capturelib.config_handler import CameraConfigHandler
 from processors import BaseProcessor
 from processors.registry import PROCESSOR_REGISTRY
+from utils.file_naming import get_file_naming_manager
 
 
 class PipelineExecutor:
@@ -21,6 +22,7 @@ class PipelineExecutor:
         capture_manager (CaptureManager): 処理結果の保存先ディレクトリを管理するオブジェクト。
         mode (str): 実行モード。"parallel" または "pipeline"。
         camera_index (int): このパイプラインが対応するカメラのインデックス。
+        id_interval (int): ID値が増加する画像数の間隔。
     """
 
     def __init__(
@@ -29,6 +31,7 @@ class PipelineExecutor:
         capture_manager: CaptureManager,
         mode: str = "parallel",
         camera_index: int = 0,
+        id_interval: int = 1,
     ) -> None:
         """
         PipelineExecutorのコンストラクタ.
@@ -38,16 +41,33 @@ class PipelineExecutor:
             capture_manager (CaptureManager): 保存先ディレクトリ管理。
             mode (str): 実行モード（"parallel" または "pipeline"）。デフォルトは "parallel"。
             camera_index (int): このパイプラインが対応するカメラのインデックス。
+            id_interval (int): ID値が増加する画像数の間隔。デフォルトは1。
         """
         self.processors = processors
         self.capture_manager = capture_manager
         self.mode = mode
         self.camera_index = camera_index
+        self.id_interval = id_interval
         self.logger = LogManager().get_logger()
+
+        # ID間隔を設定
+        file_naming_manager = get_file_naming_manager()
+        # original用の間隔設定
+        file_naming_manager.set_id_interval("original", camera_index, id_interval)
+        # pipeline用の間隔設定（パイプラインモードの場合）
+        if mode == "pipeline":
+            file_naming_manager.set_id_interval("pipeline", camera_index, id_interval)
+        # 各プロセッサ用の間隔設定（parallelモードの場合）
+        if mode == "parallel":
+            for processor in processors:
+                file_naming_manager.set_id_interval(
+                    processor.name, camera_index, id_interval
+                )
 
         # プロセッサ情報をログに記録
         self.logger.info(f"Pipeline mode: {mode}")
         self.logger.info(f"Processors: {', '.join([p.name for p in processors])}")
+        self.logger.info(f"ID interval: {id_interval}")
 
     @classmethod
     def from_config(
@@ -80,6 +100,10 @@ class PipelineExecutor:
                 CameraConfigHandler.get_camera_processors(config, profile_name)
             )
 
+            # カメラごとのid_intervalを参照
+            camera_config = config.get("cameras", {}).get(profile_name, {})
+            id_interval = camera_config.get("id_interval", config.get("id_interval", 1))
+
             # プロセッサインスタンスの生成
             processors: List[BaseProcessor] = []
             for name in processor_names:
@@ -98,6 +122,7 @@ class PipelineExecutor:
                 capture_manager=capture_manager,
                 mode=mode,
                 camera_index=camera_index,
+                id_interval=id_interval,
             )
         except Exception as e:
             logger = LogManager().get_logger()
@@ -117,13 +142,16 @@ class PipelineExecutor:
         original_dir = self.capture_manager.get_processing_dir(
             "original", self.camera_index
         )
-        original_filename = f"snapshot_original_{int(cv2.getTickCount())}.bmp"
-        original_path = original_dir / original_filename
+        filename, id_index, image_index = get_file_naming_manager().get_filename(
+            "original", self.camera_index
+        )
+        original_path = original_dir / filename
         try:
             cv2.imwrite(str(original_path), image)
             self.logger.info(
                 f"Original image saved: {original_path} "
-                f"({image.shape[1]}x{image.shape[0]})"
+                f"({image.shape[1]}x{image.shape[0]}, "
+                f"id={id_index}, image={image_index})"
             )
         except Exception as e:
             self.logger.error(f"Failed to save original image: {e}")
@@ -147,7 +175,7 @@ class PipelineExecutor:
                 self.logger.info(
                     f"Processing time ({processor.name}): {proc_time:.3f} sec"
                 )
-            self._save(result, self.processors[-1].name)
+            self._save(result, "pipeline")
 
         total_time = time.time() - start_time
         self.logger.info(f"Total processing time: {total_time:.3f} sec")
@@ -161,11 +189,15 @@ class PipelineExecutor:
             processor_name (str): 処理に使われたプロセッサの名前。
         """
         # パイプラインモード時は"pipeline"ディレクトリに保存
-        save_dir_name = "pipeline" if self.mode == "pipeline" else processor_name
+        save_dir_name = processor_name
         save_dir = self.capture_manager.get_processing_dir(
             save_dir_name, self.camera_index
         )
-        filename = f"snapshot_{save_dir_name}_{int(cv2.getTickCount())}.bmp"
+
+        # 新しいファイル命名規則を使用
+        filename, id_index, image_index = get_file_naming_manager().get_filename(
+            save_dir_name, self.camera_index
+        )
         path = save_dir / filename
 
         save_start = time.time()
@@ -174,7 +206,8 @@ class PipelineExecutor:
             save_time = time.time() - save_start
             self.logger.info(
                 f"Image saved ({save_dir_name}): {path} "
-                f"({image.shape[1]}x{image.shape[0]}, {save_time:.3f} sec)"
+                f"({image.shape[1]}x{image.shape[0]}, "
+                f"id={id_index}, image={image_index}, {save_time:.3f} sec)"
             )
         except Exception as e:
             self.logger.error(f"Failed to save image ({save_dir_name}): {e}")
