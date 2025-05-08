@@ -11,12 +11,14 @@ class FileNamingManager:
     Attributes:
         image_counters (Dict[Tuple[int, str], int]): カメラとプレフィックスごとの画像カウンタ
         id_intervals (Dict[Tuple[int, str], int]): カメラとプレフィックスごとのID増加間隔
+        labels (Dict[int, str]): カメラごとのラベル
     """
 
     def __init__(self) -> None:
         """FileNamingManagerのコンストラクタ."""
         self.image_counters: Dict[Tuple[int, str], int] = {}
         self.id_intervals: Dict[Tuple[int, str], int] = {}
+        self.labels: Dict[int, str] = {}  # カメラごとのラベル
 
     def set_id_interval(
         self, prefix: str, camera_index: int, interval: int = 1
@@ -31,6 +33,16 @@ class FileNamingManager:
         """
         key = (camera_index, prefix)
         self.id_intervals[key] = max(1, interval)  # 最小値は1を保証
+
+    def set_label(self, camera_index: int, label: str) -> None:
+        """
+        カメラごとのラベル（ファイル名のNA_NA部分）を設定します.
+
+        Args:
+            camera_index (int): カメラのインデックス
+            label (str): ファイル名に挿入するラベル
+        """
+        self.labels[camera_index] = label
 
     def get_filename(
         self, prefix: str, camera_index: int, extension: str = "bmp"
@@ -73,9 +85,12 @@ class FileNamingManager:
         # 現在の日時を取得（yyyymmddhhmmss形式）
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
+        # ラベルを取得（未設定の場合はNA_NA）
+        label = self.labels.get(camera_index, "NA_NA")
+
         # ファイル名を生成
         filename = (
-            f"{prefix}_{timestamp}_NA_NA_id{id_index}_image{image_index}.{extension}"
+            f"{prefix}_{timestamp}_{label}_id{id_index}_image{image_index}.{extension}"
         )
 
         return filename, id_index, image_index

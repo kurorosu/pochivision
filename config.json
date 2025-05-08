@@ -5,6 +5,7 @@
       "height": 2400,
       "fps": 30,
       "backend": "DSHOW",
+      "label": "Tokyo_Lab",
       "processors": ["motion_blur","gaussian_blur","grayscale", "standard_binarization"],
       "mode": "pipeline",
       "id_interval": 4,
@@ -37,6 +38,7 @@
       "height": 2400,
       "fps": 30,
       "backend": "DSHOW",
+      "label": "All_Parallel",
       "processors": [
         "motion_blur",
         "bilateral_filter",
@@ -58,6 +60,7 @@
       "height": 720,
       "fps": 60,
       "backend": "DSHOW",
+      "label": "High_FPS",
       "processors": ["grayscale"],
       "mode": "pipeline",
       "grayscale": {}
