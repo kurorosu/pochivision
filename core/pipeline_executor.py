@@ -18,11 +18,11 @@ class PipelineExecutor:
     画像処理プロセッサ群を管理し、処理と保存を行うパイプライン実行クラス.
 
     Attributes:
-        processors (list): 実行対象の画像処理プロセッサのリスト。
-        capture_manager (CaptureManager): 処理結果の保存先ディレクトリを管理するオブジェクト。
-        mode (str): 実行モード。"parallel" または "pipeline"。
-        camera_index (int): このパイプラインが対応するカメラのインデックス。
-        id_interval (int): ID値が増加する画像数の間隔。
+        processors (list): 実行対象の画像処理プロセッサのリスト.
+        capture_manager (CaptureManager): 処理結果の保存先ディレクトリを管理するオブジェクト.
+        mode (str): 実行モード. "parallel" または "pipeline".
+        camera_index (int): このパイプラインが対応するカメラのインデックス.
+        id_interval (int): ID値が増加する画像数の間隔.
     """
 
     def __init__(
@@ -37,11 +37,11 @@ class PipelineExecutor:
         PipelineExecutorのコンストラクタ.
 
         Args:
-            processors (list): 画像処理プロセッサのインスタンス群。
-            capture_manager (CaptureManager): 保存先ディレクトリ管理。
-            mode (str): 実行モード（"parallel" または "pipeline"）。デフォルトは "parallel"。
-            camera_index (int): このパイプラインが対応するカメラのインデックス。
-            id_interval (int): ID値が増加する画像数の間隔。デフォルトは1。
+            processors (list): 画像処理プロセッサのインスタンス群.
+            capture_manager (CaptureManager): 保存先ディレクトリ管理.
+            mode (str): 実行モード（"parallel" または "pipeline"）. デフォルトは "parallel".
+            camera_index (int): このパイプラインが対応するカメラのインデックス.
+            id_interval (int): ID値が増加する画像数の間隔 デフォルトは1.
         """
         self.processors = processors
         self.capture_manager = capture_manager
@@ -80,19 +80,19 @@ class PipelineExecutor:
         """
         設定ファイル（辞書）からインスタンスを生成.
 
-        カメラプロファイルごとの画像処理設定を使用します。
+        カメラプロファイルごとの画像処理設定を使用します.
 
         Args:
-            config (dict): JSON等から読み込んだ設定辞書。
-            capture_manager (CaptureManager): 保存用のディレクトリ管理インスタンス。
-            camera_index (int): このパイプラインが対応するカメラのインデックス。
-            profile_name (str): 使用するカメラプロファイル名。
+            config (dict): JSON等から読み込んだ設定辞書.
+            capture_manager (CaptureManager): 保存用のディレクトリ管理インスタンス.
+            camera_index (int): このパイプラインが対応するカメラのインデックス.
+            profile_name (str): 使用するカメラプロファイル名.
 
         Returns:
-            PipelineExecutor: 構成済みの PipelineExecutor インスタンス。
+            PipelineExecutor: 構成済みの PipelineExecutor インスタンス.
 
         Raises:
-            Exception: カメラプロファイルのプロセッサ設定が取得できない場合。
+            Exception: カメラプロファイルのプロセッサ設定が取得できない場合.
         """
         try:
             # カメラプロファイルからプロセッサ設定を取得
@@ -103,6 +103,10 @@ class PipelineExecutor:
             # カメラごとのid_intervalを参照
             camera_config = config.get("cameras", {}).get(profile_name, {})
             id_interval = camera_config.get("id_interval", config.get("id_interval", 1))
+
+            label = camera_config.get("label", "NA_NA")
+            file_naming_manager = get_file_naming_manager()
+            file_naming_manager.set_label(camera_index, label)
 
             # プロセッサインスタンスの生成
             processors: List[BaseProcessor] = []
@@ -134,7 +138,7 @@ class PipelineExecutor:
         指定された画像に対してプロセッサを適用し、処理結果を保存する.
 
         Args:
-            image (np.ndarray): 入力画像。
+            image (np.ndarray): 入力画像.
         """
         start_time = time.time()
 
@@ -185,8 +189,8 @@ class PipelineExecutor:
         処理された画像を保存する内部メソッド.
 
         Args:
-            image (np.ndarray): 処理済み画像。
-            processor_name (str): 処理に使われたプロセッサの名前。
+            image (np.ndarray): 処理済み画像.
+            processor_name (str): 処理に使われたプロセッサの名前.
         """
         # パイプラインモード時は"pipeline"ディレクトリに保存
         save_dir_name = processor_name
