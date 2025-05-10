@@ -90,9 +90,24 @@ class ImageAggregator:
             入力ファイルパスと出力ディレクトリのタプルのリストと出力ディレクトリパスのタプル
         """
         all_files = []
+        # ファイルの絶対パスによる重複チェック用のセット
+        processed_paths = set()
 
-        # 画像ファイルの拡張子リスト
-        image_extensions = ["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.tif", "*.tiff"]
+        # 画像ファイルの拡張子リスト (小文字と大文字の両方)
+        image_extensions = [
+            "*.jpg",
+            "*.JPG",
+            "*.jpeg",
+            "*.JPEG",
+            "*.png",
+            "*.PNG",
+            "*.bmp",
+            "*.BMP",
+            "*.tif",
+            "*.TIF",
+            "*.tiff",
+            "*.TIFF",
+        ]
 
         # 出力ディレクトリを作成
         output_dir = self._create_dated_output_dir()
@@ -110,12 +125,14 @@ class ImageAggregator:
             # 各フォルダから画像ファイルを収集
             for folder in folders:
                 for ext in image_extensions:
-                    # 小文字と大文字の両方の拡張子を検索
                     for img_file in folder.glob(ext):
-                        all_files.append((img_file, type_output_dir))
-                    for img_file in folder.glob(ext.upper()):
-                        all_files.append((img_file, type_output_dir))
+                        # 絶対パスに変換して重複チェック
+                        abs_path = str(img_file.resolve())
+                        if abs_path not in processed_paths:
+                            all_files.append((img_file, type_output_dir))
+                            processed_paths.add(abs_path)
 
+        print(f"Collected {len(all_files)} unique image files")
         return all_files, output_dir
 
     def _process_single_file(self, source_file: Path, output_dir: Path) -> bool:
