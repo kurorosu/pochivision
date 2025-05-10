@@ -2,7 +2,11 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Real-time image capture & preprocessing engine for AI vision applications.
+Real-time image capture & preprocessing engine for AI vision applications, featuring a plugin-based processor architecture for easy extensibility.
+
+## Requirements
+
+- Python 3.12.3 (developed and tested)
 
 ## Features
 
@@ -16,11 +20,19 @@ Real-time image capture & preprocessing engine for AI vision applications.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/vision-capture-core.git
+git clone https://github.com/kurorosu/vision-capture-core.git
 cd vision-capture-core
 
 # Install dependencies
 pip install -r requirements.txt
+```
+
+## For Developers
+
+To install all dependencies including development, testing, and linting tools:
+
+```bash
+pip install -r requirements-dev.txt
 ```
 
 ## Quick Start
@@ -37,7 +49,6 @@ Vision Capture Core provides a flexible command-line interface:
 
 ```bash
 # Use a specific camera device (by index)
-# This will use camera 1 with profile "0"
 python app.py --camera 1
 
 # Use a specific camera profile from config
@@ -76,23 +87,46 @@ The application uses a JSON configuration file to define camera profiles and pro
       "height": 2400,
       "fps": 30,
       "backend": "DSHOW",
-      "processors": ["gaussian_blur", "grayscale", "standard_binarization"],
-      "mode": "parallel",
+      "processors": ["motion_blur", "gaussian_blur", "grayscale", "standard_binarization"],
+      "mode": "pipeline",
       "gaussian_blur": {
         "kernel_size": [15, 15],
         "sigma": 0
       },
+      "average_blur": {
+        "kernel_size": [5, 5]
+      },
+      "median_blur": {
+        "kernel_size": 5
+      },
       "grayscale": {},
       "standard_binarization": {
         "threshold": 128
+      },
+      "bilateral_filter": {
+        "d": 9,
+        "sigmaColor": 75,
+        "sigmaSpace": 75
+      },
+      "motion_blur": {
+        "kernel_size": 15,
+        "angle": 0
       }
     },
-    "high_res": {
-      "width": 3840,
-      "height": 2160,
+    "all_para": {
+      "width": 3200,
+      "height": 2400,
       "fps": 30,
       "backend": "DSHOW",
-      "processors": ["gaussian_blur"],
+      "processors": [
+        "motion_blur",
+        "bilateral_filter",
+        "median_blur",
+        "gaussian_blur",
+        "average_blur",
+        "grayscale",
+        "standard_binarization"
+      ],
       "mode": "parallel",
       "gaussian_blur": {
         "kernel_size": [31, 31],
@@ -138,8 +172,19 @@ Optional parameters with default values:
 - `gaussian_blur`: Gaussian Blur processing parameters
   - `kernel_size`: Kernel size (e.g., [15, 15])
   - `sigma`: Gaussian blur sigma value (e.g., 0)
+- `average_blur`: Average Blur parameters
+  - `kernel_size`: Kernel size (e.g., [5, 5])
+- `median_blur`: Median Blur parameters
+  - `kernel_size`: Kernel size (odd integer, e.g., 5)
+- `bilateral_filter`: Bilateral Filter parameters
+  - `d`: Diameter of each pixel neighborhood (e.g., 9)
+  - `sigmaColor`: Filter sigma in the color space (e.g., 75)
+  - `sigmaSpace`: Filter sigma in the coordinate space (e.g., 75)
+- `motion_blur`: Motion Blur parameters
+  - `kernel_size`: Length of the motion blur (odd integer, e.g., 15)
+  - `angle`: Angle of the motion blur in degrees (0-359, e.g., 0)
 - `grayscale`: Grayscale conversion (no parameters)
-- `standard_binarization`: Standard (threshold-based) binarization parameters
+- `standard_binarization`: Standard binarization parameters
   - `threshold`: Binarization threshold value (e.g., 128)
 
 ### Camera Profile Notes
@@ -180,7 +225,16 @@ The following processors are currently available:
    }
    ```
 
-3. **standard_binarization**: Applies standard (threshold-based) binarization
+3. **average_blur**: Applies average blur
+   - Parameters:
+     - `kernel_size`: Kernel size (e.g., [5, 5])
+   ```json
+   "average_blur": {
+     "kernel_size": [5, 5]
+   }
+   ```
+
+4. **standard_binarization**: Applies standard (threshold-based) binarization
    - Parameters:
      - `threshold`: Binarization threshold value (e.g., 128)
    ```json
@@ -189,7 +243,7 @@ The following processors are currently available:
    }
    ```
 
-4. **median_blur**: Applies median blur
+5. **median_blur**: Applies median blur
    - Parameters:
      - `kernel_size`: Kernel size (odd integer, e.g., 5)
    ```json
@@ -198,7 +252,7 @@ The following processors are currently available:
    }
    ```
 
-5. **bilateral_filter**: Applies bilateral filter (edge-preserving blur)
+6. **bilateral_filter**: Applies bilateral filter (edge-preserving blur)
    - Parameters:
      - `d`: Diameter of each pixel neighborhood (e.g., 9)
      - `sigmaColor`: Filter sigma in the color space (e.g., 75)
@@ -211,7 +265,7 @@ The following processors are currently available:
    }
    ```
 
-6. **motion_blur**: Applies motion blur (linear motion effect)
+7. **motion_blur**: Applies motion blur (linear motion effect)
    - Parameters:
      - `kernel_size`: Length of the motion blur (odd integer, e.g., 15)
      - `angle`: Angle of the motion blur in degrees (0-359, e.g., 0)
@@ -221,10 +275,6 @@ The following processors are currently available:
      "angle": 0
    }
    ```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
