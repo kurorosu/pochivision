@@ -53,35 +53,3 @@ class ProcessorFolderFinder:
             print(f"Processor type '{processor_type}' found in {len(folders)} folders")
 
         return processor_types
-
-    def find_by_processor_type(self, processor_type: str) -> List[Path]:
-        """
-        指定された処理タイプのフォルダを検索する.
-
-        Args:
-            processor_type: 検索する処理タイプ名
-
-        Returns:
-            該当する処理フォルダのパスのリスト
-        """
-        found_folders = []
-
-        # 入力ディレクトリがカメラディレクトリの場合と、captureディレクトリの場合を処理
-        if self.base_dir.name.startswith("camera"):
-            # 直接カメラディレクトリが指定された場合
-            camera_dirs = [self.base_dir]
-        else:
-            # captureディレクトリなどが指定された場合、カメラフォルダを検索
-            camera_dirs = [d for d in self.base_dir.glob("camera*") if d.is_dir()]
-
-        # 各カメラフォルダ内の日付フォルダを検索
-        for camera_dir in camera_dirs:
-            date_dirs = [d for d in camera_dir.glob("*") if d.is_dir()]
-
-            # 各日付フォルダ内の処理フォルダを検索
-            for date_dir in date_dirs:
-                processor_dir = date_dir / processor_type
-                if processor_dir.exists() and processor_dir.is_dir():
-                    found_folders.append(processor_dir)
-
-        return found_folders

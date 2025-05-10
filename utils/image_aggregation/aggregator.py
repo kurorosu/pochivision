@@ -27,9 +27,7 @@ class ImageAggregator:
         self,
         input_dir: str,
         output_dir: str,
-        processor_type=None,  # 互換性のために残す
         mode: OperationMode = OperationMode.COPY,
-        process_all=True,  # 互換性のために残す
     ) -> None:
         """
         ImageAggregatorを初期化する.
@@ -37,9 +35,7 @@ class ImageAggregator:
         Args:
             input_dir: カメラディレクトリのパス
             output_dir: 集約画像の出力先ベースフォルダパス
-            processor_type: 未使用（互換性のために残す）
             mode: ファイル操作モード
-            process_all: 未使用（互換性のために残す）
         """
         self.input_dir = Path(input_dir)
 
