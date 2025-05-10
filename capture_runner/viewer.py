@@ -1,5 +1,7 @@
 """カメラプレビュー・キャプチャ用のコントローラークラスを提供するモジュール."""
 
+import platform
+
 import cv2
 
 from capturelib.log_manager import LogManager
@@ -26,10 +28,16 @@ class LivePreviewRunner:
         """
         self.cap = cap
         self.pipeline = pipeline
+        self.os_name = platform.system()
 
     def run(self) -> None:
-        """ライブビューを開始し、'c' でキャプチャ、'q' で終了."""
-        print("Press 'c' to capture, 'q' to quit.")
+        """
+        ライブビューを開始し、'c' でキャプチャ、'q' で終了、's' でカメラ設定.
+
+        Raises:
+            VisionCaptureError: カメラ設定ダイアログが非対応のOSで呼び出された場合.
+        """
+        print("Press 'c' to capture, 'q' to quit, 's' for camera settings.")
         try:
             while True:
                 ret, frame = self.cap.read()
@@ -42,6 +50,16 @@ class LivePreviewRunner:
                 if key == ord("c"):
                     snapshot = frame.copy()
                     self.pipeline.run(snapshot)
+                elif key == ord("s"):
+                    # カメラ設定ダイアログを開く
+                    if self.os_name == "Windows":
+                        self.cap.set(cv2.CAP_PROP_SETTINGS, 1)
+                    else:
+                        logger = LogManager().get_logger()
+                        logger.warning(
+                            f"Camera settings dialog is only supported on Windows. "
+                            f"Current OS: {self.os_name}"
+                        )
                 elif key == ord("q"):
                     break
         except VisionCaptureError as e:
