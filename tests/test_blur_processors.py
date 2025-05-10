@@ -1,11 +1,11 @@
 import numpy as np
-import pytest
+import pytest  # noqa: F401
 
 from processors.blur import (
-    GaussianBlurProcessor,
     AverageBlurProcessor,
-    MedianBlurProcessor,
     BilateralFilterProcessor,
+    GaussianBlurProcessor,
+    MedianBlurProcessor,
     MotionBlurProcessor,
 )
 
@@ -27,6 +27,7 @@ def test_gaussian_blur_valid():
     # データ型が維持されていることを確認
     assert result.dtype == np.uint8
 
+
 # AverageBlur
 
 
@@ -41,6 +42,7 @@ def test_average_blur_valid():
     assert result.shape == DUMMY_IMAGE.shape
     # データ型が維持されていることを確認
     assert result.dtype == np.uint8
+
 
 # MedianBlur
 
@@ -57,14 +59,14 @@ def test_median_blur_valid():
     # データ型が維持されていることを確認
     assert result.dtype == np.uint8
 
+
 # BilateralFilter
 
 
 def test_bilateral_filter_valid():
     """バイラテラルフィルタの基本機能をテスト"""
     config = {"d": 9, "sigmaColor": 75, "sigmaSpace": 75}
-    processor = BilateralFilterProcessor(
-        name="bilateral_filter", config=config)
+    processor = BilateralFilterProcessor(name="bilateral_filter", config=config)
 
     result = processor.process(DUMMY_IMAGE)
 
@@ -72,6 +74,7 @@ def test_bilateral_filter_valid():
     assert result.shape == DUMMY_IMAGE.shape
     # データ型が維持されていることを確認
     assert result.dtype == np.uint8
+
 
 # MotionBlur
 

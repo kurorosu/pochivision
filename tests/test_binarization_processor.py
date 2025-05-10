@@ -1,5 +1,6 @@
 import numpy as np
-import pytest
+import pytest  # noqa: F401
+
 from processors.binarization import StandardBinarizationProcessor
 
 # テスト用の画像データ
@@ -11,7 +12,8 @@ def test_binarization_valid_gray():
     """グレースケール画像からの2値化をテスト"""
     config = {"threshold": 50}
     processor = StandardBinarizationProcessor(
-        name="standard_binarization", config=config)
+        name="standard_binarization", config=config
+    )
 
     # グレースケール画像を与えると
     result = processor.process(DUMMY_GRAY)
@@ -28,7 +30,8 @@ def test_binarization_valid_color():
     """カラー画像からの2値化をテスト"""
     config = {"threshold": 50}
     processor = StandardBinarizationProcessor(
-        name="standard_binarization", config=config)
+        name="standard_binarization", config=config
+    )
 
     # カラー画像を与えると
     result = processor.process(DUMMY_COLOR)

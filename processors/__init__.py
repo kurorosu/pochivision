@@ -1,4 +1,13 @@
+"""processorsパッケージ:画像処理プロセッサ群の実装を提供します."""
+
+# flake8: noqa: F401
 from .base import BaseProcessor
-from .grayscale import GrayscaleProcessor
-from .blur import GaussianBlurProcessor, AverageBlurProcessor, MedianBlurProcessor, BilateralFilterProcessor, MotionBlurProcessor
 from .binarization import StandardBinarizationProcessor
+from .blur import (
+    AverageBlurProcessor,
+    BilateralFilterProcessor,
+    GaussianBlurProcessor,
+    MedianBlurProcessor,
+    MotionBlurProcessor,
+)
+from .grayscale import GrayscaleProcessor

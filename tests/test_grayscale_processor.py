@@ -1,5 +1,6 @@
 import numpy as np
-import pytest
+import pytest  # noqa: F401
+
 from processors.grayscale import GrayscaleProcessor
 
 # テスト用の画像データ

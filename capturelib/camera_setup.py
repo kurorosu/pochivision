@@ -1,25 +1,30 @@
+"""カメラの設定・初期化を行うためのユーティリティモジュール."""
+
+from typing import Any, Dict
+
 import cv2
-from typing import Dict, Any, Optional
 
 from capturelib.config_handler import CameraConfigError, LogManager
 
 
 class CameraSetup:
-    """
-    カメラの設定と初期化を担当するクラス。
-    """
+    """カメラの設定と初期化を担当するクラス."""
 
-    def __init__(self, config: Dict[str, Any], log_manager: LogManager,
-                 camera_index: Optional[int] = None,
-                 profile_name: Optional[str] = None):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        log_manager: LogManager,
+        camera_index: int,
+        profile_name: str,
+    ):
         """
-        CameraSetupクラスのコンストラクタ。
+        CameraSetupクラスのコンストラクタ.
 
         Args:
-            config (Dict[str, Any]): アプリケーション設定。
-            log_manager (LogManager): ロギングマネージャー。
-            camera_index (Optional[int]): 使用するカメラのインデックス。None の場合は設定ファイルの値を使用。
-            profile_name (Optional[str]): 使用するカメラプロファイル名。None の場合はカメラインデックスに対応する設定を使用。
+            config (Dict[str, Any]): アプリケーション設定.
+            log_manager (LogManager): ロギングマネージャー.
+            camera_index (Optional[int]): 使用するカメラのインデックス. None の場合は設定ファイルの値を使用.
+            profile_name (Optional[str]): 使用するカメラプロファイル名. None の場合はカメラインデックスに対応する設定を使用.
         """
         self.config = config
         self.log_manager = log_manager
@@ -32,11 +37,10 @@ class CameraSetup:
         self.backend = None
 
     def load_camera_config(self) -> None:
-        """
-        設定からカメラ設定を読み込む。CLIで指定されたカメラインデックスとプロファイル名を優先する。
-        """
+        """設定からカメラ設定を読み込む. CLIで指定されたカメラインデックスとプロファイル名を優先する."""
         try:
             # カメラインデックスが指定されていない場合は設定ファイルから取得
+            # argsでデフォルト0にしたから不要かも
             if self.camera_index is None:
                 self.camera_index = self.config.get("selected_camera_index", 0)
 
@@ -52,7 +56,9 @@ class CameraSetup:
 
             if not camera_config:
                 self.logger.warning(
-                    f"Camera profile '{profile_key}' not found in config, using default settings")
+                    f"Camera profile '{profile_key}' "
+                    f"not found in config, using default settings"
+                )
 
             # カメラの解像度設定を取得
             self.width = camera_config.get("width", 640)
@@ -60,20 +66,21 @@ class CameraSetup:
             self.fps = camera_config.get("fps", 30)
             self.backend = camera_config.get("backend", None)
 
-            self.logger.info(f"Camera configuration loaded: Camera Index={self.camera_index}, "
-                             f"Profile={profile_key}, Width={self.width}, Height={self.height}, "
-                             f"FPS={self.fps}, Backend={self.backend}")
+            self.logger.info(
+                f"Camera configuration loaded: Camera Index={self.camera_index}, "
+                f"Profile={profile_key}, Width={self.width}, Height={self.height}, "
+                f"FPS={self.fps}, Backend={self.backend}"
+            )
         except Exception as e:
             self.logger.error(f"Error loading camera config: {e}")
-            raise CameraConfigError(
-                f"Failed to load camera configuration: {e}")
+            raise CameraConfigError(f"Failed to load camera configuration: {e}")
 
     def initialize_camera(self) -> cv2.VideoCapture:
         """
-        カメラを初期化する。
+        カメラを初期化する.
 
         Returns:
-            cv2.VideoCapture: 初期化されたカメラオブジェクト。
+            cv2.VideoCapture: 初期化されたカメラオブジェクト.
         """
         self.logger.info(f"Initializing camera {self.camera_index}")
 
@@ -83,8 +90,7 @@ class CameraSetup:
             if backend_constant is not None:
                 cap = cv2.VideoCapture(self.camera_index, backend_constant)
             else:
-                self.logger.warning(
-                    f"Unknown backend: {self.backend}, using default")
+                self.logger.warning(f"Unknown backend: {self.backend}, using default")
                 cap = cv2.VideoCapture(self.camera_index)
         else:
             cap = cv2.VideoCapture(self.camera_index)
@@ -117,8 +123,7 @@ class CameraSetup:
 
         if actual_fps != self.fps:
             self.logger.warning(
-                f"Requested FPS ({self.fps}) not set. "
-                f"Actual FPS: {actual_fps}"
+                f"Requested FPS ({self.fps}) not set. " f"Actual FPS: {actual_fps}"
             )
             self.fps = actual_fps
 

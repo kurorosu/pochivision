@@ -1,31 +1,33 @@
+"""ガウシアンブラー用バリデータの実装モジュール."""
+
 from typing import Dict
-from processors.validators.base import BaseValidator
+
 import numpy as np
+
 from exceptions import ProcessorValidationError
+from processors.validators.base import BaseValidator
 
 
 class GaussianBlurConfigValidator(BaseValidator):
-    """
-    ガウシアンブラーの設定値・画像バリデーションを担当するクラス。
+    """ガウシアンブラー用のバリデータ."""
 
-    Args:
-        config (dict): バリデーション対象の設定辞書
-        image (np.ndarray, optional): 入力画像
+    def __init__(self, config: Dict[str, int], image: np.ndarray) -> None:
+        """
+        GaussianBlurConfigValidatorのコンストラクタ.
 
-    Raises:
-        ProcessorValidationError: 不正なパラメータや画像が検出された場合
-    """
-
-    def __init__(self, config: Dict[str, int], image: np.ndarray = None) -> None:
+        Args:
+            config (dict): バリデーション対象の設定辞書.
+            image (np.ndarray): 入力画像.
+        """
         self.config = config
         self.image = image
 
     def validate(self) -> None:
         """
-        設定値と画像のバリデーションを実行する。
+        設定値と画像のバリデーションを実行する.
 
         Raises:
-            ProcessorValidationError: 不正なパラメータや画像が検出された場合
+            ProcessorValidationError: 不正なパラメータや画像が検出された場合.
         """
         # 画像バリデーション（imageが指定されている場合のみ）
         if self.image is not None:
@@ -34,18 +36,20 @@ class GaussianBlurConfigValidator(BaseValidator):
         sigma = self.config.get("sigma", 0)
 
         # カーネルサイズのバリデーション
-        if (not isinstance(kernel_size, (list, tuple)) or
-            len(kernel_size) != 2 or
-                not all(isinstance(k, int) and k > 0 and k % 2 == 1 for k in kernel_size)):
+        if (
+            not isinstance(kernel_size, (list, tuple))
+            or len(kernel_size) != 2
+            or not all(isinstance(k, int) and k > 0 and k % 2 == 1 for k in kernel_size)
+        ):
             raise ProcessorValidationError(
-                "kernel_size must be specified as two positive odd integers. Example: [15, 15]")
+                "kernel_size must be specified as two positive odd integers. "
+                "Example: [15, 15]"
+            )
 
         # シグマ値のバリデーション
         if not (isinstance(sigma, (int, float)) and sigma >= 0):
-            raise ProcessorValidationError(
-                "sigma must be a non-negative number")
+            raise ProcessorValidationError("sigma must be a non-negative number")
 
         # kernel_sizeもsigmaも両方0は不可
         if sigma == 0 and all(k == 0 for k in kernel_size):
-            raise ProcessorValidationError(
-                "kernel_size and sigma cannot both be 0")
+            raise ProcessorValidationError("kernel_size and sigma cannot both be 0")

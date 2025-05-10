@@ -1,39 +1,47 @@
+"""
+設定ファイルの読み込み・保存・バリデーションを行うモジュール.
+
+カメラ設定やアプリ全体の設定の管理、例外クラスも含みます。
+"""
+
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import Any, Dict, List, Tuple
 
-from .log_manager import LogManager
+from pydantic import ValidationError
+
 from capturelib.config_schema import ConfigModel
 from exceptions.config import ConfigValidationError
-from pydantic import ValidationError
+
+from .log_manager import LogManager
 
 
 class ConfigLoadError(Exception):
-    """
-    設定ファイルの読み込みエラー用カスタム例外。
-    """
+    """設定ファイルの読み込みエラーを表す例外クラス."""
+
     pass
 
 
 class CameraConfigError(Exception):
-    """
-    カメラ設定に関するエラー用カスタム例外。
-    """
+    """カメラ設定のエラーを表す例外クラス."""
+
     pass
 
 
 class ConfigHandler:
     """
-    config.json の読み込み・保存だけを担当。
-    単一責任の原則に従い、設定ファイルの入出力のみを扱う。
+    config.json の読み込み・保存だけを担当.
+
+    単一責任の原則に従い、設定ファイルの入出力のみを扱う.
     """
+
     _logger = LogManager().get_logger()
 
     @staticmethod
     def load(path: str) -> Dict[str, Any]:
         """
-        設定ファイルを読み込む。
+        設定ファイルを読み込む.
 
         Args:
             path (str): 設定ファイルのパス。
@@ -67,7 +75,7 @@ class ConfigHandler:
     @staticmethod
     def save(config: Dict[str, Any], output_dir: Path) -> None:
         """
-        設定をファイルに保存する。
+        設定をファイルに保存する.
 
         Args:
             config (dict): 保存する設定辞書。
@@ -87,15 +95,18 @@ class ConfigHandler:
 
 class CameraConfigHandler:
     """
-    カメラ設定の処理を担当。
-    単一責任の原則に従い、カメラ関連の設定のみを扱う。
+    カメラ設定の処理を担当.
+
+    単一責任の原則に従い、カメラ関連の設定のみを扱う.
     """
+
     _logger = LogManager().get_logger()
 
     @staticmethod
-    def get_camera_config(config: Dict[str, Any], camera_index: int = None) -> Dict[str, Any]:
+    def get_camera_config(config: Dict[str, Any], camera_index: int) -> Dict[str, Any]:
         """
-        指定されたカメラインデックスの設定を取得する。
+        指定されたカメラインデックスの設定を取得する.
+
         カメラインデックスが指定されていない場合はselected_camera_indexの設定を使用。
 
         Args:
@@ -115,20 +126,20 @@ class CameraConfigHandler:
             if "selected_camera_index" in config:
                 camera_index = config["selected_camera_index"]
             else:
-                raise CameraConfigError(
-                    "No selected camera index specified in config")
+                raise CameraConfigError("No selected camera index specified in config")
 
         camera_id_str = str(camera_index)
         if camera_id_str not in config["cameras"]:
             raise CameraConfigError(
-                f"No configuration found for camera index: {camera_index}")
+                f"No configuration found for camera index: {camera_index}"
+            )
 
         return config["cameras"][camera_id_str]
 
     @staticmethod
     def get_camera_processors(config: Dict[str, Any], profile_name: str) -> Tuple:
         """
-        指定されたカメラプロファイルのプロセッサ設定を取得する。
+        指定されたカメラプロファイルのプロセッサ設定を取得する.
 
         Args:
             config (dict): 設定辞書。
@@ -145,19 +156,22 @@ class CameraConfigHandler:
 
         if profile_name not in config["cameras"]:
             raise CameraConfigError(
-                f"No configuration found for camera profile: {profile_name}")
+                f"No configuration found for camera profile: {profile_name}"
+            )
 
         camera_config = config["cameras"][profile_name]
 
         # プロセッサリストの取得
         if "processors" not in camera_config:
             raise CameraConfigError(
-                f"No processors defined for camera profile: {profile_name}")
+                f"No processors defined for camera profile: {profile_name}"
+            )
 
         processors = camera_config["processors"]
         if not processors:
             raise CameraConfigError(
-                f"Empty processors list for camera profile: {profile_name}")
+                f"Empty processors list for camera profile: {profile_name}"
+            )
 
         # プロセッサごとの設定を取得
         processor_configs = {}
@@ -175,7 +189,7 @@ class CameraConfigHandler:
     @staticmethod
     def get_all_camera_indices(config: Dict[str, Any]) -> List[int]:
         """
-        設定ファイルに定義されているすべてのカメラインデックスを取得する。
+        設定ファイルに定義されているすべてのカメラインデックスを取得する.
 
         Args:
             config (dict): 設定辞書。
@@ -195,7 +209,7 @@ class CameraConfigHandler:
     @staticmethod
     def get_selected_camera_index(config: Dict[str, Any]) -> int:
         """
-        選択されたカメラインデックスを取得する。
+        選択されたカメラインデックスを取得する.
 
         Args:
             config (dict): 設定辞書。
