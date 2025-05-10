@@ -68,9 +68,7 @@ def main():
         aggregator = ImageAggregator(
             args.input,
             "",  # 出力ディレクトリは内部で固定
-            None,  # processor_typeはNone
             mode,
-            process_all=True,
         )
         num_processed = aggregator.aggregate()
 
