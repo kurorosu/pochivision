@@ -13,3 +13,4 @@ mypy_report.txt
 pydocstyle_report.txt
 flake8_report.txt
 CONTRIBUTING.md
+image_aggregated/
