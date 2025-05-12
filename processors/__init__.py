@@ -2,7 +2,7 @@
 
 # flake8: noqa: F401
 from .base import BaseProcessor
-from .binarization import StandardBinarizationProcessor
+from .binarization import OtsuBinarizationProcessor, StandardBinarizationProcessor
 from .blur import (
     AverageBlurProcessor,
     BilateralFilterProcessor,

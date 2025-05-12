@@ -6,7 +6,7 @@
       "fps": 30,
       "backend": "DSHOW",
       "label": "Tokyo_Lab",
-      "processors": ["motion_blur","gaussian_blur","grayscale", "standard_binarization"],
+      "processors": ["motion_blur","gaussian_blur","grayscale", "otsu_binarization"],
       "mode": "pipeline",
       "id_interval": 4,
       "gaussian_blur": {
@@ -23,6 +23,7 @@
       "standard_binarization": {
         "threshold": 128
       },
+      "otsu_binarization": {},
       "bilateral_filter": {
         "d": 9,
         "sigmaColor": 75,
@@ -46,7 +47,8 @@
         "gaussian_blur",
         "average_blur",
         "grayscale",
-        "standard_binarization"
+        "standard_binarization",
+        "otsu_binarization"
       ],
       "mode": "parallel",
       "id_interval": 10,
