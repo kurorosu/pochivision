@@ -10,11 +10,15 @@ from exceptions import ProcessorRuntimeError
 from processors import BaseProcessor
 from processors.registry import register_processor
 from processors.validators.binarization import StandardBinarizationValidator
+from processors.validators.binarization.adaptive import (
+    GaussianAdaptiveBinarizationValidator,
+    MeanAdaptiveBinarizationValidator,
+)
 from processors.validators.binarization.otsu import OtsuBinarizationValidator
 from utils.image import to_grayscale
 
 
-@register_processor("standard_binarization")
+@register_processor("std_bin")
 class StandardBinarizationProcessor(BaseProcessor):
     """
     スタンダードな2値化（しきい値による通常の2値化）を行う画像処理プロセッサ.
@@ -23,11 +27,11 @@ class StandardBinarizationProcessor(BaseProcessor):
     適切に2値化処理（cv2.threshold）を行います.
 
     登録名:
-        "standard_binarization"
+        "std_bin"
 
     設定例:
         {
-            "standard_binarization": {
+            "std_bin": {
                 "threshold": 128
             }
         }
@@ -83,7 +87,7 @@ class StandardBinarizationProcessor(BaseProcessor):
         return binary
 
 
-@register_processor("otsu_binarization")
+@register_processor("otsu_bin")
 class OtsuBinarizationProcessor(BaseProcessor):
     """
     大津の2値化（Otsu's Binarization）を行う画像処理プロセッサ.
@@ -92,11 +96,11 @@ class OtsuBinarizationProcessor(BaseProcessor):
     画像のヒストグラムの分散を最小化する閾値を見つけます.
 
     登録名:
-        "otsu_binarization"
+        "otsu_bin"
 
     設定例:
         {
-            "otsu_binarization": {}  # パラメータは不要
+            "otsu_bin": {}  # パラメータは不要
         }
     """
 
@@ -135,4 +139,171 @@ class OtsuBinarizationProcessor(BaseProcessor):
         # 大津の2値化を適用
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         self.logger.info("Applied Otsu's binarization")
+        return binary
+
+
+@register_processor("gauss_adapt_bin")
+class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
+    """
+    ガウシアン適応的2値化を行う画像処理プロセッサ.
+
+    画像の局所的な領域に対してガウシアン重み付けを用いて
+    動的にしきい値を決定し、2値化を行います.
+
+    登録名:
+        "gauss_adapt_bin"
+
+    設定例:
+        {
+            "block_size": 11,
+            "c": 2
+        }
+    """
+
+    def __init__(self, name: str, config: Dict[str, int]) -> None:
+        """
+        GaussianAdaptiveBinarizationProcessorのコンストラクタ.
+
+        Args:
+            name (str): プロセッサ名.
+            config (dict, optional): 設定パラメータ.
+
+        Raises:
+            ProcessorRuntimeError: 不正な設定値が検出された場合.
+        """
+        super().__init__(name, config)
+        # 重要なパラメータの事前検証を行う
+        block_size = self.config.get("block_size", 11)
+        if not isinstance(block_size, int) or block_size < 3 or block_size % 2 == 0:
+            raise ProcessorRuntimeError(
+                "block_size must be an odd integer greater than or equal to 3"
+            )
+        self.logger = logging.getLogger(__name__)
+
+    def process(self, image: np.ndarray) -> np.ndarray:
+        """
+        ガウシアン適応的2値化処理を実行します.
+
+        Args:
+            image (np.ndarray): 入力画像.
+
+        Returns:
+            np.ndarray: 2値化後の画像.
+
+        Raises:
+            ProcessorRuntimeError: 入力画像の検証に失敗した場合.
+        """
+        try:
+            GaussianAdaptiveBinarizationValidator(self.config, image).validate()
+        except Exception as e:
+            raise ProcessorRuntimeError(
+                f"GaussianAdaptiveBinarization validation failed: {e}"
+            )
+
+        try:
+            # utils.imageの共通関数を使用してグレースケール変換
+            gray = to_grayscale(image)
+            self.logger.debug(
+                "Processing input image: original shape=%s, "
+                "after grayscale conversion=%s",
+                image.shape,
+                gray.shape,
+            )
+        except ValueError as e:
+            self.logger.error("Image conversion failed: %s", str(e))
+            raise ProcessorRuntimeError(f"Image conversion failed: {e}")
+
+        # ガウシアン適応的2値化を適用
+        block_size = self.config.get("block_size", 11)
+        c = self.config.get("c", 2)
+        binary = cv2.adaptiveThreshold(
+            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, block_size, c
+        )
+        self.logger.info(
+            f"Applied Gaussian adaptive binarization with block_size={block_size},"
+            f"c={c}"
+        )
+        return binary
+
+
+@register_processor("mean_adapt_bin")
+class MeanAdaptiveBinarizationProcessor(BaseProcessor):
+    """
+    平均適応的2値化を行う画像処理プロセッサ.
+
+    画像の局所的な領域の平均値を用いて
+    動的にしきい値を決定し、2値化を行います.
+
+    登録名:
+        "mean_adapt_bin"
+
+    設定例:
+        {
+            "block_size": 11,
+            "c": 2
+        }
+    """
+
+    def __init__(self, name: str, config: Dict[str, int]) -> None:
+        """
+        MeanAdaptiveBinarizationProcessorのコンストラクタ.
+
+        Args:
+            name (str): プロセッサ名.
+            config (dict, optional): 設定パラメータ.
+
+        Raises:
+            ProcessorRuntimeError: 不正な設定値が検出された場合.
+        """
+        super().__init__(name, config)
+        # 重要なパラメータの事前検証を行う
+        block_size = self.config.get("block_size", 11)
+        if not isinstance(block_size, int) or block_size < 3 or block_size % 2 == 0:
+            raise ProcessorRuntimeError(
+                "block_size must be an odd integer greater than or equal to 3"
+            )
+        self.logger = logging.getLogger(__name__)
+
+    def process(self, image: np.ndarray) -> np.ndarray:
+        """
+        平均適応的2値化処理を実行します.
+
+        Args:
+            image (np.ndarray): 入力画像.
+
+        Returns:
+            np.ndarray: 2値化後の画像.
+
+        Raises:
+            ProcessorRuntimeError: 入力画像の検証に失敗した場合.
+        """
+        try:
+            MeanAdaptiveBinarizationValidator(self.config, image).validate()
+        except Exception as e:
+            raise ProcessorRuntimeError(
+                f"MeanAdaptiveBinarization validation failed: {e}"
+            )
+
+        try:
+            # utils.imageの共通関数を使用してグレースケール変換
+            gray = to_grayscale(image)
+            self.logger.debug(
+                "Processing input image: original shape=%s, "
+                "after grayscale conversion=%s",
+                image.shape,
+                gray.shape,
+            )
+        except ValueError as e:
+            self.logger.error("Image conversion failed: %s", str(e))
+            raise ProcessorRuntimeError(f"Image conversion failed: {e}")
+
+        # 平均適応的2値化を適用
+        block_size = self.config.get("block_size", 11)
+        c = self.config.get("c", 2)
+        binary = cv2.adaptiveThreshold(
+            gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, block_size, c
+        )
+        self.logger.info(
+            f"Applied Mean adaptive binarization with block_size={block_size}, c={c}"
+        )
         return binary
