@@ -10,6 +10,7 @@ from exceptions import ProcessorRuntimeError
 from processors import BaseProcessor
 from processors.registry import register_processor
 from processors.validators.binarization import StandardBinarizationValidator
+from processors.validators.binarization.otsu import OtsuBinarizationValidator
 from utils.image import to_grayscale
 
 
@@ -79,4 +80,59 @@ class StandardBinarizationProcessor(BaseProcessor):
 
         _, binary = cv2.threshold(gray, self.threshold, 255, cv2.THRESH_BINARY)
         self.logger.info(f"Applied binarization with threshold {self.threshold}")
+        return binary
+
+
+@register_processor("otsu_binarization")
+class OtsuBinarizationProcessor(BaseProcessor):
+    """
+    大津の2値化（Otsu's Binarization）を行う画像処理プロセッサ.
+
+    画像の2値化において、最適なしきい値を自動的に決定します.
+    画像のヒストグラムの分散を最小化する閾値を見つけます.
+
+    登録名:
+        "otsu_binarization"
+
+    設定例:
+        {
+            "otsu_binarization": {}  # パラメータは不要
+        }
+    """
+
+    def process(self, image: np.ndarray) -> np.ndarray:
+        """
+        大津の2値化処理を実行します.
+
+        Args:
+            image (np.ndarray): 入力画像.
+
+        Returns:
+            np.ndarray: 2値化後の画像.
+
+        Raises:
+            ProcessorRuntimeError: 入力画像の検証に失敗した場合.
+        """
+        try:
+            OtsuBinarizationValidator(self.config, image).validate()
+        except Exception as e:
+            raise ProcessorRuntimeError(f"OtsuBinarization validation failed: {e}")
+
+        try:
+            # utils.imageの共通関数を使用してグレースケール変換
+            gray = to_grayscale(image)
+            self.logger = logging.getLogger(__name__)
+            self.logger.debug(
+                "Processing input image: original shape=%s, "
+                "after grayscale conversion=%s",
+                image.shape,
+                gray.shape,
+            )
+        except ValueError as e:
+            self.logger.error("Image conversion failed: %s", str(e))
+            raise ProcessorRuntimeError(f"Image conversion failed: {e}")
+
+        # 大津の2値化を適用
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        self.logger.info("Applied Otsu's binarization")
         return binary
