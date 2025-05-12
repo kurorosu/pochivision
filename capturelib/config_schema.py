@@ -40,6 +40,26 @@ class StandardBinarizationParams(BaseModel):
     threshold: StrictInt
 
 
+class OtsuBinarizationParams(BaseModel):
+    """大津の2値化のパラメータスキーマ（パラメータなし）."""
+
+    pass  # パラメータなし
+
+
+class GaussianAdaptiveBinarizationParams(BaseModel):
+    """ガウシアン適応的2値化のパラメータスキーマ."""
+
+    block_size: StrictInt
+    c: StrictFloat
+
+
+class MeanAdaptiveBinarizationParams(BaseModel):
+    """平均適応的2値化のパラメータスキーマ."""
+
+    block_size: StrictInt
+    c: StrictFloat
+
+
 class BilateralFilterParams(BaseModel):
     """バイラテラルフィルタのパラメータスキーマ."""
 
@@ -69,7 +89,10 @@ class CameraProfile(BaseModel):
     average_blur: Optional[AverageBlurParams] = None
     median_blur: Optional[MedianBlurParams] = None
     grayscale: Optional[GrayscaleParams] = None
-    standard_binarization: Optional[StandardBinarizationParams] = None
+    std_bin: Optional[StandardBinarizationParams] = None
+    otsu_bin: Optional[OtsuBinarizationParams] = None
+    gauss_adapt_bin: Optional[GaussianAdaptiveBinarizationParams] = None
+    mean_adapt_bin: Optional[MeanAdaptiveBinarizationParams] = None
     bilateral_filter: Optional[BilateralFilterParams] = None
     motion_blur: Optional[MotionBlurParams] = None
 
