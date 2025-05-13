@@ -16,3 +16,4 @@ from .blur import (
     MotionBlurProcessor,
 )
 from .grayscale import GrayscaleProcessor
+from .resize import ResizeProcessor
