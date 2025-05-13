@@ -6,7 +6,7 @@
       "fps": 30,
       "backend": "DSHOW",
       "label": "Tokyo_Lab",
-      "processors": ["motion_blur","gaussian_blur","grayscale", "gauss_adapt_bin", "resize"],
+      "processors": ["resize", "clahe"],
       "mode": "pipeline",
       "id_interval": 4,
       "gaussian_blur": {
@@ -46,6 +46,14 @@
         "height": 1200,
         "preserve_aspect_ratio": true,
         "aspect_ratio_mode": "width"
+      },
+      "equalize": {
+        "color_mode": "lab"
+      },
+      "clahe": {
+        "color_mode": "lab",
+        "clip_limit": 2.0,
+        "tile_grid_size": [8, 8]
       }
     },
     "all_para": {
@@ -65,7 +73,9 @@
         "otsu_bin",
         "gauss_adapt_bin",
         "mean_adapt_bin",
-        "resize"
+        "equalize",
+        "resize",
+        "clahe"
       ],
       "mode": "parallel",
       "id_interval": 10,
@@ -77,6 +87,14 @@
         "width": 800,
         "preserve_aspect_ratio": true,
         "aspect_ratio_mode": "width"
+      },
+      "equalize": {
+        "color_mode": "bgr"
+      },
+      "clahe": {
+        "color_mode": "lab",
+        "clip_limit": 2.0,
+        "tile_grid_size": [8, 8]
       }
     },
     "high_fps": {

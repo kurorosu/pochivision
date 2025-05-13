@@ -86,6 +86,22 @@ class ResizeParams(BaseModel):
     )
 
 
+class EqualizeParams(BaseModel):
+    """ヒストグラム平坦化のパラメータスキーマ."""
+
+    color_mode: Optional[StrictStr] = Field(default="gray", pattern="^(gray|lab|bgr)$")
+
+
+class CLAHEParams(BaseModel):
+    """CLAHE（適応的ヒストグラム平坦化）のパラメータスキーマ."""
+
+    color_mode: Optional[StrictStr] = Field(default="gray", pattern="^(gray|lab|bgr)$")
+    clip_limit: Optional[StrictFloat] = Field(default=2.0, gt=0)
+    tile_grid_size: Optional[List[StrictInt]] = Field(
+        default=[8, 8], min_items=2, max_items=2, each_item_gt=0
+    )
+
+
 class CameraProfile(BaseModel):
     """カメラプロファイルのスキーマ."""
 
@@ -107,6 +123,8 @@ class CameraProfile(BaseModel):
     bilateral_filter: Optional[BilateralFilterParams] = None
     motion_blur: Optional[MotionBlurParams] = None
     resize: Optional[ResizeParams] = None
+    equalize: Optional[EqualizeParams] = None
+    clahe: Optional[CLAHEParams] = None
 
 
 class ConfigModel(BaseModel):
