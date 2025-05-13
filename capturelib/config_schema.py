@@ -75,6 +75,17 @@ class MotionBlurParams(BaseModel):
     angle: StrictFloat
 
 
+class ResizeParams(BaseModel):
+    """リサイズプロセッサーのパラメータスキーマ."""
+
+    width: Optional[StrictInt] = None
+    height: Optional[StrictInt] = None
+    preserve_aspect_ratio: Optional[bool] = Field(default=False)
+    aspect_ratio_mode: Optional[StrictStr] = Field(
+        default="width", pattern="^(width|height)$"
+    )
+
+
 class CameraProfile(BaseModel):
     """カメラプロファイルのスキーマ."""
 
@@ -95,6 +106,7 @@ class CameraProfile(BaseModel):
     mean_adapt_bin: Optional[MeanAdaptiveBinarizationParams] = None
     bilateral_filter: Optional[BilateralFilterParams] = None
     motion_blur: Optional[MotionBlurParams] = None
+    resize: Optional[ResizeParams] = None
 
 
 class ConfigModel(BaseModel):
