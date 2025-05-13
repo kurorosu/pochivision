@@ -15,4 +15,7 @@ from .blur import (
     MedianBlurProcessor,
     MotionBlurProcessor,
 )
+from .clahe import CLAHEProcessor
+from .equalize import EqualizeProcessor
 from .grayscale import GrayscaleProcessor
+from .resize import ResizeProcessor
