@@ -10,9 +10,9 @@
         ...
 """
 
-from typing import Callable, Dict, Type
+from typing import Any, Callable, Dict, Type
 
-from processors import BaseProcessor
+from .base import BaseProcessor
 
 # 名前とクラスのマッピングを保持する辞書
 PROCESSOR_REGISTRY: Dict[str, Type[BaseProcessor]] = {}
@@ -36,3 +36,23 @@ def register_processor(
         return cls
 
     return decorator
+
+
+def get_processor(name: str, config: Dict[str, Any]) -> BaseProcessor:
+    """
+    指定された名前のプロセッサクラスを取得し、設定を使用してインスタンス化します.
+
+    Args:
+        name (str): 取得するプロセッサの名前.
+        config (Dict[str, Any]): プロセッサの初期化に使用する設定.
+
+    Returns:
+        BaseProcessor: 指定されたプロセッサのインスタンス.
+
+    Raises:
+        ValueError: 指定された名前のプロセッサが見つからない場合.
+    """
+    processor_class = PROCESSOR_REGISTRY.get(name)
+    if not processor_class:
+        raise ValueError(f"Processor not found: {name}")
+    return processor_class(name=name, config=config)

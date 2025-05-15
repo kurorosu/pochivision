@@ -102,6 +102,15 @@ class CLAHEParams(BaseModel):
     )
 
 
+class CannyEdgeParams(BaseModel):
+    """Cannyエッジ検出のパラメータスキーマ."""
+
+    threshold1: StrictFloat
+    threshold2: StrictFloat
+    aperture_size: Optional[StrictInt] = Field(default=3, ge=3, le=7)
+    l2_gradient: Optional[bool] = Field(default=False)
+
+
 class CameraProfile(BaseModel):
     """カメラプロファイルのスキーマ."""
 
@@ -125,6 +134,7 @@ class CameraProfile(BaseModel):
     resize: Optional[ResizeParams] = None
     equalize: Optional[EqualizeParams] = None
     clahe: Optional[CLAHEParams] = None
+    canny_edge: Optional[CannyEdgeParams] = None
 
 
 class ConfigModel(BaseModel):
