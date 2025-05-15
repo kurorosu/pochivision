@@ -6,7 +6,7 @@
       "fps": 30,
       "backend": "DSHOW",
       "label": "Tokyo_Lab",
-      "processors": ["resize", "clahe"],
+      "processors": ["resize", "clahe", "canny_edge"],
       "mode": "pipeline",
       "id_interval": 4,
       "gaussian_blur": {
@@ -54,6 +54,12 @@
         "color_mode": "lab",
         "clip_limit": 2.0,
         "tile_grid_size": [8, 8]
+      },
+      "canny_edge": {
+        "threshold1": 100.0,
+        "threshold2": 200.0,
+        "aperture_size": 3,
+        "l2_gradient": false
       }
     },
     "all_para": {
@@ -75,7 +81,8 @@
         "mean_adapt_bin",
         "equalize",
         "resize",
-        "clahe"
+        "clahe",
+        "canny_edge"
       ],
       "mode": "parallel",
       "id_interval": 10,
@@ -118,12 +125,16 @@
       "fps": 30,
       "backend": "DSHOW",
       "label": "Resize_Sample",
-      "processors": ["resize"],
+      "processors": ["resize", "canny_edge"],
       "mode": "pipeline",
       "resize": {
         "width": 640,
         "height": 480,
         "preserve_aspect_ratio": false
+      },
+      "canny_edge": {
+        "threshold1": 50.0,
+        "threshold2": 150.0
       }
     }
   },
