@@ -1,7 +1,7 @@
 """2値化処理プロセッサの実装を提供するモジュール."""
 
 import logging
-from typing import Dict
+from typing import Any, Dict
 
 import cv2
 import numpy as np
@@ -65,16 +65,9 @@ class StandardBinarizationProcessor(BaseProcessor):
 
         Raises:
             ProcessorRuntimeError: サポート外の画像形式の場合やバリデーション失敗時.
+            ProcessorValidationError: 入力画像が無効な場合 (バリデーションによる).
         """
-        if not isinstance(image, np.ndarray) or image.size == 0:
-            raise ProcessorRuntimeError(
-                "Input image must be a non-empty NumPy ndarray."
-            )
-        if not ((image.ndim == 2) or (image.ndim == 3 and image.shape[2] in (3, 4))):
-            raise ProcessorRuntimeError(
-                "Input image for StandardBinarization must be 2D grayscale or "
-                "3/4 channel color image (BGR/BGRA)."
-            )
+        self.validator.validate_image(image)
 
         try:
             gray = to_grayscale(image)
@@ -110,7 +103,7 @@ class OtsuBinarizationProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, int]) -> None:
+    def __init__(self, name: str, config: Dict[str, Any]) -> None:
         """
         OtsuBinarizationProcessorのコンストラクタ.
 
@@ -134,17 +127,10 @@ class OtsuBinarizationProcessor(BaseProcessor):
             np.ndarray: 2値化後の画像.
 
         Raises:
-            ProcessorRuntimeError: 入力画像の検証に失敗した場合.
+            ProcessorRuntimeError: 画像変換処理に失敗した場合.
+            ProcessorValidationError: 入力画像が無効な場合 (バリデーションによる).
         """
-        if not isinstance(image, np.ndarray) or image.size == 0:
-            raise ProcessorRuntimeError(
-                "Input image must be a non-empty NumPy ndarray."
-            )
-        if not ((image.ndim == 2) or (image.ndim == 3 and image.shape[2] in (3, 4))):
-            raise ProcessorRuntimeError(
-                "Input image for OtsuBinarization must be 2D grayscale or "
-                "3/4 channel color image (BGR/BGRA)."
-            )
+        self.validator.validate_image(image)
 
         try:
             gray = to_grayscale(image)
@@ -181,7 +167,7 @@ class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, int]) -> None:
+    def __init__(self, name: str, config: Dict[str, Any]) -> None:
         """
         GaussianAdaptiveBinarizationProcessorのコンストラクタ.
 
@@ -210,17 +196,10 @@ class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
             np.ndarray: 2値化後の画像.
 
         Raises:
-            ProcessorRuntimeError: 入力画像の検証に失敗した場合.
+            ProcessorRuntimeError: 画像変換処理に失敗した場合.
+            ProcessorValidationError: 入力画像が無効な場合 (バリデーションによる).
         """
-        if not isinstance(image, np.ndarray) or image.size == 0:
-            raise ProcessorRuntimeError(
-                "Input image must be a non-empty NumPy ndarray."
-            )
-        if not ((image.ndim == 2) or (image.ndim == 3 and image.shape[2] in (3, 4))):
-            raise ProcessorRuntimeError(
-                "Input image for GaussianAdaptiveBinarization must be 2D grayscale or "
-                "3/4 channel color image (BGR/BGRA)."
-            )
+        self.validator.validate_image(image)
 
         try:
             gray = to_grayscale(image)
@@ -267,7 +246,7 @@ class MeanAdaptiveBinarizationProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, int]) -> None:
+    def __init__(self, name: str, config: Dict[str, Any]) -> None:
         """
         MeanAdaptiveBinarizationProcessorのコンストラクタ.
 
@@ -296,17 +275,10 @@ class MeanAdaptiveBinarizationProcessor(BaseProcessor):
             np.ndarray: 2値化後の画像.
 
         Raises:
-            ProcessorRuntimeError: 入力画像の検証に失敗した場合.
+            ProcessorRuntimeError: 画像変換処理に失敗した場合.
+            ProcessorValidationError: 入力画像が無効な場合 (バリデーションによる).
         """
-        if not isinstance(image, np.ndarray) or image.size == 0:
-            raise ProcessorRuntimeError(
-                "Input image must be a non-empty NumPy ndarray."
-            )
-        if not ((image.ndim == 2) or (image.ndim == 3 and image.shape[2] in (3, 4))):
-            raise ProcessorRuntimeError(
-                "Input image for MeanAdaptiveBinarization must be 2D grayscale or "
-                "3/4 channel color image (BGR/BGRA)."
-            )
+        self.validator.validate_image(image)
 
         try:
             gray = to_grayscale(image)

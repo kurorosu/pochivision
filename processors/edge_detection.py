@@ -10,7 +10,7 @@ from utils.image import to_grayscale
 
 from .base import BaseProcessor
 from .registry import register_processor
-from .validators.edge_detection.canny import CannyConfigValidator
+from .validators.edge_detection.canny import CannyEdgeValidator
 
 
 @register_processor("canny_edge")
@@ -24,19 +24,12 @@ class CannyEdgeProcessor(BaseProcessor):
         Args:
             name (str): プロセッサの名前.
             config (Dict[str, Any]): Cannyエッジ検出の設定辞書.
-                configにキーが存在しない場合はデフォルト値が使用されます。
-                期待されるキー:
-                - threshold1 (float): ヒステリシス手順の最初のしきい値.
-                - threshold2 (float): ヒステリシス手順の2番目のしきい値.
-                - aperture_size (int, optional): Sobelオペレータのアパーチャサイズ.
-                  デフォルトは3. 3から7の奇数である必要があります.
-                - l2_gradient (bool, optional): グラデーションの大きさをより正確に計算するために
-                  L2ノルムを使用するかどうかを示すフラグ. デフォルトはFalse.
         """
         super().__init__(name, config)
-        # バリデーターはconfigに存在するキーの値の妥当性のみをチェックする
-        self.validator = CannyConfigValidator(self.config)  # self.config を渡す
-        self.validator.validate()
+        self.validator = CannyEdgeValidator(
+            self.config
+        )  # バリデータのインスタンス化とconfigの引き渡し
+        self.validator.validate()  # 設定のバリデーションを実行
 
         default_vals = self.get_default_config()
         self._threshold1 = self.config.get("threshold1", default_vals["threshold1"])
@@ -50,8 +43,6 @@ class CannyEdgeProcessor(BaseProcessor):
         """
         入力画像にCannyエッジ検出を適用します.
 
-        入力画像がカラーの場合、最初にグレースケールに変換されます.
-
         Args:
             image (np.ndarray): 入力画像 (BGRまたはグレースケール).
 
@@ -59,43 +50,40 @@ class CannyEdgeProcessor(BaseProcessor):
             np.ndarray: 結果のエッジ検出画像 (グレースケール).
 
         Raises:
-            ProcessorRuntimeError: 入力画像が処理不可能な形式の場合.
+            ProcessorValidationError: 入力画像が無効な場合.
+            ProcessorRuntimeError: 画像処理中にエラーが発生した場合.
         """
-        if not isinstance(image, np.ndarray) or image.size == 0:
-            raise ProcessorRuntimeError(
-                "Input image must be a non-empty NumPy ndarray."
-            )
-        if not (image.ndim == 2 or (image.ndim == 3 and image.shape[2] == 3)):
-            # Cannyはグレースケール画像を期待するが、入力として一般的なカラー(3ch)も許容する
-            # to_grayscale で処理できない、または意図しない形式の場合はここでエラー
-            raise ProcessorRuntimeError(
-                "Input image for CannyEdgeProcessor must be 2D grayscale "
-                "or 3-channel color image."
-            )
+        self.validator.validate_image(image)  # 入力画像のバリデーションを実行
 
         gray_image = to_grayscale(image)
 
-        # Ensure the image is 8-bit, as Canny requires it.
         if gray_image.dtype != np.uint8:
-            if (
-                np.max(gray_image) <= 1.0 and gray_image.dtype == np.float32
-            ):  # Assuming 0-1 float
+            if np.max(gray_image) <= 1.0 and gray_image.dtype == np.float32:
                 gray_image = (gray_image * 255).astype(np.uint8)
-            elif np.max(gray_image) <= 255:  # Assuming 0-255 but not uint8
+            elif np.max(gray_image) <= 255:
                 gray_image = gray_image.astype(np.uint8)
             else:
-                # Attempt to normalize if it's a larger dtype like uint16 or int32
-                gray_image = cv2.normalize(
-                    gray_image, None, 0, 255, cv2.NORM_MINMAX
-                ).astype(np.uint8)
+                try:
+                    gray_image = cv2.normalize(
+                        gray_image, None, 0, 255, cv2.NORM_MINMAX
+                    ).astype(np.uint8)
+                except cv2.error as e:
+                    raise ProcessorRuntimeError(
+                        f"Failed to convert image to uint8 for Canny: {e}"
+                    )
 
-        edges = cv2.Canny(
-            gray_image,
-            int(self._threshold1),  # cv2.Canny expects int
-            int(self._threshold2),  # cv2.Canny expects int
-            apertureSize=self._aperture_size,
-            L2gradient=self._l2_gradient,
-        )
+        try:
+            edges = cv2.Canny(
+                gray_image,
+                int(self._threshold1),
+                int(self._threshold2),
+                apertureSize=self._aperture_size,
+                L2gradient=self._l2_gradient,
+            )
+        except cv2.error as e:
+            # cv2.Canny で予期せぬエラーが発生した場合のフォールバック
+            raise ProcessorRuntimeError(f"Error during Canny edge detection: {e}")
+
         return edges
 
     @staticmethod
