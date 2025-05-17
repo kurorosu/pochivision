@@ -1,5 +1,7 @@
 """各種ブラー（ぼかし）処理プロセッサの実装を提供するモジュール."""
 
+from typing import Any, Dict
+
 import cv2
 import numpy as np
 
@@ -32,6 +34,20 @@ class GaussianBlurProcessor(BaseProcessor):
         }
     """
 
+    def __init__(self, name: str, config: Dict[str, Any]):
+        """
+        GaussianBlurProcessorを初期化.
+
+        Args:
+            name (str): プロセッサ名.
+            config (Dict[str, Any]): 設定パラメータ.
+        """
+        super().__init__(name, config)
+        self.validator = GaussianBlurConfigValidator(self.config)
+        self.validator.validate()
+        self.kernel_size = tuple(self.config.get("kernel_size", [15, 15]))
+        self.sigma = self.config.get("sigma", 0)
+
     def process(self, image: np.ndarray) -> np.ndarray:
         """
         ガウシアンぼかし処理（Gaussian Blur）を実行します.
@@ -42,13 +58,16 @@ class GaussianBlurProcessor(BaseProcessor):
         Returns:
             np.ndarray: ガウシアンぼかしを適用した画像.
         """
-        try:
-            GaussianBlurConfigValidator(self.config, image).validate()
-        except Exception as e:
-            raise ProcessorRuntimeError(f"GaussianBlur validation failed: {e}")
-        kernel_size = tuple(self.config.get("kernel_size", [15, 15]))
-        sigma = self.config.get("sigma", 0)
-        return cv2.GaussianBlur(image, kernel_size, sigma)
+        # 画像自体のバリデーション（必要であれば）
+        # self.validator.validate_image_type_and_nonempty(
+        # image)
+        # BaseValidatorにメソッドがある場合
+        if not isinstance(image, np.ndarray) or image.size == 0:
+            raise ProcessorRuntimeError(
+                "Input image must be a non-empty NumPy ndarray."
+            )
+
+        return cv2.GaussianBlur(image, self.kernel_size, self.sigma)
 
 
 @register_processor("average_blur")
@@ -68,6 +87,18 @@ class AverageBlurProcessor(BaseProcessor):
         }
     """
 
+    def __init__(self, name: str, config: Dict[str, Any]):
+        """Averageblurprocessor を初期化します.
+
+        Args:
+            name (str): プロセッサ名.
+            config (Dict[str, Any]): 設定パラメータ.
+        """
+        super().__init__(name, config)
+        self.validator = AverageBlurValidator(self.config)
+        self.validator.validate()
+        self.kernel_size = tuple(self.config.get("kernel_size", [5, 5]))
+
     def process(self, image: np.ndarray) -> np.ndarray:
         """
         平均値ブラー処理（cv2.blur）を実行します.
@@ -78,12 +109,12 @@ class AverageBlurProcessor(BaseProcessor):
         Returns:
             np.ndarray: 平均値ブラーを適用した画像.
         """
-        try:
-            AverageBlurValidator(self.config, image).validate()
-        except Exception as e:
-            raise ProcessorRuntimeError(f"AverageBlur validation failed: {e}")
-        kernel_size = tuple(self.config.get("kernel_size", [5, 5]))
-        return cv2.blur(image, kernel_size)
+        # 画像自体のバリデーション（必要であれば）
+        if not isinstance(image, np.ndarray) or image.size == 0:
+            raise ProcessorRuntimeError(
+                "Input image must be a non-empty NumPy ndarray."
+            )
+        return cv2.blur(image, self.kernel_size)
 
 
 @register_processor("median_blur")
@@ -104,6 +135,18 @@ class MedianBlurProcessor(BaseProcessor):
         }
     """
 
+    def __init__(self, name: str, config: Dict[str, Any]):
+        """Medianblurprocessor を初期化します.
+
+        Args:
+            name (str): プロセッサ名.
+            config (Dict[str, Any]): 設定パラメータ.
+        """
+        super().__init__(name, config)
+        self.validator = MedianBlurValidator(self.config)
+        self.validator.validate()
+        self.kernel_size = self.config.get("kernel_size", 5)
+
     def process(self, image: np.ndarray) -> np.ndarray:
         """
         メディアンブラー処理（cv2.medianBlur）を実行します.
@@ -114,12 +157,12 @@ class MedianBlurProcessor(BaseProcessor):
         Returns:
             np.ndarray: メディアンブラーを適用した画像.
         """
-        try:
-            MedianBlurValidator(self.config, image).validate()
-        except Exception as e:
-            raise ProcessorRuntimeError(f"MedianBlur validation failed: {e}")
-        kernel_size = self.config.get("kernel_size", 5)
-        return cv2.medianBlur(image, kernel_size)
+        # 画像自体のバリデーション（必要であれば）
+        if not isinstance(image, np.ndarray) or image.size == 0:
+            raise ProcessorRuntimeError(
+                "Input image must be a non-empty NumPy ndarray."
+            )
+        return cv2.medianBlur(image, self.kernel_size)
 
 
 @register_processor("bilateral_filter")
@@ -141,6 +184,20 @@ class BilateralFilterProcessor(BaseProcessor):
         }
     """
 
+    def __init__(self, name: str, config: Dict[str, Any]):
+        """Bilateralfilterprocessor を初期化します.
+
+        Args:
+            name (str): プロセッサ名.
+            config (Dict[str, Any]): 設定パラメータ.
+        """
+        super().__init__(name, config)
+        self.validator = BilateralFilterValidator(self.config)
+        self.validator.validate()
+        self.d = self.config.get("d", 9)
+        self.sigmaColor = self.config.get("sigmaColor", 75)
+        self.sigmaSpace = self.config.get("sigmaSpace", 75)
+
     def process(self, image: np.ndarray) -> np.ndarray:
         """
         バイラテラルフィルタ処理（cv2.bilateralFilter）を実行します.
@@ -151,14 +208,12 @@ class BilateralFilterProcessor(BaseProcessor):
         Returns:
             np.ndarray: バイラテラルフィルタを適用した画像.
         """
-        try:
-            BilateralFilterValidator(self.config, image).validate()
-        except Exception as e:
-            raise ProcessorRuntimeError(f"BilateralFilter validation failed: {e}")
-        d = self.config.get("d", 9)
-        sigmaColor = self.config.get("sigmaColor", 75)
-        sigmaSpace = self.config.get("sigmaSpace", 75)
-        return cv2.bilateralFilter(image, d, sigmaColor, sigmaSpace)
+        # 画像自体のバリデーション（必要であれば）
+        if not isinstance(image, np.ndarray) or image.size == 0:
+            raise ProcessorRuntimeError(
+                "Input image must be a non-empty NumPy ndarray."
+            )
+        return cv2.bilateralFilter(image, self.d, self.sigmaColor, self.sigmaSpace)
 
 
 @register_processor("motion_blur")
@@ -178,6 +233,20 @@ class MotionBlurProcessor(BaseProcessor):
         }
     """
 
+    def __init__(self, name: str, config: Dict[str, Any]):
+        """
+        Motionblurprocessor を初期化します.
+
+        Args:
+            name (str): プロセッサ名.
+            config (Dict[str, Any]): 設定パラメータ.
+        """
+        super().__init__(name, config)
+        self.validator = MotionBlurValidator(self.config)
+        self.validator.validate()
+        self.kernel_size = self.config.get("kernel_size", 15)
+        self.angle = self.config.get("angle", 0)
+
     def process(self, image: np.ndarray) -> np.ndarray:
         """
         モーションブラー処理（cv2.filter2D）を実行します.
@@ -188,23 +257,27 @@ class MotionBlurProcessor(BaseProcessor):
         Returns:
             np.ndarray: モーションブラーを適用した画像.
         """
-        try:
-            MotionBlurValidator(self.config, image).validate()
-        except Exception as e:
-            # バリデータ例外をProcessorRuntimeErrorにラップ
-            raise ProcessorRuntimeError(f"MotionBlur validation failed: {e}")
-        kernel_size = self.config.get("kernel_size", 15)
-        angle = self.config.get("angle", 0)
+        # 画像自体のバリデーション（必要であれば）
+        if not isinstance(image, np.ndarray) or image.size == 0:
+            raise ProcessorRuntimeError(
+                "Input image must be a non-empty NumPy ndarray."
+            )
+
         # カーネル生成
-        kernel = np.zeros((kernel_size, kernel_size), dtype=np.float32)
-        center = kernel_size // 2
-        rad = np.deg2rad(angle)
+        kernel = np.zeros((self.kernel_size, self.kernel_size), dtype=np.float32)
+        center = self.kernel_size // 2
+        rad = np.deg2rad(self.angle)
         cos_a = np.cos(rad)
         sin_a = np.sin(rad)
-        for i in range(kernel_size):
+        for i in range(self.kernel_size):
             x = int(center + (i - center) * cos_a)
             y = int(center + (i - center) * sin_a)
-            if 0 <= x < kernel_size and 0 <= y < kernel_size:
+            if 0 <= x < self.kernel_size and 0 <= y < self.kernel_size:
                 kernel[y, x] = 1
+        if np.sum(kernel) == 0:  # 全要素が0の場合、ゼロ除算を避ける
+            # 例えば、kernel_sizeが非常に小さい場合や特定の角度で発生しうる
+            # この場合、元画像をそのまま返すか、エラーとするか、あるいは小さな単位行列カーネルを適用するか
+            # ここでは元画像を返すことにする
+            return image
         kernel /= np.sum(kernel)
         return cv2.filter2D(image, -1, kernel)

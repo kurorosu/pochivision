@@ -20,7 +20,7 @@ class ResizeProcessor(BaseProcessor):
 
     def __init__(self, name: str, config: Dict[str, Any]) -> None:
         """
-        リサイズプロセッサーを初期化します.
+        ResizeProcessorを初期化.
 
         Args:
             name (str): プロセッサー名
@@ -31,14 +31,14 @@ class ResizeProcessor(BaseProcessor):
                 - aspect_ratio_mode (str, optional): アスペクト比保持モード ('width' or 'height')
         """
         super().__init__(name, config)
+        # パラメータのバリデーション
+        self.validator = ResizeConfigValidator(config)
+        self.validator.validate_config()
+
         self.width = config.get("width", None)
         self.height = config.get("height", None)
         self.preserve_aspect_ratio = config.get("preserve_aspect_ratio", False)
         self.aspect_ratio_mode = config.get("aspect_ratio_mode", "width")
-
-        # パラメータのバリデーション
-        validator = ResizeConfigValidator(config)
-        validator.validate()
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -51,16 +51,7 @@ class ResizeProcessor(BaseProcessor):
             np.ndarray: リサイズされた画像
         """
         # 入力画像のバリデーション
-        validator = ResizeConfigValidator(
-            {
-                "width": self.width,
-                "height": self.height,
-                "preserve_aspect_ratio": self.preserve_aspect_ratio,
-                "aspect_ratio_mode": self.aspect_ratio_mode,
-            },
-            image,
-        )
-        validator.validate()
+        self.validator.validate_image(image)
 
         # アスペクト比を保持しない場合は単純にリサイズ
         if not self.preserve_aspect_ratio:

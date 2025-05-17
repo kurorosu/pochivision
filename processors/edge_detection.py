@@ -5,6 +5,9 @@ from typing import Any, Dict
 import cv2
 import numpy as np
 
+from exceptions import ProcessorRuntimeError
+from utils.image import to_grayscale
+
 from .base import BaseProcessor
 from .registry import register_processor
 from .validators.edge_detection.canny import CannyConfigValidator
@@ -16,7 +19,7 @@ class CannyEdgeProcessor(BaseProcessor):
 
     def __init__(self, name: str, config: Dict[str, Any]):
         """
-        CannyEdgeProcessorを初期化します.
+        CannyEdgeProcessorを初期化.
 
         Args:
             name (str): プロセッサの名前.
@@ -54,15 +57,23 @@ class CannyEdgeProcessor(BaseProcessor):
 
         Returns:
             np.ndarray: 結果のエッジ検出画像 (グレースケール).
+
+        Raises:
+            ProcessorRuntimeError: 入力画像が処理不可能な形式の場合.
         """
-        if len(image.shape) == 3 and image.shape[2] == 3:
-            gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        elif len(image.shape) == 2 or (len(image.shape) == 3 and image.shape[2] == 1):
-            gray_image = image
-        else:
-            raise ValueError(
-                "Input image must be a 2D grayscale image or a 3D BGR image."
+        if not isinstance(image, np.ndarray) or image.size == 0:
+            raise ProcessorRuntimeError(
+                "Input image must be a non-empty NumPy ndarray."
             )
+        if not (image.ndim == 2 or (image.ndim == 3 and image.shape[2] == 3)):
+            # Cannyはグレースケール画像を期待するが、入力として一般的なカラー(3ch)も許容する
+            # to_grayscale で処理できない、または意図しない形式の場合はここでエラー
+            raise ProcessorRuntimeError(
+                "Input image for CannyEdgeProcessor must be 2D grayscale "
+                "or 3-channel color image."
+            )
+
+        gray_image = to_grayscale(image)
 
         # Ensure the image is 8-bit, as Canny requires it.
         if gray_image.dtype != np.uint8:

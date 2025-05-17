@@ -1,7 +1,7 @@
 import numpy as np
 import pytest  # noqa: F401
 
-from exceptions import ProcessorRuntimeError
+from exceptions import ProcessorValidationError
 from processors.binarization import (
     GaussianAdaptiveBinarizationProcessor,
     MeanAdaptiveBinarizationProcessor,
@@ -184,13 +184,20 @@ def test_adaptive_binarization_invalid_input():
 def test_adaptive_binarization_invalid_config():
     """不正な設定に対するテスト"""
     # ガウシアン適応的2値化
-    with pytest.raises(ProcessorRuntimeError):
+    with pytest.raises(ProcessorValidationError):
         GaussianAdaptiveBinarizationProcessor(
             name="gauss_adapt_bin", config={"block_size": 4}  # 偶数は不正
         )
-
+    with pytest.raises(ProcessorValidationError):
+        GaussianAdaptiveBinarizationProcessor(
+            name="gauss_adapt_bin", config={"block_size": -1}  # 負数は不正
+        )
     # 平均適応的2値化
-    with pytest.raises(ProcessorRuntimeError):
+    with pytest.raises(ProcessorValidationError):
         MeanAdaptiveBinarizationProcessor(
-            name="mean_adapt_bin", config={"block_size": 4}  # 偶数は不正
+            name="mean_adapt_bin", config={"block_size": 2}  # 偶数は不正
+        )
+    with pytest.raises(ProcessorValidationError):
+        MeanAdaptiveBinarizationProcessor(
+            name="mean_adapt_bin", config={"block_size": 0}  # 0は不正
         )

@@ -5,7 +5,6 @@ import numpy as np
 from exceptions import ProcessorRuntimeError
 from processors import BaseProcessor
 from processors.registry import register_processor
-from processors.validators.grayscale.grayscale import GrayscaleInputValidator
 from utils.image import to_grayscale
 
 
@@ -31,21 +30,19 @@ class GrayscaleProcessor(BaseProcessor):
         グレースケール変換を実行します.
 
         Args:
-            image (np.ndarray): 入力画像(BGR形式).
+            image (np.ndarray): 入力画像(BGRまたはグレースケール).
 
         Returns:
             np.ndarray: グレースケールに変換された画像.
 
         Raises:
-            ProcessorRuntimeError: 入力画像の検証に失敗した場合.
+            ProcessorRuntimeError: 画像変換に失敗した場合.
         """
+        if not isinstance(image, np.ndarray) or image.size == 0:
+            raise ProcessorRuntimeError(
+                "Input image must be a non-empty NumPy ndarray."
+            )
         try:
-            GrayscaleInputValidator(image).validate()
-        except Exception as e:
-            raise ProcessorRuntimeError(f"Grayscale validation failed: {e}")
-
-        try:
-            # utils.imageの共通関数を使用してグレースケール変換
             return to_grayscale(image)
         except ValueError as e:
             raise ProcessorRuntimeError(f"Grayscale conversion failed: {e}")
