@@ -1,4 +1,4 @@
-"""大津の2値化バリデータの実装モジュール."""
+"""グレースケール変換バリデータの実装モジュール."""
 
 from typing import Any, Dict
 
@@ -8,20 +8,12 @@ from exceptions import ProcessorValidationError
 from processors.validators.base import BaseValidator
 
 
-class OtsuBinarizationValidator(BaseValidator):
-    """
-    大津の2値化用のバリデータ.
-
-    Args:
-        config (Dict[str, Any]): バリデーション対象の設定辞書.
-
-    Raises:
-        ProcessorValidationError: 不正なパラメータが検出された場合.
-    """
+class GrayscaleValidator(BaseValidator):
+    """グレースケール変換用のバリデータ."""
 
     def __init__(self, config: Dict[str, Any]) -> None:
         """
-        OtsuBinarizationValidatorのコンストラクタ.
+        GrayscaleValidatorのコンストラクタ.
 
         Args:
             config (Dict[str, Any]): バリデーション対象の設定辞書.
@@ -40,24 +32,30 @@ class OtsuBinarizationValidator(BaseValidator):
         """
         設定値のバリデーションを実行する.
 
-        大津の2値化は設定パラメータを持たないため、このメソッドは何も行いません.
+        グレースケール変換は設定パラメータを持たないため、このメソッドは何も行いません.
         """
         pass  # 設定パラメータに関するバリデーションは無い
 
     def validate_image(self, image: np.ndarray) -> None:
         """
-        入力画像を検証します.
+        入力画像のバリデーションを実行する.
 
         Args:
             image (np.ndarray): 入力画像.
 
         Raises:
-            ProcessorValidationError: 入力画像が無効な場合.
+            ProcessorValidationError: 不正な画像が渡された場合.
         """
+        # 基本的な画像バリデーション
         self.validate_image_type_and_nonempty(image)
 
-        if not ((image.ndim == 2) or (image.ndim == 3 and image.shape[2] in (3, 4))):
+        # dtype チェック
+        if image.dtype != np.uint8:
+            raise ProcessorValidationError("Input image must be of type np.uint8")
+
+        # 1チャンネル(グレースケール)または3チャンネル(BGRカラー)の画像であることを確認
+        if not ((image.ndim == 2) or (image.ndim == 3 and image.shape[2] in (1, 3, 4))):
             raise ProcessorValidationError(
-                "Input image for OtsuBinarization must be 2D grayscale or "
-                "3/4 channel color image (BGR/BGRA)."
+                "Input image must be 2D grayscale or 3/4 channel color "
+                "image (BGR/BGRA)."
             )

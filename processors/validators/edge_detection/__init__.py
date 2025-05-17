@@ -1,5 +1,5 @@
 """エッジ検出プロセッサーのバリデーターパッケージ."""
 
-from .canny import CannyConfigValidator
+from .canny import CannyEdgeValidator
 
-__all__ = ["CannyConfigValidator"]
+__all__ = ["CannyEdgeValidator"]

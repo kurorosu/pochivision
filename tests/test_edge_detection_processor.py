@@ -1,9 +1,8 @@
 import numpy as np
 import pytest
 
-from exceptions import ProcessorRuntimeError
+from exceptions import ProcessorValidationError
 from processors.edge_detection import CannyEdgeProcessor
-from processors.validators.base import ProcessorValidationError
 
 
 # Helper function to create a simple image
@@ -155,16 +154,17 @@ class TestCannyEdgeProcessor:
         """不正な設定（aperture_sizeの値誤り）のテスト."""
         with pytest.raises(ProcessorValidationError) as excinfo:
             CannyEdgeProcessor(
-                name="canny_invalid",
-                config={"threshold1": 100, "threshold2": 200, "aperture_size": 4},
-            )
-        assert "'aperture_size' must be 3, 5, or 7" in str(excinfo.value)
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            CannyEdgeProcessor(
-                name="canny_invalid",
+                name="canny_invalid_ap_val_1",
                 config={"threshold1": 100, "threshold2": 200, "aperture_size": 1},
             )
-        assert "'aperture_size' must be 3, 5, or 7" in str(excinfo.value)
+        assert "Canny 'aperture_size' must be 3, 5, or 7" in str(excinfo.value)
+
+        with pytest.raises(ProcessorValidationError) as excinfo:
+            CannyEdgeProcessor(
+                name="canny_invalid_ap_val_even",
+                config={"threshold1": 100, "threshold2": 200, "aperture_size": 4},
+            )
+        assert "Canny 'aperture_size' must be 3, 5, or 7. Got 4." in str(excinfo.value)
 
     def test_invalid_config_l2_gradient_type(self):
         """不正な設定（l2_gradientの型誤り）のテスト."""
@@ -179,13 +179,43 @@ class TestCannyEdgeProcessor:
             )
         assert "'l2_gradient' must be a boolean" in str(excinfo.value)
 
+    def test_invalid_input_image_type(self):
+        """不正な型の画像を与えたテスト（例: list）。"""
+        image = [[1, 2, 3], [4, 5, 6]]
+        config = CannyEdgeProcessor.get_default_config()
+        processor = CannyEdgeProcessor(name="canny_invalid_type", config=config)
+        with pytest.raises(ProcessorValidationError) as excinfo:
+            processor.process(image)
+        assert "image must be of type numpy.ndarray" in str(excinfo.value)
+
+    def test_invalid_input_empty_image(self):
+        """空の画像を与えたテスト。"""
+        image = np.array([])
+        config = CannyEdgeProcessor.get_default_config()
+        processor = CannyEdgeProcessor(name="canny_empty_image", config=config)
+        with pytest.raises(ProcessorValidationError) as excinfo:
+            processor.process(image)
+        assert "input image is empty" in str(excinfo.value)
+
     def test_invalid_input_image_shape(self):
         """不正な形状の画像を与えたテスト（例: 4チャンネル）。"""
         image = np.random.randint(0, 256, (100, 100, 4), dtype=np.uint8)  # 4 channels
         config = CannyEdgeProcessor.get_default_config()
         processor = CannyEdgeProcessor(name="canny_invalid_shape", config=config)
-        with pytest.raises(ProcessorRuntimeError) as excinfo:
+        with pytest.raises(ProcessorValidationError) as excinfo:
             processor.process(image)
+        assert (
+            "Input image for CannyEdgeProcessor must be 2D grayscale or "
+            "3-channel color image." in str(excinfo.value)
+        )
+
+    def test_process_image_normalize_fail(self):
+        """cv2.normalize でエラーが発生するケースのテスト (例: 0次元配列)."""
+        image_problematic = np.array(0, dtype=np.int32)
+        config = CannyEdgeProcessor.get_default_config()
+        processor = CannyEdgeProcessor(name="canny_norm_fail", config=config)
+        with pytest.raises(ProcessorValidationError) as excinfo:
+            processor.process(image_problematic)
         assert (
             "Input image for CannyEdgeProcessor must be 2D grayscale or "
             "3-channel color image." in str(excinfo.value)
