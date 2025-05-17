@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from exceptions import ProcessorRuntimeError, ProcessorValidationError
+from exceptions import ProcessorValidationError
 from processors.clahe import CLAHEProcessor
 
 # テスト用の画像データ
@@ -153,13 +153,13 @@ def test_clahe_invalid_input():
     processor = CLAHEProcessor(name="clahe", config={})
 
     # None入力
-    with pytest.raises(ProcessorRuntimeError):
+    with pytest.raises(ProcessorValidationError):
         processor.process(None)
 
     # 空の画像
-    with pytest.raises(ProcessorRuntimeError):
+    with pytest.raises(ProcessorValidationError):
         processor.process(np.array([]))
 
     # 無効なデータ型
-    with pytest.raises(ProcessorRuntimeError):
+    with pytest.raises(ProcessorValidationError):
         processor.process(np.ones((10, 10), dtype=np.float32))
