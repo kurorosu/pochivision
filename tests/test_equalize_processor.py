@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from exceptions import ProcessorRuntimeError
+from exceptions import ProcessorRuntimeError, ProcessorValidationError
 from processors.equalize import EqualizeProcessor
 
 # テスト用の画像データ
@@ -116,7 +116,7 @@ def test_equalize_color_bgr_mode():
 def test_equalize_invalid_color_mode():
     """無効なcolor_modeテスト."""
     # バリデーションエラーになるはず
-    with pytest.raises(ProcessorRuntimeError):
+    with pytest.raises(ProcessorValidationError):
         processor = EqualizeProcessor(name="equalize", config={"color_mode": "invalid"})
         # テスト用カラー画像の作成
         image = np.copy(DUMMY_COLOR_IMAGE)

@@ -2,8 +2,6 @@
 
 from typing import Dict
 
-import numpy as np
-
 from exceptions import ProcessorValidationError
 from processors.validators.base import BaseValidator
 
@@ -11,27 +9,25 @@ from processors.validators.base import BaseValidator
 class GaussianBlurConfigValidator(BaseValidator):
     """ガウシアンブラー用のバリデータ."""
 
-    def __init__(self, config: Dict[str, int], image: np.ndarray) -> None:
+    def __init__(self, config: Dict[str, int]) -> None:
         """
         GaussianBlurConfigValidatorのコンストラクタ.
 
         Args:
             config (dict): バリデーション対象の設定辞書.
-            image (np.ndarray): 入力画像.
         """
         self.config = config
-        self.image = image
 
     def validate(self) -> None:
         """
-        設定値と画像のバリデーションを実行する.
+        設定値のバリデーションを実行する.
 
         Raises:
-            ProcessorValidationError: 不正なパラメータや画像が検出された場合.
+            ProcessorValidationError: 不正なパラメータが検出された場合.
         """
         # 画像バリデーション（imageが指定されている場合のみ）
-        if self.image is not None:
-            self.validate_image_type_and_nonempty(self.image)
+        # if self.image is not None:
+        #     self.validate_image_type_and_nonempty(self.image)
         kernel_size = self.config.get("kernel_size", [15, 15])
         sigma = self.config.get("sigma", 0)
 
