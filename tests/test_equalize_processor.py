@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from exceptions import ProcessorRuntimeError, ProcessorValidationError
+from exceptions import ProcessorValidationError
 from processors.equalize import EqualizeProcessor
 
 # テスト用の画像データ
@@ -128,13 +128,13 @@ def test_equalize_invalid_input():
     processor = EqualizeProcessor(name="equalize", config={})
 
     # None入力
-    with pytest.raises(ProcessorRuntimeError):
+    with pytest.raises(ProcessorValidationError):
         processor.process(None)
 
     # 空の画像
-    with pytest.raises(ProcessorRuntimeError):
+    with pytest.raises(ProcessorValidationError):
         processor.process(np.array([]))
 
     # 無効なデータ型
-    with pytest.raises(ProcessorRuntimeError):
+    with pytest.raises(ProcessorValidationError):
         processor.process(np.ones((10, 10), dtype=np.float32))

@@ -61,12 +61,11 @@ class EqualizeProcessor(BaseProcessor):
             np.ndarray: ヒストグラム平坦化後の画像.
 
         Raises:
-            ProcessorRuntimeError: 入力画像の検証に失敗した場合.
+            ProcessorValidationError: 入力画像が不正な場合.
+            ProcessorRuntimeError: 処理中にエラーが発生した場合.
         """
-        try:
-            self.validator.validate_image(image)
-        except Exception as e:
-            raise ProcessorRuntimeError(f"Equalize image validation failed: {e}")
+        # 入力画像のバリデーション
+        self.validator.validate_image(image)
 
         try:
             # 画像がカラーかグレースケールかを判定
@@ -118,6 +117,11 @@ class EqualizeProcessor(BaseProcessor):
                 self.logger.info("Applied histogram equalization to grayscale image")
 
             return result
+        except cv2.error as e:
+            error_msg = f"Error during histogram equalization: {e}"
+            self.logger.error(error_msg)
+            raise ProcessorRuntimeError(error_msg)
         except Exception as e:
-            self.logger.error("Histogram equalization failed: %s", str(e))
-            raise ProcessorRuntimeError(f"Histogram equalization failed: {e}")
+            error_msg = f"Unexpected error in {self.name}: {e}"
+            self.logger.error(error_msg)
+            raise ProcessorRuntimeError(error_msg)

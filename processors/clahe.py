@@ -74,12 +74,11 @@ class CLAHEProcessor(BaseProcessor):
             np.ndarray: CLAHE適用後の画像.
 
         Raises:
-            ProcessorRuntimeError: 入力画像の検証に失敗した場合.
+            ProcessorValidationError: 入力画像が不正な場合.
+            ProcessorRuntimeError: 処理中にエラーが発生した場合.
         """
-        try:
-            self.validator.validate_image(image)
-        except Exception as e:
-            raise ProcessorRuntimeError(f"CLAHE image validation failed: {e}")
+        # 入力画像のバリデーション
+        self.validator.validate_image(image)
 
         try:
             # 画像がカラーかグレースケールかを判定
@@ -128,6 +127,11 @@ class CLAHEProcessor(BaseProcessor):
                 self.logger.info("Applied CLAHE to grayscale image")
 
             return result
+        except cv2.error as e:
+            error_msg = f"Error during CLAHE processing: {e}"
+            self.logger.error(error_msg)
+            raise ProcessorRuntimeError(error_msg)
         except Exception as e:
-            self.logger.error("CLAHE processing failed: %s", str(e))
-            raise ProcessorRuntimeError(f"CLAHE processing failed: {e}")
+            error_msg = f"Unexpected error in {self.name}: {e}"
+            self.logger.error(error_msg)
+            raise ProcessorRuntimeError(error_msg)

@@ -64,8 +64,14 @@ class BilateralFilterParams(BaseModel):
     """バイラテラルフィルタのパラメータスキーマ."""
 
     d: StrictInt
-    sigmaColor: StrictInt
-    sigmaSpace: StrictInt
+    sigma_color: StrictFloat = Field(alias="sigmaColor")
+    sigma_space: StrictFloat = Field(alias="sigmaSpace")
+
+    class Config:
+        """Pydanticの設定クラス."""
+
+        populate_by_name = True  # 名前またはエイリアスでフィールドにアクセス可能にする
+        allow_population_by_field_name = True  # 後方互換性のため
 
 
 class MotionBlurParams(BaseModel):
