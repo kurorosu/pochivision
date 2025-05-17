@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from exceptions import ProcessorRuntimeError
 from processors.edge_detection import CannyEdgeProcessor
 from processors.validators.base import ProcessorValidationError
 
@@ -179,12 +180,13 @@ class TestCannyEdgeProcessor:
         assert "'l2_gradient' must be a boolean" in str(excinfo.value)
 
     def test_invalid_input_image_shape(self):
-        """不正な形状の画像処理をテストします（例: 4チャンネル）."""
+        """不正な形状の画像を与えたテスト（例: 4チャンネル）。"""
         image = np.random.randint(0, 256, (100, 100, 4), dtype=np.uint8)  # 4 channels
         config = CannyEdgeProcessor.get_default_config()
         processor = CannyEdgeProcessor(name="canny_invalid_shape", config=config)
-        with pytest.raises(ValueError) as excinfo:
+        with pytest.raises(ProcessorRuntimeError) as excinfo:
             processor.process(image)
-        assert "Input image must be a 2D grayscale image or a 3D BGR image" in str(
-            excinfo.value
+        assert (
+            "Input image for CannyEdgeProcessor must be 2D grayscale or "
+            "3-channel color image." in str(excinfo.value)
         )

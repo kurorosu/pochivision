@@ -39,7 +39,7 @@ class CLAHEProcessor(BaseProcessor):
 
     def __init__(self, name: str, config: Optional[Dict[str, Any]] = None) -> None:
         """
-        CLAHEProcessorのコンストラクタ.
+        CLAHEProcessorの初期化.
 
         Args:
             name (str): プロセッサ名.
@@ -50,6 +50,8 @@ class CLAHEProcessor(BaseProcessor):
         """
         super().__init__(name, config or {})
         self.logger = logging.getLogger(__name__)
+        self.validator = CLAHEInputValidator(self.config)
+        self.validator.validate_config()
 
         # デフォルト値の設定
         self.color_mode = self.config.get("color_mode", "gray")
@@ -75,9 +77,9 @@ class CLAHEProcessor(BaseProcessor):
             ProcessorRuntimeError: 入力画像の検証に失敗した場合.
         """
         try:
-            CLAHEInputValidator(image, self.config).validate()
+            self.validator.validate_image(image)
         except Exception as e:
-            raise ProcessorRuntimeError(f"CLAHE validation failed: {e}")
+            raise ProcessorRuntimeError(f"CLAHE image validation failed: {e}")
 
         try:
             # 画像がカラーかグレースケールかを判定
