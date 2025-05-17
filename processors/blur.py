@@ -10,7 +10,7 @@ from processors import BaseProcessor
 from processors.registry import register_processor
 from processors.validators.blur.average import AverageBlurValidator
 from processors.validators.blur.bilateral import BilateralFilterValidator
-from processors.validators.blur.gaussian import GaussianBlurConfigValidator
+from processors.validators.blur.gaussian import GaussianBlurValidator
 from processors.validators.blur.median import MedianBlurValidator
 from processors.validators.blur.motion import MotionBlurValidator
 
@@ -34,7 +34,7 @@ class GaussianBlurProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]):
+    def __init__(self, name: str, config: Dict[str, Any]) -> None:
         """
         GaussianBlurProcessorを初期化.
 
@@ -43,10 +43,14 @@ class GaussianBlurProcessor(BaseProcessor):
             config (Dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
-        self.validator = GaussianBlurConfigValidator(self.config)
-        self.validator.validate()
-        self.kernel_size = tuple(self.config.get("kernel_size", [15, 15]))
-        self.sigma = self.config.get("sigma", 0)
+        # パラメータのバリデーション
+        self.validator = GaussianBlurValidator(config)
+        self.validator.validate_config()
+
+        # バリデータから検証済みの値を取得
+        self.kernel_size = (self.validator.kernel_width, self.validator.kernel_height)
+        self.sigma_x = self.validator.sigma_x
+        self.sigma_y = self.validator.sigma_y
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -57,17 +61,27 @@ class GaussianBlurProcessor(BaseProcessor):
 
         Returns:
             np.ndarray: ガウシアンぼかしを適用した画像.
-        """
-        # 画像自体のバリデーション（必要であれば）
-        # self.validator.validate_image_type_and_nonempty(
-        # image)
-        # BaseValidatorにメソッドがある場合
-        if not isinstance(image, np.ndarray) or image.size == 0:
-            raise ProcessorRuntimeError(
-                "Input image must be a non-empty NumPy ndarray."
-            )
 
-        return cv2.GaussianBlur(image, self.kernel_size, self.sigma)
+        Raises:
+            ProcessorValidationError: 入力画像が不正な場合.
+            ProcessorRuntimeError: OpenCV処理中にエラーが発生した場合.
+        """
+        # 入力画像のバリデーション
+        self.validator.validate_image(image)
+
+        # ガウシアンブラー処理
+        try:
+            return cv2.GaussianBlur(
+                image, self.kernel_size, self.sigma_x, sigmaY=self.sigma_y
+            )
+        except cv2.error as e:
+            error_msg = f"Error during GaussianBlur processing: {e}"
+            # ログ出力など必要に応じて追加
+            raise ProcessorRuntimeError(error_msg)
+        except Exception as e:
+            error_msg = f"Unexpected error in {self.name}: {e}"
+            # ログ出力など必要に応じて追加
+            raise ProcessorRuntimeError(error_msg)
 
 
 @register_processor("average_blur")
@@ -87,17 +101,21 @@ class AverageBlurProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]):
-        """Averageblurprocessor を初期化します.
+    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+        """
+        AverageBlurProcessorを初期化します.
 
         Args:
             name (str): プロセッサ名.
             config (Dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
-        self.validator = AverageBlurValidator(self.config)
-        self.validator.validate()
-        self.kernel_size = tuple(self.config.get("kernel_size", [5, 5]))
+        # パラメータのバリデーション
+        self.validator = AverageBlurValidator(config)
+        self.validator.validate_config()
+
+        # バリデータから検証済みの値を取得
+        self.kernel_size = (self.validator.kernel_width, self.validator.kernel_height)
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -108,13 +126,25 @@ class AverageBlurProcessor(BaseProcessor):
 
         Returns:
             np.ndarray: 平均値ブラーを適用した画像.
+
+        Raises:
+            ProcessorValidationError: 入力画像が不正な場合.
+            ProcessorRuntimeError: OpenCV処理中にエラーが発生した場合.
         """
-        # 画像自体のバリデーション（必要であれば）
-        if not isinstance(image, np.ndarray) or image.size == 0:
-            raise ProcessorRuntimeError(
-                "Input image must be a non-empty NumPy ndarray."
-            )
-        return cv2.blur(image, self.kernel_size)
+        # 入力画像のバリデーション
+        self.validator.validate_image(image)
+
+        # 平均値ブラー処理
+        try:
+            return cv2.blur(image, self.kernel_size)
+        except cv2.error as e:
+            error_msg = f"Error during Average Blur processing: {e}"
+            # ログ出力など必要に応じて追加
+            raise ProcessorRuntimeError(error_msg)
+        except Exception as e:
+            error_msg = f"Unexpected error in {self.name}: {e}"
+            # ログ出力など必要に応じて追加
+            raise ProcessorRuntimeError(error_msg)
 
 
 @register_processor("median_blur")
@@ -135,17 +165,21 @@ class MedianBlurProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]):
-        """Medianblurprocessor を初期化します.
+    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+        """
+        MedianBlurProcessorを初期化します.
 
         Args:
             name (str): プロセッサ名.
             config (Dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
-        self.validator = MedianBlurValidator(self.config)
-        self.validator.validate()
-        self.kernel_size = self.config.get("kernel_size", 5)
+        # パラメータのバリデーション
+        self.validator = MedianBlurValidator(config)
+        self.validator.validate_config()
+
+        # バリデータから検証済みの値を取得
+        self.kernel_size = self.validator.kernel_size
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -156,13 +190,25 @@ class MedianBlurProcessor(BaseProcessor):
 
         Returns:
             np.ndarray: メディアンブラーを適用した画像.
+
+        Raises:
+            ProcessorValidationError: 入力画像が不正な場合.
+            ProcessorRuntimeError: OpenCV処理中にエラーが発生した場合.
         """
-        # 画像自体のバリデーション（必要であれば）
-        if not isinstance(image, np.ndarray) or image.size == 0:
-            raise ProcessorRuntimeError(
-                "Input image must be a non-empty NumPy ndarray."
-            )
-        return cv2.medianBlur(image, self.kernel_size)
+        # 入力画像のバリデーション
+        self.validator.validate_image(image)
+
+        # メディアンブラー処理
+        try:
+            return cv2.medianBlur(image, self.kernel_size)
+        except cv2.error as e:
+            error_msg = f"Error during Median Blur processing: {e}"
+            # ログ出力など必要に応じて追加
+            raise ProcessorRuntimeError(error_msg)
+        except Exception as e:
+            error_msg = f"Unexpected error in {self.name}: {e}"
+            # ログ出力など必要に応じて追加
+            raise ProcessorRuntimeError(error_msg)
 
 
 @register_processor("bilateral_filter")
@@ -185,18 +231,22 @@ class BilateralFilterProcessor(BaseProcessor):
     """
 
     def __init__(self, name: str, config: Dict[str, Any]):
-        """Bilateralfilterprocessor を初期化します.
+        """
+        BilateralFilterProcessorを初期化します.
 
         Args:
             name (str): プロセッサ名.
             config (Dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
-        self.validator = BilateralFilterValidator(self.config)
-        self.validator.validate()
-        self.d = self.config.get("d", 9)
-        self.sigmaColor = self.config.get("sigmaColor", 75)
-        self.sigmaSpace = self.config.get("sigmaSpace", 75)
+        # パラメータのバリデーション
+        self.validator = BilateralFilterValidator(config)
+        self.validator.validate_config()
+
+        # バリデータから検証済みの値を取得
+        self.d = self.validator.d
+        self.sigma_color = self.validator.sigma_color
+        self.sigma_space = self.validator.sigma_space
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -207,13 +257,37 @@ class BilateralFilterProcessor(BaseProcessor):
 
         Returns:
             np.ndarray: バイラテラルフィルタを適用した画像.
+
+        Raises:
+            ProcessorValidationError: 入力画像が不正な場合.
+            ProcessorRuntimeError: OpenCV処理中にエラーが発生した場合.
         """
-        # 画像自体のバリデーション（必要であれば）
-        if not isinstance(image, np.ndarray) or image.size == 0:
-            raise ProcessorRuntimeError(
-                "Input image must be a non-empty NumPy ndarray."
-            )
-        return cv2.bilateralFilter(image, self.d, self.sigmaColor, self.sigmaSpace)
+        # 入力画像のバリデーション
+        self.validator.validate_image(image)
+
+        # バイラテラルフィルタ処理
+        try:
+            # パラメータを確実に利用可能にする（バリデーションが成功していれば通常はNoneではない）
+            d = self.d
+            sigma_color = self.sigma_color
+            sigma_space = self.sigma_space
+
+            if d is None or sigma_color is None or sigma_space is None:
+                error_msg = (
+                    f"Bilateral filter parameters were not properly validated: d={d}, "
+                    f"sigma_color={sigma_color}, sigma_space={sigma_space}"
+                )
+                raise ProcessorRuntimeError(error_msg)
+
+            return cv2.bilateralFilter(image, d, sigma_color, sigma_space)
+        except cv2.error as e:
+            error_msg = f"Error during Bilateral Filter processing: {e}"
+            # ログ出力など必要に応じて追加
+            raise ProcessorRuntimeError(error_msg)
+        except Exception as e:
+            error_msg = f"Unexpected error in {self.name}: {e}"
+            # ログ出力など必要に応じて追加
+            raise ProcessorRuntimeError(error_msg)
 
 
 @register_processor("motion_blur")
@@ -235,17 +309,20 @@ class MotionBlurProcessor(BaseProcessor):
 
     def __init__(self, name: str, config: Dict[str, Any]):
         """
-        Motionblurprocessor を初期化します.
+        MotionBlurProcessorを初期化します.
 
         Args:
             name (str): プロセッサ名.
             config (Dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
-        self.validator = MotionBlurValidator(self.config)
-        self.validator.validate()
-        self.kernel_size = self.config.get("kernel_size", 15)
-        self.angle = self.config.get("angle", 0)
+        # パラメータのバリデーション
+        self.validator = MotionBlurValidator(config)
+        self.validator.validate_config()
+
+        # バリデータから検証済みの値を取得
+        self.kernel_size = self.validator.kernel_size
+        self.angle = self.validator.angle
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -256,28 +333,49 @@ class MotionBlurProcessor(BaseProcessor):
 
         Returns:
             np.ndarray: モーションブラーを適用した画像.
-        """
-        # 画像自体のバリデーション（必要であれば）
-        if not isinstance(image, np.ndarray) or image.size == 0:
-            raise ProcessorRuntimeError(
-                "Input image must be a non-empty NumPy ndarray."
-            )
 
-        # カーネル生成
-        kernel = np.zeros((self.kernel_size, self.kernel_size), dtype=np.float32)
-        center = self.kernel_size // 2
-        rad = np.deg2rad(self.angle)
-        cos_a = np.cos(rad)
-        sin_a = np.sin(rad)
-        for i in range(self.kernel_size):
-            x = int(center + (i - center) * cos_a)
-            y = int(center + (i - center) * sin_a)
-            if 0 <= x < self.kernel_size and 0 <= y < self.kernel_size:
-                kernel[y, x] = 1
-        if np.sum(kernel) == 0:  # 全要素が0の場合、ゼロ除算を避ける
-            # 例えば、kernel_sizeが非常に小さい場合や特定の角度で発生しうる
-            # この場合、元画像をそのまま返すか、エラーとするか、あるいは小さな単位行列カーネルを適用するか
-            # ここでは元画像を返すことにする
-            return image
-        kernel /= np.sum(kernel)
-        return cv2.filter2D(image, -1, kernel)
+        Raises:
+            ProcessorValidationError: 入力画像が不正な場合.
+            ProcessorRuntimeError: OpenCV処理中にエラーが発生した場合.
+        """
+        # 入力画像のバリデーション
+        self.validator.validate_image(image)
+
+        try:
+            # パラメータを確実に利用可能にする（バリデーションが成功していれば通常はNoneではない）
+            kernel_size = self.kernel_size
+            angle = self.angle
+
+            if kernel_size is None or angle is None:
+                error_msg = (
+                    f"Motion blur parameters were not properly "
+                    f"validated: kernel_size={kernel_size}, angle={angle}"
+                )
+                raise ProcessorRuntimeError(error_msg)
+
+            # カーネル生成
+            kernel = np.zeros((kernel_size, kernel_size), dtype=np.float32)
+            center = kernel_size // 2
+            rad = np.deg2rad(angle)
+            cos_a = np.cos(rad)
+            sin_a = np.sin(rad)
+            for i in range(kernel_size):
+                x = int(center + (i - center) * cos_a)
+                y = int(center + (i - center) * sin_a)
+                if 0 <= x < kernel_size and 0 <= y < kernel_size:
+                    kernel[y, x] = 1
+            if np.sum(kernel) == 0:  # 全要素が0の場合、ゼロ除算を避ける
+                # 例えば、kernel_sizeが非常に小さい場合や特定の角度で発生しうる
+                # この場合、元画像をそのまま返すか、エラーとするか、あるいは小さな単位行列カーネルを適用するか
+                # ここでは元画像を返すことにする
+                return image
+            kernel /= np.sum(kernel)
+            return cv2.filter2D(image, -1, kernel)
+        except cv2.error as e:
+            error_msg = f"Error during Motion Blur processing: {e}"
+            # ログ出力など必要に応じて追加
+            raise ProcessorRuntimeError(error_msg)
+        except Exception as e:
+            error_msg = f"Unexpected error in {self.name}: {e}"
+            # ログ出力など必要に応じて追加
+            raise ProcessorRuntimeError(error_msg)

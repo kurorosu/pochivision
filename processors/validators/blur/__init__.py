@@ -2,12 +2,12 @@
 
 from .average import AverageBlurValidator
 from .bilateral import BilateralFilterValidator
-from .gaussian import GaussianBlurConfigValidator
+from .gaussian import GaussianBlurValidator
 from .median import MedianBlurValidator
 from .motion import MotionBlurValidator
 
 __all__ = [
-    "GaussianBlurConfigValidator",
+    "GaussianBlurValidator",
     "AverageBlurValidator",
     "MedianBlurValidator",
     "BilateralFilterValidator",
