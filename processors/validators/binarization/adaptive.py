@@ -28,14 +28,6 @@ class GaussianAdaptiveBinarizationValidator(BaseValidator):
         """
         self.config = config
 
-    def validate(self) -> None:
-        """
-        設定パラメータのバリデーションを実行します.
-
-        BaseValidatorの抽象メソッドを満たすために定義されています.
-        """
-        self.validate_config()
-
     def validate_config(self) -> None:
         """
         設定値のバリデーションを実行する.
@@ -94,14 +86,6 @@ class MeanAdaptiveBinarizationValidator(BaseValidator):
             config (Dict[str, Any]): バリデーション対象の設定辞書.
         """
         self.config = config
-
-    def validate(self) -> None:
-        """
-        設定パラメータのバリデーションを実行します.
-
-        BaseValidatorの抽象メソッドを満たすために定義されています.
-        """
-        self.validate_config()
 
     def validate_config(self) -> None:
         """

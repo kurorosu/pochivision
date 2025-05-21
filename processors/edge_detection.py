@@ -29,7 +29,7 @@ class CannyEdgeProcessor(BaseProcessor):
         self.validator = CannyEdgeValidator(
             self.config
         )  # バリデータのインスタンス化とconfigの引き渡し
-        self.validator.validate()  # 設定のバリデーションを実行
+        self.validator.validate_config()  # 設定のバリデーションを実行
 
         default_vals = self.get_default_config()
         self._threshold1 = self.config.get("threshold1", default_vals["threshold1"])
