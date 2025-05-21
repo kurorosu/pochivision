@@ -17,18 +17,6 @@ class BaseValidator(ABC):
     共通バリデーションメソッドも提供します.
     """
 
-    def validate(self) -> None:
-        """
-        バリデーションを実行する.
-
-        デフォルト実装では validate_config を呼び出します.
-        必要に応じてオーバーライドしてください。
-
-        Raises:
-            ProcessorValidationError: バリデーションに失敗した場合.
-        """
-        self.validate_config()
-
     @abstractmethod
     def validate_config(self) -> None:
         """
