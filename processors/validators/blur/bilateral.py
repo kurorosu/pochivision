@@ -23,14 +23,6 @@ class BilateralFilterValidator(BaseValidator):
         self.sigma_color: float | None = None
         self.sigma_space: float | None = None
 
-    def validate(self) -> None:
-        """
-        設定値のバリデーションを実行する.
-
-        BaseValidatorの抽象メソッドを満たすために定義されています.
-        """
-        self.validate_config()
-
     def validate_config(self) -> None:
         """
         設定値のバリデーションを実行する.
