@@ -50,7 +50,7 @@ class StandardBinarizationProcessor(BaseProcessor):
         super().__init__(name, config)
         self.logger = logging.getLogger(__name__)
         self.validator = StandardBinarizationValidator(self.config)
-        self.validator.validate()
+        self.validator.validate_config()
         self.threshold: int = self.config.get("threshold", 128)
 
     def process(self, image: np.ndarray) -> np.ndarray:
@@ -114,7 +114,7 @@ class OtsuBinarizationProcessor(BaseProcessor):
         super().__init__(name, config)
         self.logger = logging.getLogger(__name__)
         self.validator = OtsuBinarizationValidator(self.config)
-        self.validator.validate()
+        self.validator.validate_config()
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -181,7 +181,7 @@ class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
         super().__init__(name, config)
         self.logger = logging.getLogger(__name__)
         self.validator = GaussianAdaptiveBinarizationValidator(self.config)
-        self.validator.validate()
+        self.validator.validate_config()
         self.block_size: int = self.config.get("block_size", 11)
         self.c_value: int | float = self.config.get("c", 2)
 
@@ -260,7 +260,7 @@ class MeanAdaptiveBinarizationProcessor(BaseProcessor):
         super().__init__(name, config)
         self.logger = logging.getLogger(__name__)
         self.validator = MeanAdaptiveBinarizationValidator(self.config)
-        self.validator.validate()
+        self.validator.validate_config()
         self.block_size: int = self.config.get("block_size", 11)
         self.c_value: int | float = self.config.get("c", 2)
 

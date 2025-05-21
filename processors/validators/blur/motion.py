@@ -22,14 +22,6 @@ class MotionBlurValidator(BaseValidator):
         self.kernel_size: int | None = None
         self.angle: float | None = None
 
-    def validate(self) -> None:
-        """
-        設定値のバリデーションを実行する.
-
-        BaseValidatorの抽象メソッドを満たすために定義されています.
-        """
-        self.validate_config()
-
     def validate_config(self) -> None:
         """
         設定値のバリデーションを実行する.

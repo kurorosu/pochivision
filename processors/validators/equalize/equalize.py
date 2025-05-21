@@ -20,14 +20,6 @@ class EqualizeInputValidator(BaseValidator):
         """
         self.config = config or {}
 
-    def validate(self) -> None:
-        """
-        設定パラメータのバリデーションを実行します.
-
-        BaseValidatorの抽象メソッドを満たすために定義されています.
-        """
-        self.validate_config()
-
     def validate_config(self) -> None:
         """
         パラメータのバリデーションを実行する.
