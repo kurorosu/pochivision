@@ -6,11 +6,11 @@
       "fps": 30,
       "backend": "DSHOW",
       "label": "Tokyo_Lab",
-      "processors": ["resize", "clahe", "canny_edge"],
+      "processors": ["resize", "gaussian_blur","std_bin", "contour"],
       "mode": "pipeline",
       "id_interval": 4,
       "gaussian_blur": {
-        "kernel_size": [15, 15],
+        "kernel_size": [19, 19],
         "sigma": 0
       },
       "average_blur": {
@@ -21,7 +21,7 @@
       },
       "grayscale": {},
       "std_bin": {
-        "threshold": 128
+        "threshold": 30
       },
       "otsu_bin": {},
       "gauss_adapt_bin": {
@@ -60,6 +60,15 @@
         "threshold2": 200.0,
         "aperture_size": 3,
         "l2_gradient": false
+      },
+      "contour": {
+        "retrieval_mode": "list",
+        "approximation_method": "simple",
+        "min_area": 100,
+        "select_mode": "rank",
+        "contour_rank": 1,
+        "outside_color": [0, 0, 0],
+        "inside_color": [255, 255, 255]
       }
     },
     "all_para": {
@@ -82,7 +91,8 @@
         "equalize",
         "resize",
         "clahe",
-        "canny_edge"
+        "canny_edge",
+        "contour"
       ],
       "mode": "parallel",
       "id_interval": 10,
@@ -102,6 +112,15 @@
         "color_mode": "lab",
         "clip_limit": 2.0,
         "tile_grid_size": [8, 8]
+      },
+      "contour": {
+        "retrieval_mode": "list",
+        "approximation_method": "simple",
+        "min_area": 100,
+        "select_mode": "rank",
+        "contour_rank": 0,
+        "outside_color": [0, 0, 0],
+        "inside_color": [255, 255, 255]
       }
     },
     "high_fps": {
