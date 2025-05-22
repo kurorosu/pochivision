@@ -16,6 +16,7 @@ from .blur import (
     MotionBlurProcessor,
 )
 from .clahe import CLAHEProcessor
+from .contour import ContourProcessor
 from .edge_detection import CannyEdgeProcessor
 from .equalize import EqualizeProcessor
 from .grayscale import GrayscaleProcessor

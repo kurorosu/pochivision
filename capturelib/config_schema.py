@@ -117,6 +117,26 @@ class CannyEdgeParams(BaseModel):
     l2_gradient: Optional[bool] = Field(default=False)
 
 
+class ContourParams(BaseModel):
+    """輪郭抽出プロセッサのパラメータスキーマ."""
+
+    retrieval_mode: Optional[StrictStr] = Field(
+        default="list", pattern="^(external|list|ccomp|tree|floodfill)$"
+    )
+    approximation_method: Optional[StrictStr] = Field(
+        default="simple", pattern="^(none|simple|tc89_l1|tc89_kcos)$"
+    )
+    min_area: Optional[StrictInt] = Field(default=100, ge=0)
+    select_mode: Optional[StrictStr] = Field(default="rank", pattern="^(rank|all)$")
+    contour_rank: Optional[StrictInt] = Field(default=0, ge=0)
+    outside_color: Optional[List[StrictInt]] = Field(
+        default=[0, 0, 0], min_items=3, max_items=3
+    )
+    inside_color: Optional[List[StrictInt]] = Field(
+        default=[255, 255, 255], min_items=3, max_items=3
+    )
+
+
 class CameraProfile(BaseModel):
     """カメラプロファイルのスキーマ."""
 
@@ -141,6 +161,7 @@ class CameraProfile(BaseModel):
     equalize: Optional[EqualizeParams] = None
     clahe: Optional[CLAHEParams] = None
     canny_edge: Optional[CannyEdgeParams] = None
+    contour: Optional[ContourParams] = None
 
 
 class ConfigModel(BaseModel):
