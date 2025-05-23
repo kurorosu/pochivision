@@ -65,3 +65,13 @@ class GrayscaleProcessor(BaseProcessor):
             error_msg = f"Error during grayscale conversion: {e}"
             # ログ出力など必要に応じて追加
             raise ProcessorRuntimeError(error_msg)
+
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        グレースケール変換プロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定（空の辞書）.
+        """
+        return {}

@@ -55,10 +55,10 @@ class EqualizeProcessor(BaseProcessor):
         ヒストグラム平坦化処理を実行します.
 
         Args:
-            image (np.ndarray): 入力画像.
+            image (np.ndarray): 入力画像(BGRまたはグレースケール).
 
         Returns:
-            np.ndarray: ヒストグラム平坦化後の画像.
+            np.ndarray: ヒストグラム平坦化された画像.
 
         Raises:
             ProcessorValidationError: 入力画像が不正な場合.
@@ -68,55 +68,45 @@ class EqualizeProcessor(BaseProcessor):
         self.validator.validate_image(image)
 
         try:
-            # 画像がカラーかグレースケールかを判定
-            if len(image.shape) > 2 and image.shape[2] > 1:
-                # カラー画像の場合
-                if self.color_mode == "gray":
-                    # グレースケール変換方式
-                    gray = to_grayscale(image)
-                    equalized = cv2.equalizeHist(gray)
-                    result = cv2.cvtColor(equalized, cv2.COLOR_GRAY2BGR)
-                    self.logger.info(
-                        "Applied grayscale-based histogram equalization to color image"
-                    )
-                elif self.color_mode == "lab":
-                    # LAB色空間方式
-                    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-                    # L（輝度）チャンネルのみ平坦化
-                    lab_planes = list(cv2.split(lab))
-                    lab_planes[0] = cv2.equalizeHist(lab_planes[0])
-                    lab = cv2.merge(lab_planes)
-                    # 元の色空間に戻す
-                    result = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
-                    self.logger.info(
-                        "Applied LAB color space histogram"
-                        "equalization (L channel only)"
-                    )
-                elif self.color_mode == "bgr":
-                    # BGR各チャンネル個別方式
-                    b, g, r = cv2.split(image)
-                    b_eq = cv2.equalizeHist(b)
-                    g_eq = cv2.equalizeHist(g)
-                    r_eq = cv2.equalizeHist(r)
-                    result = cv2.merge([b_eq, g_eq, r_eq])
-                    self.logger.info(
-                        "Applied per-channel histogram equalization to BGR image"
-                    )
-                else:
-                    # 不明なモードの場合はデフォルト（グレースケール）を使用
-                    self.logger.warning(
-                        f"Unknown color_mode '{self.color_mode}', "
-                        f"falling back to 'gray'"
-                    )
-                    gray = to_grayscale(image)
-                    equalized = cv2.equalizeHist(gray)
-                    result = cv2.cvtColor(equalized, cv2.COLOR_GRAY2BGR)
-            else:
-                # グレースケール画像の場合、そのまま平坦化
-                result = cv2.equalizeHist(image)
-                self.logger.info("Applied histogram equalization to grayscale image")
+            # 画像がグレースケールの場合は直接処理
+            if len(image.shape) == 2 or image.shape[2] == 1:
+                return cv2.equalizeHist(image)
 
-            return result
+            # カラー画像の処理
+            if self.color_mode == "gray":
+                # グレースケール変換してから処理
+                gray = to_grayscale(image)
+                equalized = cv2.equalizeHist(gray)
+                # 3チャンネルに戻す
+                return cv2.cvtColor(equalized, cv2.COLOR_GRAY2BGR)
+
+            elif self.color_mode == "lab":
+                # LAB色空間に変換
+                lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+                # Lチャンネルのみ平坦化
+                l, a, b = cv2.split(lab)
+                equalized_l = cv2.equalizeHist(l)
+                # チャンネルを結合してBGRに戻す
+                equalized_lab = cv2.merge([equalized_l, a, b])
+                return cv2.cvtColor(equalized_lab, cv2.COLOR_LAB2BGR)
+
+            elif self.color_mode == "bgr":
+                # 各チャンネルを個別に平坦化
+                b, g, r = cv2.split(image)
+                equalized_b = cv2.equalizeHist(b)
+                equalized_g = cv2.equalizeHist(g)
+                equalized_r = cv2.equalizeHist(r)
+                return cv2.merge([equalized_b, equalized_g, equalized_r])
+
+            else:
+                # 未知のモード（バリデータでチェックされるはずなのでここには来ないはず）
+                self.logger.warning(
+                    f"Unknown color mode: {self.color_mode}, using 'gray'"
+                )
+                gray = to_grayscale(image)
+                equalized = cv2.equalizeHist(gray)
+                return cv2.cvtColor(equalized, cv2.COLOR_GRAY2BGR)
+
         except cv2.error as e:
             error_msg = f"Error during histogram equalization: {e}"
             self.logger.error(error_msg)
@@ -125,3 +115,13 @@ class EqualizeProcessor(BaseProcessor):
             error_msg = f"Unexpected error in {self.name}: {e}"
             self.logger.error(error_msg)
             raise ProcessorRuntimeError(error_msg)
+
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        ヒストグラム平坦化プロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        return {"color_mode": "gray"}
