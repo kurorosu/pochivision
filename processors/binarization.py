@@ -85,6 +85,16 @@ class StandardBinarizationProcessor(BaseProcessor):
         self.logger.info(f"Applied binarization with threshold {self.threshold}")
         return binary
 
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        標準2値化プロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        return {"threshold": 128}
+
 
 @register_processor("otsu_bin")
 class OtsuBinarizationProcessor(BaseProcessor):
@@ -147,6 +157,16 @@ class OtsuBinarizationProcessor(BaseProcessor):
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         self.logger.info("Applied Otsu's binarization")
         return binary
+
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        大津の2値化プロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定（空の辞書）.
+        """
+        return {}
 
 
 @register_processor("gauss_adapt_bin")
@@ -222,10 +242,20 @@ class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
             self.c_value,
         )
         self.logger.info(
-            f"Applied Gaussian adaptive binarization with block_size={self.block_size},"
-            f"c={self.c_value}"
+            f"Applied Gaussian adaptive binarization "
+            f"(block_size={self.block_size}, C={self.c_value})"
         )
         return binary
+
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        ガウシアン適応的2値化プロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        return {"block_size": 11, "c": 2}
 
 
 @register_processor("mean_adapt_bin")
@@ -301,7 +331,17 @@ class MeanAdaptiveBinarizationProcessor(BaseProcessor):
             self.c_value,
         )
         self.logger.info(
-            f"Applied Mean adaptive binarization with block_size={self.block_size},"
-            f"c={self.c_value}"
+            f"Applied Mean adaptive binarization "
+            f"(block_size={self.block_size}, C={self.c_value})"
         )
         return binary
+
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        平均値による適応的2値化プロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        return {"block_size": 11, "c": 2}
