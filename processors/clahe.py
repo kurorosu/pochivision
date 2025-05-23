@@ -9,16 +9,16 @@ import numpy as np
 from exceptions import ProcessorRuntimeError
 from processors import BaseProcessor
 from processors.registry import register_processor
-from processors.validators.clahe.clahe import CLAHEInputValidator
+from processors.validators.clahe import CLAHEInputValidator
 from utils.image import to_grayscale
 
 
 @register_processor("clahe")
 class CLAHEProcessor(BaseProcessor):
     """
-    CLAHE（Contrast Limited Adaptive Histogram Equalization）を行うプロセッサー.
+    CLAHE（Contrast Limited Adaptive Histogram Equalization）処理を行うプロセッサー.
 
-    このプロセッサーは、画像のコントラストを局所的に適応的に強調します.
+    このプロセッサーは、入力画像に対して適応的ヒストグラム平坦化を適用します。
     カラー画像の場合は以下の処理方式から選択できます：
     - 'gray': グレースケールに変換してから処理を適用し、結果を再度BGRカラー形式に戻す（デフォルト）
     - 'lab': LAB色空間に変換して輝度（L）チャンネルのみを平坦化
@@ -30,7 +30,7 @@ class CLAHEProcessor(BaseProcessor):
     設定例:
         {
             "clahe": {
-                "color_mode": "lab",
+                "color_mode": "lab",  # 'gray', 'lab', 'bgr'のいずれか
                 "clip_limit": 2.0,
                 "tile_grid_size": [8, 8]
             }
@@ -68,10 +68,10 @@ class CLAHEProcessor(BaseProcessor):
         CLAHE処理を実行します.
 
         Args:
-            image (np.ndarray): 入力画像.
+            image (np.ndarray): 入力画像(BGRまたはグレースケール).
 
         Returns:
-            np.ndarray: CLAHE適用後の画像.
+            np.ndarray: CLAHE処理された画像.
 
         Raises:
             ProcessorValidationError: 入力画像が不正な場合.
@@ -81,52 +81,45 @@ class CLAHEProcessor(BaseProcessor):
         self.validator.validate_image(image)
 
         try:
-            # 画像がカラーかグレースケールかを判定
-            if len(image.shape) > 2 and image.shape[2] > 1:
-                # カラー画像の場合
-                if self.color_mode == "gray":
-                    # グレースケール変換方式
-                    gray = to_grayscale(image)
-                    equalized = self.clahe.apply(gray)
-                    result = cv2.cvtColor(equalized, cv2.COLOR_GRAY2BGR)
-                    self.logger.info(
-                        "Applied CLAHE to color image using grayscale conversion"
-                    )
-                elif self.color_mode == "lab":
-                    # LAB色空間方式
-                    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-                    # L（輝度）チャンネルのみ平坦化
-                    lab_planes = list(cv2.split(lab))
-                    lab_planes[0] = self.clahe.apply(lab_planes[0])
-                    lab = cv2.merge(lab_planes)
-                    # 元の色空間に戻す
-                    result = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
-                    self.logger.info(
-                        "Applied CLAHE to color image using LAB color space"
-                    )
-                elif self.color_mode == "bgr":
-                    # BGR各チャンネル個別方式
-                    b, g, r = cv2.split(image)
-                    b_eq = self.clahe.apply(b)
-                    g_eq = self.clahe.apply(g)
-                    r_eq = self.clahe.apply(r)
-                    result = cv2.merge([b_eq, g_eq, r_eq])
-                    self.logger.info("Applied CLAHE to color image per BGR channel")
-                else:
-                    # 不明なモードの場合はデフォルト（グレースケール）を使用
-                    self.logger.warning(
-                        f"Unknown color_mode '{self.color_mode}', "
-                        f"falling back to 'gray'"
-                    )
-                    gray = to_grayscale(image)
-                    equalized = self.clahe.apply(gray)
-                    result = cv2.cvtColor(equalized, cv2.COLOR_GRAY2BGR)
-            else:
-                # グレースケール画像の場合、そのまま平坦化
-                result = self.clahe.apply(image)
-                self.logger.info("Applied CLAHE to grayscale image")
+            # 画像がグレースケールの場合は直接処理
+            if len(image.shape) == 2 or image.shape[2] == 1:
+                return self.clahe.apply(image)
 
-            return result
+            # カラー画像の処理
+            if self.color_mode == "gray":
+                # グレースケール変換してから処理
+                gray = to_grayscale(image)
+                clahe_img = self.clahe.apply(gray)
+                # 3チャンネルに戻す
+                return cv2.cvtColor(clahe_img, cv2.COLOR_GRAY2BGR)
+
+            elif self.color_mode == "lab":
+                # LAB色空間に変換
+                lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+                # Lチャンネルのみ処理
+                l, a, b = cv2.split(lab)
+                clahe_l = self.clahe.apply(l)
+                # チャンネルを結合してBGRに戻す
+                clahe_lab = cv2.merge([clahe_l, a, b])
+                return cv2.cvtColor(clahe_lab, cv2.COLOR_LAB2BGR)
+
+            elif self.color_mode == "bgr":
+                # 各チャンネルを個別に処理
+                b, g, r = cv2.split(image)
+                clahe_b = self.clahe.apply(b)
+                clahe_g = self.clahe.apply(g)
+                clahe_r = self.clahe.apply(r)
+                return cv2.merge([clahe_b, clahe_g, clahe_r])
+
+            else:
+                # 未知のモード（バリデータでチェックされるはずなのでここには来ないはず）
+                self.logger.warning(
+                    f"Unknown color mode: {self.color_mode}, using 'gray'"
+                )
+                gray = to_grayscale(image)
+                clahe_img = self.clahe.apply(gray)
+                return cv2.cvtColor(clahe_img, cv2.COLOR_GRAY2BGR)
+
         except cv2.error as e:
             error_msg = f"Error during CLAHE processing: {e}"
             self.logger.error(error_msg)
@@ -135,3 +128,13 @@ class CLAHEProcessor(BaseProcessor):
             error_msg = f"Unexpected error in {self.name}: {e}"
             self.logger.error(error_msg)
             raise ProcessorRuntimeError(error_msg)
+
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        CLAHEプロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        return {"color_mode": "gray", "clip_limit": 2.0, "tile_grid_size": [8, 8]}

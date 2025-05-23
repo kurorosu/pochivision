@@ -38,3 +38,14 @@ class BaseProcessor:
             np.ndarray: 処理後の画像.
         """
         pass
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        プロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        pass
