@@ -83,6 +83,16 @@ class GaussianBlurProcessor(BaseProcessor):
             # ログ出力など必要に応じて追加
             raise ProcessorRuntimeError(error_msg)
 
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        ガウシアンブラープロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        return {"kernel_size": [15, 15], "sigma": 0}
+
 
 @register_processor("average_blur")
 class AverageBlurProcessor(BaseProcessor):
@@ -145,6 +155,16 @@ class AverageBlurProcessor(BaseProcessor):
             error_msg = f"Unexpected error in {self.name}: {e}"
             # ログ出力など必要に応じて追加
             raise ProcessorRuntimeError(error_msg)
+
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        平均値ブラープロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        return {"kernel_size": [5, 5]}
 
 
 @register_processor("median_blur")
@@ -209,6 +229,16 @@ class MedianBlurProcessor(BaseProcessor):
             error_msg = f"Unexpected error in {self.name}: {e}"
             # ログ出力など必要に応じて追加
             raise ProcessorRuntimeError(error_msg)
+
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        メディアンブラープロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        return {"kernel_size": 5}
 
 
 @register_processor("bilateral_filter")
@@ -288,6 +318,16 @@ class BilateralFilterProcessor(BaseProcessor):
             error_msg = f"Unexpected error in {self.name}: {e}"
             # ログ出力など必要に応じて追加
             raise ProcessorRuntimeError(error_msg)
+
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        バイラテラルフィルタプロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        return {"d": 9, "sigmaColor": 75, "sigmaSpace": 75}
 
 
 @register_processor("motion_blur")
@@ -379,3 +419,13 @@ class MotionBlurProcessor(BaseProcessor):
             error_msg = f"Unexpected error in {self.name}: {e}"
             # ログ出力など必要に応じて追加
             raise ProcessorRuntimeError(error_msg)
+
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        モーションブラープロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        return {"kernel_size": 15, "angle": 0}

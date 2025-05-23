@@ -45,38 +45,70 @@ class ResizeProcessor(BaseProcessor):
         画像をリサイズします.
 
         Args:
-            image (np.ndarray): 入力画像
+            image (np.ndarray): 入力画像.
 
         Returns:
-            np.ndarray: リサイズされた画像
+            np.ndarray: リサイズされた画像.
         """
         # 入力画像のバリデーション
         self.validator.validate_image(image)
 
-        # アスペクト比を保持しない場合は単純にリサイズ
+        # 元の画像サイズを取得
+        h, w = image.shape[:2]
+
+        # リサイズ後のサイズを計算
+        target_w, target_h = self._calculate_target_size(w, h)
+
+        # リサイズ処理
+        return cv2.resize(image, (target_w, target_h), interpolation=cv2.INTER_AREA)
+
+    def _calculate_target_size(self, orig_width: int, orig_height: int) -> tuple:
+        """
+        リサイズ後のサイズを計算.
+
+        Args:
+            orig_width (int): 元の画像の幅.
+            orig_height (int): 元の画像の高さ.
+
+        Returns:
+            tuple: (target_width, target_height)
+        """
+        if self.width is None and self.height is None:
+            return orig_width, orig_height
+
         if not self.preserve_aspect_ratio:
-            target_size = (self.width or image.shape[1], self.height or image.shape[0])
-            return cv2.resize(image, target_size, interpolation=cv2.INTER_AREA)
+            return (
+                self.width if self.width is not None else orig_width,
+                self.height if self.height is not None else orig_height,
+            )
 
-        # アスペクト比を保持する場合の処理
-        orig_h, orig_w = image.shape[:2]
-        orig_aspect_ratio = orig_w / orig_h
+        # アスペクト比を保持する場合
+        aspect_ratio = orig_width / orig_height
 
-        if self.aspect_ratio_mode == "width":
-            # 幅を基準にアスペクト比を保持
-            if self.width:
-                new_w = self.width
-                new_h = int(new_w / orig_aspect_ratio)
-            else:
-                new_h = self.height
-                new_w = int(new_h * orig_aspect_ratio)
-        else:  # height mode
-            # 高さを基準にアスペクト比を保持
-            if self.height:
-                new_h = self.height
-                new_w = int(new_h * orig_aspect_ratio)
-            else:
-                new_w = self.width
-                new_h = int(new_w / orig_aspect_ratio)
+        if self.aspect_ratio_mode == "width" and self.width is not None:
+            target_w = self.width
+            target_h = int(target_w / aspect_ratio)
+        elif self.aspect_ratio_mode == "height" and self.height is not None:
+            target_h = self.height
+            target_w = int(target_h * aspect_ratio)
+        else:
+            # どちらも指定されていない場合は元のサイズを使用
+            target_w = self.width if self.width is not None else orig_width
+            target_h = self.height if self.height is not None else orig_height
 
-        return cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        return target_w, target_h
+
+    @staticmethod
+    def get_default_config() -> Dict[str, Any]:
+        """
+        リサイズプロセッサのデフォルト設定を返す.
+
+        Returns:
+            Dict[str, Any]: デフォルト設定.
+        """
+        return {
+            "width": None,
+            "height": None,
+            "preserve_aspect_ratio": False,
+            "aspect_ratio_mode": "width",
+        }
