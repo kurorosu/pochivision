@@ -35,10 +35,16 @@ class ResizeProcessor(BaseProcessor):
         self.validator = ResizeConfigValidator(config)
         self.validator.validate_config()
 
-        self.width = config.get("width", None)
-        self.height = config.get("height", None)
-        self.preserve_aspect_ratio = config.get("preserve_aspect_ratio", False)
-        self.aspect_ratio_mode = config.get("aspect_ratio_mode", "width")
+        # デフォルト設定を取得してDRY原則に従う
+        default_config = self.get_default_config()
+        self.width = config.get("width", default_config["width"])
+        self.height = config.get("height", default_config["height"])
+        self.preserve_aspect_ratio = config.get(
+            "preserve_aspect_ratio", default_config["preserve_aspect_ratio"]
+        )
+        self.aspect_ratio_mode = config.get(
+            "aspect_ratio_mode", default_config["aspect_ratio_mode"]
+        )
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -107,8 +113,8 @@ class ResizeProcessor(BaseProcessor):
             Dict[str, Any]: デフォルト設定.
         """
         return {
-            "width": None,
-            "height": None,
-            "preserve_aspect_ratio": False,
+            "width": 1600,
+            "height": 1200,
+            "preserve_aspect_ratio": True,
             "aspect_ratio_mode": "width",
         }
