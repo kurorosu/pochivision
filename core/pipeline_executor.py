@@ -50,6 +50,11 @@ class PipelineExecutor:
         self.id_interval = id_interval
         self.logger = LogManager().get_logger()
 
+        # モード制限のあるプロセッサに対して実行モードを設定
+        for processor in processors:
+            if hasattr(processor, "set_pipeline_mode"):
+                processor.set_pipeline_mode(mode)
+
         # ID間隔を設定
         file_naming_manager = get_file_naming_manager()
         # original用の間隔設定
@@ -160,6 +165,8 @@ class PipelineExecutor:
         except Exception as e:
             self.logger.error(f"Failed to save original image: {e}")
 
+        # 処理された画像を保存する辞書
+        processed_images = {"original": image.copy()}
         if self.mode == "parallel":
             for processor in self.processors:
                 proc_start = time.time()
@@ -168,17 +175,41 @@ class PipelineExecutor:
                 self.logger.info(
                     f"Processing time ({processor.name}): {proc_time:.3f} sec"
                 )
+                processed_images[processor.name] = result
                 self._save(result, processor.name)
 
         elif self.mode == "pipeline":
             result = image
+
             for processor in self.processors:
                 proc_start = time.time()
+
+                # マスク合成プロセッサの場合、ターゲット画像を設定
+                if hasattr(processor, "target_image_name") and hasattr(
+                    processor, "set_target_image"
+                ):
+                    target_name = processor.target_image_name  # type: ignore
+                    if target_name in processed_images:
+                        processor.set_target_image(
+                            processed_images[target_name]
+                        )  # type: ignore
+                    else:
+                        self.logger.warning(
+                            f"Target image '{target_name}' not found "
+                            f"for {processor.name}"
+                        )
+                        # fallback to original
+                        processor.set_target_image(
+                            processed_images["original"]
+                        )  # type: ignore
+
                 result = processor.process(result)
                 proc_time = time.time() - proc_start
                 self.logger.info(
                     f"Processing time ({processor.name}): {proc_time:.3f} sec"
                 )
+                processed_images[processor.name] = result
+
             self._save(result, "pipeline")
 
         total_time = time.time() - start_time

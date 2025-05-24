@@ -1,5 +1,5 @@
-"""バリデータ（グレースケール系）パッケージ."""
+"""グレースケール変換バリデータパッケージ."""
 
-from .grayscale import GrayscaleInputValidator
+from processors.validators.grayscale.grayscale import GrayscaleValidator
 
-__all__ = ["GrayscaleInputValidator"]
+__all__ = ["GrayscaleValidator"]
