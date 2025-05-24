@@ -6,6 +6,7 @@
 
 from .base import BaseFeatureExtractor
 from .brightness_statistics import BrightnessStatisticsExtractor
+from .hsv_statistics import HSVStatisticsExtractor
 from .registry import (
     FEATURE_EXTRACTOR_REGISTRY,
     get_feature_extractor,
@@ -17,6 +18,7 @@ from .schema import BrightnessStatisticsParams, RGBStatisticsParams
 __all__ = [
     "BaseFeatureExtractor",
     "BrightnessStatisticsExtractor",
+    "HSVStatisticsExtractor",
     "RGBStatisticsExtractor",
     "FEATURE_EXTRACTOR_REGISTRY",
     "get_feature_extractor",
