@@ -3,24 +3,6 @@
 
 カメラフォルダ内のすべての日付フォルダから、処理タイプごとに画像を集約して
 新しい出力フォルダ（image_aggregated）にコピーまたは移動します.
-
-使い方:
-    python image_aggregator.py -i <入力カメラディレクトリ> [-m <モード>]
-
-引数:
-    -i, --input   : 入力カメラディレクトリ (例: ./capture/camera1)
-    -m, --mode    : 操作モード (copy または move, デフォルトは copy)
-
-出力:
-    画像は常に「image_aggregated/YYYYMMDD_INDEX」フォルダに集約されます.
-    各処理タイプごとにサブフォルダが作成されます.
-
-例:
-    # camera1の画像をコピーする.
-    python image_aggregator.py -i ./capture/camera1 -m copy
-
-    # camera0の画像を移動する.
-    python image_aggregator.py -i ./capture/camera0 -m move
 """
 
 import argparse

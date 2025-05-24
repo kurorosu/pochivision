@@ -21,7 +21,7 @@
       },
       "grayscale": {},
       "std_bin": {
-        "threshold": 30
+        "threshold": 20
       },
       "otsu_bin": {},
       "gauss_adapt_bin": {
@@ -96,8 +96,7 @@
         "resize",
         "clahe",
         "canny_edge",
-        "contour",
-        "mask_composition"
+        "contour"
       ],
       "mode": "parallel",
       "id_interval": 10,
