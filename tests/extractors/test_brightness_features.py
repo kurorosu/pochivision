@@ -1,6 +1,7 @@
-"""特徴量抽出機能のテストスクリプト."""
+"""輝度統計特徴量抽出機能のテストスクリプト."""
 
 import numpy as np
+import pytest  # noqa: F401
 
 from feature_extractors import BrightnessStatisticsExtractor, get_feature_extractor
 
@@ -173,4 +174,4 @@ if __name__ == "__main__":
     test_zero_pixel_exclusion()
     test_default_config_merging()
     test_edge_cases()
-    print("\n=== テスト完了 ===")
+    print("\n=== 輝度統計特徴量抽出テスト完了 ===")
