@@ -20,4 +20,5 @@ from .contour import ContourProcessor
 from .edge_detection import CannyEdgeProcessor
 from .equalize import EqualizeProcessor
 from .grayscale import GrayscaleProcessor
+from .mask_composition import MaskCompositionProcessor
 from .resize import ResizeProcessor
