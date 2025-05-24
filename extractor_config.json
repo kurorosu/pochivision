@@ -9,6 +9,9 @@
     },
     "rgb": {
       "exclude_black_pixels": true
+    },
+    "hsv": {
+      "exclude_black_pixels": true
     }
   },
   "file_filters": {
