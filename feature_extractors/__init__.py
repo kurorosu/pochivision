@@ -11,13 +11,16 @@ from .registry import (
     get_feature_extractor,
     register_feature_extractor,
 )
-from .schema import BrightnessStatisticsParams
+from .rgb_statistics import RGBStatisticsExtractor
+from .schema import BrightnessStatisticsParams, RGBStatisticsParams
 
 __all__ = [
     "BaseFeatureExtractor",
     "BrightnessStatisticsExtractor",
+    "RGBStatisticsExtractor",
     "FEATURE_EXTRACTOR_REGISTRY",
     "get_feature_extractor",
     "register_feature_extractor",
     "BrightnessStatisticsParams",
+    "RGBStatisticsParams",
 ]
