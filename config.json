@@ -6,7 +6,7 @@
       "fps": 30,
       "backend": "DSHOW",
       "label": "Tokyo_Lab",
-      "processors": ["resize", "gaussian_blur","std_bin", "contour"],
+      "processors": ["resize", "gaussian_blur","std_bin", "contour", "mask_composition"],
       "mode": "pipeline",
       "id_interval": 4,
       "gaussian_blur": {
@@ -66,9 +66,13 @@
         "approximation_method": "simple",
         "min_area": 100,
         "select_mode": "rank",
-        "contour_rank": 1,
+        "contour_rank": 0,
         "outside_color": [0, 0, 0],
         "inside_color": [255, 255, 255]
+      },
+      "mask_composition": {
+        "target_image": "original",
+        "use_white_pixels": true
       }
     },
     "all_para": {
@@ -92,7 +96,8 @@
         "resize",
         "clahe",
         "canny_edge",
-        "contour"
+        "contour",
+        "mask_composition"
       ],
       "mode": "parallel",
       "id_interval": 10,
