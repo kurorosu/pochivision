@@ -8,6 +8,7 @@
 import argparse
 import csv
 import json
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -28,9 +29,11 @@ class FeatureExtractionRunner:
         Args:
             config_path (str): 設定ファイルのパス.
         """
+        self.config_path = config_path
         self.config = self._load_config(config_path)
         self.input_dir = Path(self.config["input_directory"])
-        self.output_dir = Path(self.config["output_directory"])
+        self.base_output_dir = Path(self.config["output_directory"])
+        self.output_dir = self._create_timestamped_output_dir()
         self.extractors = self._initialize_extractors()
 
     def _load_config(self, config_path: str) -> Dict[str, Any]:
@@ -56,6 +59,70 @@ class FeatureExtractionRunner:
         except json.JSONDecodeError as e:
             print(f"エラー: 設定ファイルのJSON形式が不正です: {e}")
             sys.exit(1)
+
+    def _get_next_suffix(self, base_dir: Path, date_str: str) -> int:
+        """
+        指定された日付の次のサフィックス番号を取得します.
+
+        同じ日付のディレクトリが存在する場合、最大のサフィックス番号に1を加えた値を返します.
+
+        Args:
+            base_dir (Path): 出力ベースディレクトリのパス.
+            date_str (str): 日付文字列(YYYYMMDD形式).
+
+        Returns:
+            int: 次のサフィックス番号.
+        """
+        if not base_dir.exists():
+            return 0
+
+        max_suffix = -1
+        for dir_path in base_dir.iterdir():
+            if not dir_path.is_dir():
+                continue
+
+            # YYYYMMDD_N 形式のディレクトリを検索
+            if dir_path.name.startswith(date_str + "_"):
+                try:
+                    suffix = int(dir_path.name.split("_")[-1])
+                    max_suffix = max(max_suffix, suffix)
+                except ValueError:
+                    continue
+
+        return max_suffix + 1
+
+    def _create_timestamped_output_dir(self) -> Path:
+        """
+        日付とインクリメントを含む出力ディレクトリを作成します.
+
+        同じ日付のディレクトリが存在する場合、サフィックスをインクリメントします.
+
+        Returns:
+            Path: 作成されたディレクトリのパス. 例：extraction_results/YYYYMMDD_{suffix}/
+        """
+        date_str = datetime.now().strftime("%Y%m%d")
+
+        # ベース出力ディレクトリが存在しない場合は作成
+        if not self.base_output_dir.exists():
+            self.base_output_dir.mkdir(parents=True, exist_ok=True)
+
+        # 次のサフィックス番号を取得
+        suffix = self._get_next_suffix(self.base_output_dir, date_str)
+
+        # 日付ディレクトリ作成
+        final_path = self.base_output_dir / f"{date_str}_{suffix}"
+        final_path.mkdir(parents=True, exist_ok=True)
+        return final_path
+
+    def _copy_config_to_output(self) -> None:
+        """使用した設定ファイルを出力ディレクトリにコピーします."""
+        try:
+            config_filename = Path(self.config_path).name
+            output_config_path = self.output_dir / config_filename
+            shutil.copy2(self.config_path, output_config_path)
+            print(f"設定ファイルをコピーしました: {output_config_path}")
+        except Exception as e:
+            print(f"警告: 設定ファイルのコピーに失敗しました: {e}")
 
     def _initialize_extractors(self) -> Dict[str, Any]:
         """
@@ -177,9 +244,6 @@ class FeatureExtractionRunner:
             print("警告: 保存する結果がありません")
             return
 
-        # 出力ディレクトリの作成
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
         # 出力ファイル名の決定
         output_filename = self.config.get("output_settings", {}).get(
             "output_filename", "features.csv"
@@ -222,6 +286,9 @@ class FeatureExtractionRunner:
         print("=== 特徴量抽出を開始します ===")
         print(f"入力ディレクトリ: {self.input_dir}")
         print(f"出力ディレクトリ: {self.output_dir}")
+
+        # 設定ファイルのコピー
+        self._copy_config_to_output()
 
         # 対象画像ファイルの取得
         image_files = self._get_image_files()
