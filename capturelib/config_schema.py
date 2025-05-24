@@ -147,6 +147,7 @@ class CameraProfile(BaseModel):
     processors: List[StrictStr]
     mode: StrictStr
     id_interval: Optional[StrictInt] = Field(default=None)
+
     gaussian_blur: Optional[GaussianBlurParams] = None
     average_blur: Optional[AverageBlurParams] = None
     median_blur: Optional[MedianBlurParams] = None

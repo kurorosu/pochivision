@@ -1,0 +1,20 @@
+{
+  "input_directory": "image_aggregated/20250524_0/pipeline",
+  "output_directory": "extraction_results",
+  "output_format": "csv",
+  "feature_extractors": {
+    "brightness": {
+      "color_mode": "gray"
+    }
+  },
+  "file_filters": {
+    "extensions": [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"],
+    "case_sensitive": false
+  },
+  "output_settings": {
+    "include_filename": true,
+    "include_timestamp": true,
+    "csv_separator": ",",
+    "output_filename": "features.csv"
+  }
+} 

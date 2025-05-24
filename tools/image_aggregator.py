@@ -17,10 +17,10 @@
 
 例:
     # camera1の画像をコピーする.
-    python image_aggregator.py -i ./capture/camera1 -m copy
+    python -m tools.image_aggregator -i ./capture/camera1 -m copy
 
     # camera0の画像を移動する.
-    python image_aggregator.py -i ./capture/camera0 -m move
+    python -m tools.image_aggregator -i ./capture/camera0 -m move
 """
 
 import argparse
