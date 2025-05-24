@@ -57,8 +57,9 @@ def test_resize_width_only():
 
     result = processor.process(DUMMY_IMAGE)
 
-    # 高さは元の画像のまま
-    assert result.shape == (300, 200, 3)
+    # デフォルトでアスペクト比保持、元画像400x300、幅200指定
+    # アスペクト比保持で高さは 200 * (300/400) = 150
+    assert result.shape == (150, 200, 3)
     assert result.dtype == np.uint8
 
 
@@ -69,8 +70,10 @@ def test_resize_height_only():
 
     result = processor.process(DUMMY_IMAGE)
 
-    # 幅は元の画像のまま
-    assert result.shape == (150, 400, 3)
+    # デフォルトでアスペクト比保持、aspect_ratio_mode="width"
+    # 高さのみ指定でもwidthモードなので、デフォルト幅1600が適用される
+    # 幅1600でアスペクト比保持すると高さは 1600 * (300/400) = 1200
+    assert result.shape == (1200, 1600, 3)
     assert result.dtype == np.uint8
 
 
