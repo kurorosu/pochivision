@@ -15,13 +15,13 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
     画像の輝度統計特徴量を抽出するクラス.
 
     抽出する特徴量:
-    - mean: 輝度平均値（輝度値0を除外）
-    - median: 輝度中央値（輝度値0を除外）
-    - variance: 輝度分散（輝度値0を除外）
-    - std_dev: 輝度標準偏差（輝度値0を除外）
+    - mean: 輝度平均値
+    - median: 輝度中央値
+    - variance: 輝度分散
+    - std_dev: 輝度標準偏差
     - cv: 変動係数（標準偏差/平均値）
 
-    注意: 輝度値0のピクセルは背景として除外されます。
+    設定により、輝度値が0のピクセルを計算から除外することができます。
     """
 
     def __init__(
@@ -40,20 +40,21 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
 
         # 設定パラメータの取得（デフォルト設定が既にマージされているため直接アクセス）
         self.color_mode = self.config["color_mode"]
+        self.exclude_zero_pixels = self.config["exclude_zero_pixels"]
 
     def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
         """
-        画像から輝度統計特徴量を抽出する（輝度値0を除外）.
+        画像から輝度統計特徴量を抽出する.
 
         Args:
             image (np.ndarray): 入力画像.
 
         Returns:
             Dict[str, Union[float, int]]: 抽出された特徴量の辞書.
-                - mean: 輝度平均値（輝度値0を除外）
-                - median: 輝度中央値（輝度値0を除外）
-                - variance: 輝度分散（輝度値0を除外）
-                - std_dev: 輝度標準偏差（輝度値0を除外）
+                - mean: 輝度平均値
+                - median: 輝度中央値
+                - variance: 輝度分散
+                - std_dev: 輝度標準偏差
                 - cv: 変動係数
 
         Raises:
@@ -65,24 +66,30 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
         # 輝度画像の取得
         brightness_image = self._get_brightness_image(image)
 
-        # 統計値の計算（輝度値0を除外）
+        # 統計値の計算
         pixels = brightness_image.flatten().astype(np.float64)
 
-        # 輝度値0のピクセルを除外（背景を除外）
-        non_zero_pixels = pixels[pixels > 0]
+        # ゼロピクセル除外の処理
+        if self.exclude_zero_pixels:
+            # 輝度値0のピクセルを除外
+            non_zero_pixels = pixels[pixels > 0]
+            calculation_pixels = non_zero_pixels
+        else:
+            # すべてのピクセルを使用
+            calculation_pixels = pixels
 
-        if len(non_zero_pixels) == 0:
-            # すべてのピクセルが0の場合
+        if len(calculation_pixels) == 0:
+            # 有効なピクセルがない場合
             mean_val = 0.0
             median_val = 0.0
             variance_val = 0.0
             std_dev_val = 0.0
             cv_val = float("inf")
         else:
-            mean_val = float(np.mean(non_zero_pixels))
-            median_val = float(np.median(non_zero_pixels))
-            variance_val = float(np.var(non_zero_pixels))
-            std_dev_val = float(np.std(non_zero_pixels))
+            mean_val = float(np.mean(calculation_pixels))
+            median_val = float(np.median(calculation_pixels))
+            variance_val = float(np.var(calculation_pixels))
+            std_dev_val = float(np.std(calculation_pixels))
 
             # 変動係数の計算（平均値が0の場合は無限大になるため特別処理）
             cv_val = float(std_dev_val / mean_val) if mean_val != 0 else float("inf")
@@ -136,8 +143,12 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
         Returns:
             Dict[str, Any]: デフォルト設定.
                 - color_mode: 輝度計算モード ("gray", "lab_l", "hsv_v")
+                - exclude_zero_pixels: 輝度値が0のピクセルを除外するかどうか
         """
-        return {"color_mode": "gray"}
+        return {
+            "color_mode": "gray",
+            "exclude_zero_pixels": True,
+        }
 
     @staticmethod
     def get_feature_names() -> list[str]:

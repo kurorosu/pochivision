@@ -4,7 +4,8 @@
   "output_format": "csv",
   "feature_extractors": {
     "brightness": {
-      "color_mode": "gray"
+      "color_mode": "gray",
+      "exclude_zero_pixels": true
     },
     "rgb": {
       "exclude_black_pixels": true

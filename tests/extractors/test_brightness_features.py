@@ -107,6 +107,83 @@ def test_zero_pixel_exclusion():
         print(f"  {name}: {value}")
 
 
+def test_exclude_zero_pixels_option():
+    """exclude_zero_pixelsオプションのテスト."""
+    print("\n=== exclude_zero_pixelsオプションテスト ===")
+
+    # テスト画像の作成（一部に0値を含む）
+    test_image = np.zeros((50, 50, 3), dtype=np.uint8)
+    # 中央部分に非ゼロ値を設定
+    test_image[10:40, 10:40, :] = 100  # 30x30の領域に輝度値100
+    test_image[20:30, 20:30, :] = 200  # 10x10の領域に輝度値200（重複）
+
+    print(f"テスト画像: 全ピクセル数={50*50}, 非ゼロピクセル数={30*30}")
+
+    # 1. exclude_zero_pixels=True（デフォルト）
+    extractor_exclude = BrightnessStatisticsExtractor(
+        config={"exclude_zero_pixels": True}
+    )
+    features_exclude = extractor_exclude.extract(test_image)
+    print("\nexclude_zero_pixels=True（ゼロ値除外）:")
+    for name, value in features_exclude.items():
+        print(f"  {name}: {value:.3f}")
+
+    # 2. exclude_zero_pixels=False
+    extractor_include = BrightnessStatisticsExtractor(
+        config={"exclude_zero_pixels": False}
+    )
+    features_include = extractor_include.extract(test_image)
+    print("\nexclude_zero_pixels=False（ゼロ値含む）:")
+    for name, value in features_include.items():
+        print(f"  {name}: {value:.3f}")
+
+    # 3. 結果の比較
+    print("\n--- 結果比較 ---")
+    print(
+        f"平均値: 除外={features_exclude['mean']:.3f}, "
+        f"含む={features_include['mean']:.3f}"
+    )
+    print(
+        f"中央値: 除外={features_exclude['median']:.3f}, "
+        f"含む={features_include['median']:.3f}"
+    )
+    print(
+        f"分散: 除外={features_exclude['variance']:.3f}, "
+        f"含む={features_include['variance']:.3f}"
+    )
+
+    # 4. 全てゼロの画像でのテスト
+    zero_image = np.zeros((50, 50, 3), dtype=np.uint8)
+
+    features_exclude_zero = extractor_exclude.extract(zero_image)
+    features_include_zero = extractor_include.extract(zero_image)
+
+    print("\n--- 全てゼロ画像での比較 ---")
+    print("exclude_zero_pixels=True:")
+    for name, value in features_exclude_zero.items():
+        print(f"  {name}: {value}")
+
+    print("exclude_zero_pixels=False:")
+    for name, value in features_include_zero.items():
+        print(f"  {name}: {value}")
+
+    # 5. 単一非ゼロピクセルでのテスト
+    single_pixel_image = np.zeros((50, 50, 3), dtype=np.uint8)
+    single_pixel_image[25, 25, :] = 128  # 中央に1ピクセルだけ非ゼロ
+
+    features_exclude_single = extractor_exclude.extract(single_pixel_image)
+    features_include_single = extractor_include.extract(single_pixel_image)
+
+    print("\n--- 単一非ゼロピクセルでの比較 ---")
+    print("exclude_zero_pixels=True:")
+    for name, value in features_exclude_single.items():
+        print(f"  {name}: {value:.3f}")
+
+    print("exclude_zero_pixels=False:")
+    for name, value in features_include_single.items():
+        print(f"  {name}: {value:.3f}")
+
+
 def test_default_config_merging():
     """デフォルト設定のマージ機能のテスト."""
     print("\n=== デフォルト設定マージテスト ===")
@@ -124,7 +201,11 @@ def test_default_config_merging():
     print(f"部分設定時のconfig: {extractor2.config}")
 
     # 3. 完全な設定でインスタンス化（ユーザー設定が優先）
-    full_config = {"color_mode": "lab_l", "roi": [10, 10, 30, 30]}
+    full_config = {
+        "color_mode": "lab_l",
+        "roi": [10, 10, 30, 30],
+        "exclude_zero_pixels": False,
+    }
     extractor3 = BrightnessStatisticsExtractor(config=full_config)
     print(f"完全設定時のconfig: {extractor3.config}")
 
@@ -132,13 +213,13 @@ def test_default_config_merging():
     print("\n--- 実際の処理結果 ---")
 
     features1 = extractor1.extract(test_image)
-    print(f"デフォルト設定(gray): mean={features1['mean']:.1f}")
+    print(f"デフォルト設定(gray, exclude_zero=True): mean={features1['mean']:.1f}")
 
     features2 = extractor2.extract(test_image)
-    print(f"HSV-V成分: mean={features2['mean']:.1f}")
+    print(f"HSV-V成分(exclude_zero=True): mean={features2['mean']:.1f}")
 
     features3 = extractor3.extract(test_image)
-    print(f"LAB-L成分(ROI): mean={features3['mean']:.1f}")
+    print(f"LAB-L成分(ROI, exclude_zero=False): mean={features3['mean']:.1f}")
 
 
 def test_edge_cases():
@@ -172,6 +253,7 @@ def test_edge_cases():
 if __name__ == "__main__":
     test_brightness_statistics()
     test_zero_pixel_exclusion()
+    test_exclude_zero_pixels_option()
     test_default_config_merging()
     test_edge_cases()
     print("\n=== 輝度統計特徴量抽出テスト完了 ===")
