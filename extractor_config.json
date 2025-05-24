@@ -5,6 +5,9 @@
   "feature_extractors": {
     "brightness": {
       "color_mode": "gray"
+    },
+    "rgb": {
+      "exclude_black_pixels": true
     }
   },
   "file_filters": {
