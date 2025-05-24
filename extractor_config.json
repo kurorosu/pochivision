@@ -12,6 +12,20 @@
     },
     "hsv": {
       "exclude_black_pixels": true
+    },
+    "glcm": {
+      "distances": [1, 2, 3],
+      "angles": [0, 45, 90, 135],
+      "levels": 256,
+      "symmetric": true,
+      "normed": true,
+      "properties": [
+        "contrast",
+        "dissimilarity",
+        "homogeneity",
+        "energy",
+        "correlation",
+        "asm"]
     }
   },
   "file_filters": {

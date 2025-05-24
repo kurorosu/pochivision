@@ -4,3 +4,4 @@ colorlog==6.8.2
 dearpygui==2.0.0
 pydantic==2.7.1
 PyYAML==6.0.1
+scikit-image==0.24.0
