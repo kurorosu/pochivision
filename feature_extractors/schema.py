@@ -60,7 +60,33 @@ class GLCMTextureParams(BaseModel):
             "homogeneity",
             "energy",
             "correlation",
-            "asm",
+            "ASM",
         ],
         description="計算するプロパティのリスト",
+    )
+
+
+class FFTFrequencyParams(BaseModel):
+    """FFT周波数領域特徴量抽出のパラメータスキーマ."""
+
+    frequency_bands: Optional[List[List[StrictFloat]]] = Field(
+        default=[[0.0, 0.1], [0.1, 0.3], [0.3, 0.5]],
+        description="周波数帯域のリスト（各帯域は[最小周波数, 最大周波数]の形式）",
+    )
+    high_low_threshold: Optional[StrictFloat] = Field(
+        default=0.2, ge=0.0, le=0.5, description="高周波/低周波の境界閾値（0.0-0.5）"
+    )
+    directional_tolerance: Optional[StrictFloat] = Field(
+        default=10.0,
+        ge=0.0,
+        le=90.0,
+        description="方向性エネルギー計算の許容角度（度）",
+    )
+    peak_threshold_ratio: Optional[StrictFloat] = Field(
+        default=0.1, ge=0.0, le=1.0, description="ピーク検出の閾値比（0.0-1.0）"
+    )
+    mm_per_pixel: Optional[StrictFloat] = Field(
+        default=None,
+        gt=0.0,
+        description="ピクセルあたりのmm（Noneの場合はピクセル単位）",
     )
