@@ -25,7 +25,18 @@
         "homogeneity",
         "energy",
         "correlation",
-        "asm"]
+        "ASM"]
+    },
+    "fft": {
+      "frequency_bands": [
+        [0.0, 0.1],
+        [0.1, 0.3],
+        [0.3, 0.5]
+      ],
+      "high_low_threshold": 0.2,
+      "directional_tolerance": 10.0,
+      "peak_threshold_ratio": 0.1,
+      "mm_per_pixel": 0.05
     }
   },
   "file_filters": {

@@ -212,7 +212,7 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
                 "homogeneity",  # 均質性
                 "energy",  # エネルギー
                 "correlation",  # 相関
-                "asm",  # Angular Second Moment
+                "ASM",  # Angular Second Moment
             ],
         }
 
