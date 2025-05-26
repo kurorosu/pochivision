@@ -90,3 +90,27 @@ class FFTFrequencyParams(BaseModel):
         gt=0.0,
         description="ピクセルあたりのmm（Noneの場合はピクセル単位）",
     )
+
+
+class LBPTextureParams(BaseModel):
+    """LBPテクスチャ特徴量抽出のパラメータスキーマ."""
+
+    P: Optional[StrictInt] = Field(
+        default=8, ge=4, le=24, description="近傍点数（4-24）"
+    )
+    R: Optional[Union[StrictInt, StrictFloat]] = Field(
+        default=1, gt=0.0, description="半径（正の数値）"
+    )
+    method: Optional[StrictStr] = Field(
+        default="uniform",
+        pattern="^(default|ror|uniform|nri_uniform|var)$",
+        description="LBP手法（default, ror, uniform, nri_uniform, var）",
+    )
+    resize_shape: Optional[List[StrictInt]] = Field(
+        default=[128, 128],
+        description="リサイズ形状 [高さ, 幅]（Noneの場合はリサイズしない）",
+    )
+    include_histogram: Optional[StrictBool] = Field(
+        default=False,
+        description="ヒストグラムの各ビンを特徴量として含むかどうか",
+    )
