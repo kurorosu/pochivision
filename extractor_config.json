@@ -37,6 +37,13 @@
       "directional_tolerance": 10.0,
       "peak_threshold_ratio": 0.1,
       "mm_per_pixel": 0.05
+    },
+    "lbp": {
+      "P": 8,
+      "R": 1,
+      "method": "uniform",
+      "resize_shape": [128, 128],
+      "include_histogram": false
     }
   },
   "file_filters": {

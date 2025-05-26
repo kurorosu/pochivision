@@ -15,3 +15,4 @@ flake8_report.txt
 CONTRIBUTING.md
 image_aggregated/
 extraction_results/
+tools/samples/sample.bmp
