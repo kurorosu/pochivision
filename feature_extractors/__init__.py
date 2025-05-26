@@ -9,6 +9,7 @@ from .brightness_statistics import BrightnessStatisticsExtractor
 from .fft_frequency import FFTFrequencyExtractor
 from .glcm_texture import GLCMTextureExtractor
 from .hsv_statistics import HSVStatisticsExtractor
+from .lbp_texture import LBPTextureExtractor
 from .registry import (
     FEATURE_EXTRACTOR_REGISTRY,
     get_feature_extractor,
@@ -20,6 +21,7 @@ from .schema import (
     FFTFrequencyParams,
     GLCMTextureParams,
     HSVStatisticsParams,
+    LBPTextureParams,
     RGBStatisticsParams,
 )
 
@@ -29,6 +31,7 @@ __all__ = [
     "FFTFrequencyExtractor",
     "GLCMTextureExtractor",
     "HSVStatisticsExtractor",
+    "LBPTextureExtractor",
     "RGBStatisticsExtractor",
     "FEATURE_EXTRACTOR_REGISTRY",
     "get_feature_extractor",
@@ -37,5 +40,6 @@ __all__ = [
     "FFTFrequencyParams",
     "GLCMTextureParams",
     "HSVStatisticsParams",
+    "LBPTextureParams",
     "RGBStatisticsParams",
 ]
