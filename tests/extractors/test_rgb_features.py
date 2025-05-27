@@ -239,21 +239,65 @@ def test_error_cases():
     except ValueError as e:
         print(f"None画像のエラー処理: {e}")
 
-    # 3. グレースケール画像（2次元）
-    try:
-        gray_image = np.random.randint(0, 256, (50, 50), dtype=np.uint8)
-        extractor.extract(gray_image)
-        print("エラー: グレースケール画像で例外が発生しませんでした")
-    except ValueError as e:
-        print(f"グレースケール画像のエラー処理: {e}")
 
-    # 4. 4チャンネル画像
-    try:
-        rgba_image = np.random.randint(0, 256, (50, 50, 4), dtype=np.uint8)
-        extractor.extract(rgba_image)
-        print("エラー: 4チャンネル画像で例外が発生しませんでした")
-    except ValueError as e:
-        print(f"4チャンネル画像のエラー処理: {e}")
+def test_grayscale_support():
+    """グレースケール画像対応のテスト（新機能）."""
+    print("\n=== グレースケール画像対応テスト ===")
+
+    extractor = RGBStatisticsExtractor()
+
+    # 1. 2次元グレースケール画像
+    gray_2d = np.random.randint(50, 200, (50, 50), dtype=np.uint8)
+    features_2d = extractor.extract(gray_2d)
+    print("2次元グレースケール画像の特徴量:")
+    print(f"  red_mean: {features_2d['red_mean']:.1f}")
+    print(f"  green_mean: {features_2d['green_mean']:.1f}")
+    print(f"  blue_mean: {features_2d['blue_mean']:.1f}")
+    # グレースケールなのでR=G=Bになるはず
+    assert abs(features_2d["red_mean"] - features_2d["green_mean"]) < 0.1
+    assert abs(features_2d["green_mean"] - features_2d["blue_mean"]) < 0.1
+    print("  ✓ R=G=Bの関係が保たれています")
+
+    # 2. 3次元1チャンネル画像
+    gray_3d_1ch = gray_2d[:, :, np.newaxis]  # (50, 50, 1)
+    features_3d_1ch = extractor.extract(gray_3d_1ch)
+    print("\n3次元1チャンネル画像の特徴量:")
+    print(f"  red_mean: {features_3d_1ch['red_mean']:.1f}")
+    print(f"  green_mean: {features_3d_1ch['green_mean']:.1f}")
+    print(f"  blue_mean: {features_3d_1ch['blue_mean']:.1f}")
+    # 2次元と同じ結果になるはず
+    assert abs(features_2d["red_mean"] - features_3d_1ch["red_mean"]) < 0.1
+    print("  ✓ 2次元グレースケールと同じ結果です")
+
+    # 3. 4チャンネル画像（BGRA）
+    rgba_image = np.random.randint(0, 256, (50, 50, 4), dtype=np.uint8)
+    features_rgba = extractor.extract(rgba_image)
+    print("\n4チャンネル画像（BGRA）の特徴量:")
+    print(f"  red_mean: {features_rgba['red_mean']:.1f}")
+    print(f"  green_mean: {features_rgba['green_mean']:.1f}")
+    print(f"  blue_mean: {features_rgba['blue_mean']:.1f}")
+    print("  ✓ 4チャンネル画像も正常に処理されました")
+
+    # 4. グレースケール値の一貫性テスト
+    gray_value = 128
+    uniform_gray_2d = np.full((30, 30), gray_value, dtype=np.uint8)
+    uniform_gray_3d = np.full((30, 30, 1), gray_value, dtype=np.uint8)
+    uniform_gray_bgr = np.full((30, 30, 3), gray_value, dtype=np.uint8)
+
+    features_gray_2d = extractor.extract(uniform_gray_2d)
+    features_gray_3d = extractor.extract(uniform_gray_3d)
+    features_gray_bgr = extractor.extract(uniform_gray_bgr)
+
+    print(f"\n一様グレースケール値({gray_value})の一貫性テスト:")
+    print(f"  2次元: R={features_gray_2d['red_mean']:.1f}")
+    print(f"  3次元1ch: R={features_gray_3d['red_mean']:.1f}")
+    print(f"  3次元3ch: R={features_gray_bgr['red_mean']:.1f}")
+
+    # すべて同じ値になるはず
+    assert abs(features_gray_2d["red_mean"] - gray_value) < 0.1
+    assert abs(features_gray_3d["red_mean"] - gray_value) < 0.1
+    assert abs(features_gray_bgr["red_mean"] - gray_value) < 0.1
+    print("  ✓ すべての形状で一貫した結果が得られました")
 
 
 def test_config_validation():
@@ -283,5 +327,6 @@ if __name__ == "__main__":
     test_statistical_properties()
     test_edge_cases()
     test_error_cases()
+    test_grayscale_support()  # 新しいテストを追加
     test_config_validation()
     print("\n=== RGB統計特徴量抽出テスト完了 ===")
