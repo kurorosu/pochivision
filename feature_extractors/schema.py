@@ -114,3 +114,25 @@ class LBPTextureParams(BaseModel):
         default=False,
         description="ヒストグラムの各ビンを特徴量として含むかどうか",
     )
+
+
+class HLACTextureParams(BaseModel):
+    """HLACテクスチャ特徴量抽出のパラメータスキーマ."""
+
+    order: Optional[StrictInt] = Field(
+        default=2, ge=1, le=2, description="自己相関の次数（1または2）"
+    )
+    rotate_invariant: Optional[StrictBool] = Field(
+        default=False, description="回転不変性を有効にするかどうか"
+    )
+    normalize: Optional[StrictBool] = Field(
+        default=True, description="特徴量を正規化するかどうか"
+    )
+    scales: Optional[List[StrictFloat]] = Field(
+        default=[1.0, 0.75, 0.5],
+        description="マルチスケール処理のスケール係数リスト",
+    )
+    resize_shape: Optional[List[StrictInt]] = Field(
+        default=None,
+        description="リサイズ形状 [高さ, 幅]（Noneの場合はリサイズしない）",
+    )
