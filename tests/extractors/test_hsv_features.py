@@ -222,16 +222,8 @@ def test_edge_cases():
     for name, value in features.items():
         print(f"  {name}: {value}")
 
-    # 無効な画像形状のテスト
+    # エラーハンドリングテスト
     print("\n--- エラーハンドリングテスト ---")
-    try:
-        # グレースケール画像（3チャンネルではない）
-        gray_image = np.random.randint(0, 256, (50, 50), dtype=np.uint8)
-        extractor.extract(gray_image)
-        print("エラー: グレースケール画像が受け入れられました")
-    except ValueError as e:
-        print(f"正常: グレースケール画像でエラー発生 - {e}")
-
     try:
         # 空の画像
         empty_image = np.array([])
@@ -241,10 +233,83 @@ def test_edge_cases():
         print(f"正常: 空の画像でエラー発生 - {e}")
 
 
+def test_grayscale_support():
+    """グレースケール画像対応のテスト（新機能）."""
+    print("\n=== グレースケール画像対応テスト ===")
+
+    extractor = HSVStatisticsExtractor()
+
+    # 1. 2次元グレースケール画像
+    gray_2d = np.random.randint(50, 200, (50, 50), dtype=np.uint8)
+    features_2d = extractor.extract(gray_2d)
+    print("2次元グレースケール画像の特徴量:")
+    print(f"  hue_mean: {features_2d['hue_mean']:.1f}")
+    print(f"  saturation_mean: {features_2d['saturation_mean']:.1f}")
+    print(f"  value_mean: {features_2d['value_mean']:.1f}")
+    # グレースケールなので彩度は0になるはず
+    assert features_2d["saturation_mean"] < 1.0  # 彩度はほぼ0
+    print("  ✓ グレースケール画像の彩度が低い値になっています")
+
+    # 2. 3次元1チャンネル画像
+    gray_3d_1ch = gray_2d[:, :, np.newaxis]  # (50, 50, 1)
+    features_3d_1ch = extractor.extract(gray_3d_1ch)
+    print("\n3次元1チャンネル画像の特徴量:")
+    print(f"  hue_mean: {features_3d_1ch['hue_mean']:.1f}")
+    print(f"  saturation_mean: {features_3d_1ch['saturation_mean']:.1f}")
+    print(f"  value_mean: {features_3d_1ch['value_mean']:.1f}")
+    # 2次元と同じ結果になるはず
+    assert abs(features_2d["value_mean"] - features_3d_1ch["value_mean"]) < 0.1
+    print("  ✓ 2次元グレースケールと同じ結果です")
+
+    # 3. 4チャンネル画像（BGRA）
+    rgba_image = np.random.randint(0, 256, (50, 50, 4), dtype=np.uint8)
+    features_rgba = extractor.extract(rgba_image)
+    print("\n4チャンネル画像（BGRA）の特徴量:")
+    print(f"  hue_mean: {features_rgba['hue_mean']:.1f}")
+    print(f"  saturation_mean: {features_rgba['saturation_mean']:.1f}")
+    print(f"  value_mean: {features_rgba['value_mean']:.1f}")
+    print("  ✓ 4チャンネル画像も正常に処理されました")
+
+    # 4. グレースケール値の一貫性テスト
+    gray_value = 128
+    uniform_gray_2d = np.full((30, 30), gray_value, dtype=np.uint8)
+    uniform_gray_3d = np.full((30, 30, 1), gray_value, dtype=np.uint8)
+    uniform_gray_bgr = np.full((30, 30, 3), gray_value, dtype=np.uint8)
+
+    features_gray_2d = extractor.extract(uniform_gray_2d)
+    features_gray_3d = extractor.extract(uniform_gray_3d)
+    features_gray_bgr = extractor.extract(uniform_gray_bgr)
+
+    print(f"\n一様グレースケール値({gray_value})の一貫性テスト:")
+    print(
+        f" 2次元: V={features_gray_2d['value_mean']:.1f}, "
+        f" S={features_gray_2d['saturation_mean']:.1f}"
+    )
+    print(
+        f" 3次元1ch: V={features_gray_3d['value_mean']:.1f}, "
+        f" S={features_gray_3d['saturation_mean']:.1f}"
+    )
+    print(
+        f" 3次元3ch: V={features_gray_bgr['value_mean']:.1f}, "
+        f" S={features_gray_bgr['saturation_mean']:.1f}"
+    )
+
+    # すべて同じ値になるはず
+    assert abs(features_gray_2d["value_mean"] - gray_value) < 0.1
+    assert abs(features_gray_3d["value_mean"] - gray_value) < 0.1
+    assert abs(features_gray_bgr["value_mean"] - gray_value) < 0.1
+    # 彩度はすべて0に近いはず
+    assert features_gray_2d["saturation_mean"] < 1.0
+    assert features_gray_3d["saturation_mean"] < 1.0
+    assert features_gray_bgr["saturation_mean"] < 1.0
+    print("  ✓ すべての形状で一貫した結果が得られました")
+
+
 if __name__ == "__main__":
     test_hsv_statistics()
     test_exclude_black_pixels_option()
     test_hsv_color_space_properties()
     test_default_config_merging()
     test_edge_cases()
+    test_grayscale_support()  # 新しいテストを追加
     print("\n=== HSV統計特徴量抽出テスト完了 ===")

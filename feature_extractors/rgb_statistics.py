@@ -2,8 +2,9 @@
 
 from typing import Any, Dict, Optional, Union
 
-import cv2
 import numpy as np
+
+from utils.image import to_rgb
 
 from .base import BaseFeatureExtractor
 from .registry import register_feature_extractor
@@ -63,13 +64,8 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
         if image is None or image.size == 0:
             raise ValueError("Input image is empty or None")
 
-        if len(image.shape) != 3 or image.shape[2] != 3:
-            raise ValueError(
-                f"Input image must be a 3-channel color image, got shape: {image.shape}"
-            )
-
-        # BGR to RGB変換
-        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # 任意の形状の画像をRGB形式に変換（グレースケール対応）
+        rgb_image = to_rgb(image)
 
         results = {}
 
