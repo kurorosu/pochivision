@@ -5,6 +5,8 @@ from typing import Any, Dict, Optional, Union
 import cv2
 import numpy as np
 
+from utils.image import to_bgr
+
 from .base import BaseFeatureExtractor
 from .registry import register_feature_extractor
 
@@ -63,23 +65,21 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
         if image is None or image.size == 0:
             raise ValueError("Input image is empty or None")
 
-        if len(image.shape) != 3 or image.shape[2] != 3:
-            raise ValueError(
-                f"Input image must be a 3-channel color image, got shape: {image.shape}"
-            )
+        # 任意の形状の画像をBGR形式に変換（グレースケール対応）
+        bgr_image = to_bgr(image)
 
         # BGR to HSV変換
-        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        hsv_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2HSV)
 
         results = {}
 
         # 黒ピクセル除外の処理
         if self.exclude_black_pixels:
-            # 元のBGR画像ですべてのチャンネルが0でないピクセルのマスクを作成
-            non_black_mask = np.any(image > 0, axis=2)
+            # BGR画像ですべてのチャンネルが0でないピクセルのマスクを作成
+            non_black_mask = np.any(bgr_image > 0, axis=2)
         else:
             # すべてのピクセルを使用
-            non_black_mask = np.ones(image.shape[:2], dtype=bool)
+            non_black_mask = np.ones(bgr_image.shape[:2], dtype=bool)
 
         # チャンネル名の定義
         channel_names = ["hue", "saturation", "value"]
