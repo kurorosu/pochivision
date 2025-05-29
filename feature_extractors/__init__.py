@@ -25,7 +25,9 @@ from .schema import (
     HSVStatisticsParams,
     LBPTextureParams,
     RGBStatisticsParams,
+    SWTFrequencyParams,
 )
+from .swt_frequency import SWTFrequencyExtractor
 
 __all__ = [
     "BaseFeatureExtractor",
@@ -36,6 +38,7 @@ __all__ = [
     "HSVStatisticsExtractor",
     "LBPTextureExtractor",
     "RGBStatisticsExtractor",
+    "SWTFrequencyExtractor",
     "FEATURE_EXTRACTOR_REGISTRY",
     "get_feature_extractor",
     "register_feature_extractor",
@@ -46,4 +49,5 @@ __all__ = [
     "HSVStatisticsParams",
     "LBPTextureParams",
     "RGBStatisticsParams",
+    "SWTFrequencyParams",
 ]
