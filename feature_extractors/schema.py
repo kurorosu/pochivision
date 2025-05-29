@@ -92,6 +92,26 @@ class FFTFrequencyParams(BaseModel):
     )
 
 
+class SWTFrequencyParams(BaseModel):
+    """SWT周波数変換特徴量抽出のパラメータスキーマ."""
+
+    wavelet: Optional[StrictStr] = Field(
+        default="db1",
+        description="ウェーブレット種類（例: 'db1', 'db4', 'haar', 'bior2.2'）",
+    )
+    max_level: Optional[StrictInt] = Field(
+        default=1, ge=1, le=6, description="最大分解レベル（1-6）"
+    )
+    multiscale: Optional[StrictBool] = Field(
+        default=True,
+        description=(
+            "マルチスケール解析を行うかどうか。"
+            "Trueの場合は各レベルの特徴量を抽出、"
+            "Falseの場合は最高レベル（最も詳細な分解レベル）のみ抽出"
+        ),
+    )
+
+
 class LBPTextureParams(BaseModel):
     """LBPテクスチャ特徴量抽出のパラメータスキーマ."""
 
