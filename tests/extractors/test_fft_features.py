@@ -56,9 +56,15 @@ class TestFFTFrequencyExtractor:
             "num_peaks",
             "max_peak_amp",
             "spectral_centroid",
+            "spectral_entropy",
+            "horizontal_entropy",
+            "vertical_entropy",
             "band_1_0.00_0.10",
             "band_2_0.10_0.30",
             "band_3_0.30_0.50",
+            "band_1_0.00_0.10_entropy",
+            "band_2_0.10_0.30_entropy",
+            "band_3_0.30_0.50_entropy",
         ]
 
         for feature_name in expected_features:
@@ -208,6 +214,61 @@ class TestFFTFrequencyExtractor:
         assert num_peaks >= 0
         assert max_peak >= 0
 
+    def test_compute_spectral_entropy(self):
+        """スペクトラルエントロピー計算の内部メソッドをテスト."""
+        # テスト用のスペクトラム振幅を作成
+        magnitude = np.random.rand(32, 32) * 100
+
+        entropy = self.extractor._compute_spectral_entropy(magnitude)
+
+        assert isinstance(entropy, float)
+        assert entropy >= 0  # エントロピーは非負
+
+        # 均一な分布では高いエントロピー
+        uniform_magnitude = np.ones((32, 32))
+        uniform_entropy = self.extractor._compute_spectral_entropy(uniform_magnitude)
+        assert uniform_entropy > 0
+
+        # ゼロ配列では0エントロピー
+        zero_magnitude = np.zeros((32, 32))
+        zero_entropy = self.extractor._compute_spectral_entropy(zero_magnitude)
+        assert zero_entropy == 0.0
+
+    def test_compute_directional_entropy(self):
+        """方向性エントロピー計算の内部メソッドをテスト."""
+        image = np.random.randint(0, 256, (32, 32), dtype=np.uint8)
+
+        # 水平方向エントロピー
+        horizontal_entropy = self.extractor._compute_directional_entropy(
+            image, 0.0, 10.0
+        )
+        assert isinstance(horizontal_entropy, float)
+        assert horizontal_entropy >= 0
+
+        # 垂直方向エントロピー
+        vertical_entropy = self.extractor._compute_directional_entropy(
+            image, 90.0, 10.0
+        )
+        assert isinstance(vertical_entropy, float)
+        assert vertical_entropy >= 0
+
+    def test_compute_band_entropy(self):
+        """周波数帯域エントロピー計算の内部メソッドをテスト."""
+        image = np.random.randint(0, 256, (32, 32), dtype=np.uint8)
+        bands = [[0.0, 0.1], [0.1, 0.3], [0.3, 0.5]]
+
+        entropies = self.extractor._compute_band_entropy(image, bands)
+
+        assert len(entropies) == 3
+        assert "band_1_0.00_0.10_entropy" in entropies
+        assert "band_2_0.10_0.30_entropy" in entropies
+        assert "band_3_0.30_0.50_entropy" in entropies
+
+        # すべてのエントロピーが非負であることを確認
+        for entropy in entropies.values():
+            assert isinstance(entropy, float)
+            assert entropy >= 0
+
     def test_get_default_config(self):
         """デフォルト設定の取得をテスト."""
         config = FFTFrequencyExtractor.get_default_config()
@@ -241,9 +302,15 @@ class TestFFTFrequencyExtractor:
             "num_peaks",
             "max_peak_amp",
             "spectral_centroid",
+            "spectral_entropy",
+            "horizontal_entropy",
+            "vertical_entropy",
             "band_1_0.00_0.10",
             "band_2_0.10_0.30",
             "band_3_0.30_0.50",
+            "band_1_0.00_0.10_entropy",
+            "band_2_0.10_0.30_entropy",
+            "band_3_0.30_0.50_entropy",
         ]
 
         assert len(feature_names) == len(expected_features)
