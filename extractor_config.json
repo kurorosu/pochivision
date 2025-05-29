@@ -38,6 +38,11 @@
       "peak_threshold_ratio": 0.1,
       "mm_per_pixel": 0.05
     },
+    "swt": {
+      "wavelet": "db4",
+      "max_level": 3,
+      "multiscale": true
+    },
     "lbp": {
       "P": 8,
       "R": 1,
