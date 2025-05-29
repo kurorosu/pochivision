@@ -19,14 +19,18 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
     空間領域の画像を周波数領域に変換することで、画像の周波数特性を定量化できます。
 
     抽出する特徴量:
-    - high_low_ratio: 高周波/低周波エネルギー比
-    - spectral_std: スペクトルの標準偏差
-    - horizontal_energy: 水平方向エネルギー
-    - vertical_energy: 垂直方向エネルギー
-    - num_peaks: スペクトルピーク数
-    - max_peak_amp: 最大ピーク振幅
-    - band_energy: 周波数帯域別エネルギー
-    - spectral_centroid: スペクトル重心
+    - high_low_ratio: 高周波/低周波エネルギー比 [ratio]
+    - spectral_std: スペクトルの標準偏差 [cycle/mm or cycle/pixel]
+    - horizontal_energy: 水平方向エネルギー [ratio]
+    - vertical_energy: 垂直方向エネルギー [ratio]
+    - num_peaks: スペクトルピーク数 [count]
+    - max_peak_amp: 最大ピーク振幅 [amplitude]
+    - band_energy: 周波数帯域別エネルギー [ratio]
+    - spectral_centroid: スペクトル重心 [cycle/mm or cycle/pixel]
+    - spectral_entropy: スペクトラム全体のエントロピー [bits]
+    - horizontal_entropy: 水平方向スペクトラムエントロピー [bits]
+    - vertical_entropy: 垂直方向スペクトラムエントロピー [bits]
+    - band_entropy: 周波数帯域別エントロピー [bits]
 
     設定により、周波数帯域、閾値、ピクセル解像度などを調整できます。
     """
@@ -243,6 +247,104 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
 
         return num_peaks, max_peak
 
+    def _compute_spectral_entropy(self, magnitude: np.ndarray) -> float:
+        """
+        スペクトラムのエントロピーを計算する.
+
+        Args:
+            magnitude (np.ndarray): スペクトラムの振幅
+
+        Returns:
+            float: スペクトラルエントロピー
+        """
+        # 正規化してプロバビリティ分布に変換
+        total = np.sum(magnitude)
+        if total == 0:
+            return 0.0
+
+        prob = magnitude / total
+        # エントロピー計算（0 log 0 = 0として処理）
+        prob_safe = prob + 1e-12  # 数値安定性のための小さな値
+        entropy = -np.sum(prob * np.log2(prob_safe))
+        return entropy
+
+    def _compute_directional_entropy(
+        self, image: np.ndarray, angle_deg: float, tolerance_deg: float
+    ) -> float:
+        """
+        指定方向のスペクトラムエントロピーを計算する.
+
+        Args:
+            image (np.ndarray): グレースケール画像
+            angle_deg (float): 角度（度）
+            tolerance_deg (float): 許容角度（度）
+
+        Returns:
+            float: 方向性スペクトラルエントロピー
+        """
+        h, w = image.shape
+        f = np.fft.fft2(image)
+        fshift = np.fft.fftshift(f)
+        magnitude = np.abs(fshift)
+
+        cy, cx = h // 2, w // 2
+        y, x = np.ogrid[:h, :w]
+        dy = y - cy
+        dx = x - cx
+        angle = np.arctan2(dy, dx) * 180 / np.pi  # -180〜180度
+
+        angle = (angle + 360) % 180  # 0〜180度に正規化
+        diff = np.abs(angle - angle_deg)
+        mask = diff <= tolerance_deg
+
+        # 指定方向のスペクトラムを抽出
+        directional_magnitude = magnitude[mask]
+        if directional_magnitude.size == 0:
+            return 0.0
+
+        return self._compute_spectral_entropy(directional_magnitude)
+
+    def _compute_band_entropy(
+        self, image: np.ndarray, bands: List[Tuple[float, float]]
+    ) -> Dict[str, float]:
+        """
+        周波数帯域ごとのエントロピーを計算する.
+
+        Args:
+            image (np.ndarray): グレースケール画像
+            bands (List[Tuple[float, float]]): 周波数帯域のリスト
+
+        Returns:
+            Dict[str, float]: 帯域別エントロピーの辞書
+        """
+        f = np.fft.fft2(image)
+        fshift = np.fft.fftshift(f)
+        magnitude = np.abs(fshift)
+
+        h, w = image.shape
+        cy, cx = h // 2, w // 2
+        max_radius = np.sqrt(cx**2 + cy**2)
+
+        y, x = np.ogrid[:h, :w]
+        dist = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
+        freq_norm = dist / max_radius / 2
+
+        entropies = {}
+
+        for i, (fmin, fmax) in enumerate(bands):
+            mask = (freq_norm >= fmin) & (freq_norm < fmax)
+            band_magnitude = magnitude[mask]
+
+            if band_magnitude.size == 0:
+                entropy = 0.0
+            else:
+                entropy = self._compute_spectral_entropy(band_magnitude)
+
+            band_key = f"band_{i+1}_{fmin:.2f}_{fmax:.2f}_entropy"
+            entropies[band_key] = entropy
+
+        return entropies
+
     def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
         """
         画像からFFT周波数領域特徴量を抽出する.
@@ -330,6 +432,30 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
             spectral_centroid = self._compute_spectral_centroid(gray_image) * scale
             results["spectral_centroid"] = float(spectral_centroid)
 
+            # 7. スペクトラル全体エントロピー
+            f = np.fft.fft2(gray_image)
+            fshift = np.fft.fftshift(f)
+            magnitude = np.abs(fshift)
+            spectral_entropy = self._compute_spectral_entropy(magnitude)
+            results["spectral_entropy"] = float(spectral_entropy)
+
+            # 8. 方向性エントロピー（水平／垂直）
+            horizontal_entropy = self._compute_directional_entropy(
+                gray_image, 0.0, self.directional_tolerance
+            )
+            results["horizontal_entropy"] = float(horizontal_entropy)
+
+            vertical_entropy = self._compute_directional_entropy(
+                gray_image, 90.0, self.directional_tolerance
+            )
+            results["vertical_entropy"] = float(vertical_entropy)
+
+            # 9. 周波数帯域エントロピー
+            band_entropies = self._compute_band_entropy(
+                gray_image, self.frequency_bands
+            )
+            results.update(band_entropies)
+
             # NaNや無限大の値をチェックして修正
             for key, value in results.items():
                 if isinstance(value, float) and (np.isnan(value) or np.isinf(value)):
@@ -386,11 +512,19 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
             "num_peaks",
             "max_peak_amp",
             "spectral_centroid",
+            "spectral_entropy",
+            "horizontal_entropy",
+            "vertical_entropy",
         ]
 
         # 周波数帯域の特徴量名を追加
         for i, (fmin, fmax) in enumerate(default_config["frequency_bands"]):
             band_key = f"band_{i+1}_{fmin:.2f}_{fmax:.2f}"
+            feature_names.append(band_key)
+
+        # エントロピーの特徴量名を追加
+        for i, (fmin, fmax) in enumerate(default_config["frequency_bands"]):
+            band_key = f"band_{i+1}_{fmin:.2f}_{fmax:.2f}_entropy"
             feature_names.append(band_key)
 
         return feature_names
