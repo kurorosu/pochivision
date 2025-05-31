@@ -1,6 +1,6 @@
 """HSV統計特徴量抽出を行うモジュール."""
 
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import cv2
 import numpy as np
@@ -16,15 +16,37 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
     """
     画像のHSV統計特徴量を抽出するクラス.
 
+    HSV色空間における各チャンネル（色相、彩度、明度）の統計的特性を定量化します。
+    色の性質をより直感的に把握することで、画像の色彩特性を分析できます。
+
     抽出する特徴量（H、S、Vチャンネルそれぞれ）:
-    - mean: HSV平均値
-    - median: HSV中央値
-    - variance: HSV分散
-    - std_dev: HSV標準偏差
-    - cv: 変動係数（標準偏差/平均値）
+    - mean: HSV平均値 [H: degree, S: intensity, V: intensity]
+    - median: HSV中央値 [H: degree, S: intensity, V: intensity]
+    - variance: HSV分散 [H: squared_degree, S: squared_intensity, V: squared_intensity]
+    - std_dev: HSV標準偏差 [H: degree, S: intensity, V: intensity]
+    - cv: 変動係数（標準偏差/平均値） [ratio]
 
     設定により、RGB値がすべて0のピクセルを計算から除外することができます。
     """
+
+    # 特徴量の単位定義
+    _FEATURE_UNITS = {
+        "hue_mean": "degree",
+        "hue_median": "degree",
+        "hue_variance": "squared_degree",
+        "hue_std_dev": "degree",
+        "hue_cv": "ratio",
+        "saturation_mean": "intensity",
+        "saturation_median": "intensity",
+        "saturation_variance": "squared_intensity",
+        "saturation_std_dev": "intensity",
+        "saturation_cv": "ratio",
+        "value_mean": "intensity",
+        "value_median": "intensity",
+        "value_variance": "squared_intensity",
+        "value_std_dev": "intensity",
+        "value_cv": "ratio",
+    }
 
     def __init__(
         self,
@@ -134,12 +156,26 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
         return {"exclude_black_pixels": True}
 
     @staticmethod
-    def get_feature_names() -> list[str]:
+    def get_feature_names() -> List[str]:
         """
-        この特徴量抽出器が出力する特徴量名のリストを返す.
+        この特徴量抽出器が出力する特徴量名のリストを返す（単位付き）.
 
         Returns:
-            list[str]: 特徴量名のリスト.
+            List[str]: 特徴量名のリスト（単位付き）.
+        """
+        base_names = HSVStatisticsExtractor.get_base_feature_names()
+        return [
+            f"{name}[{HSVStatisticsExtractor._get_unit_for_feature(name)}]"
+            for name in base_names
+        ]
+
+    @staticmethod
+    def get_base_feature_names() -> List[str]:
+        """
+        この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
+
+        Returns:
+            List[str]: 基本特徴量名のリスト.
         """
         feature_names = []
         channels = ["hue", "saturation", "value"]
@@ -150,3 +186,34 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
                 feature_names.append(f"{channel}_{stat}")
 
         return feature_names
+
+    @staticmethod
+    def get_feature_units() -> Dict[str, str]:
+        """
+        特徴量の単位辞書を返す.
+
+        Returns:
+            Dict[str, str]: 特徴量名と単位の対応辞書.
+        """
+        # 基本特徴量名を取得
+        base_names = HSVStatisticsExtractor.get_base_feature_names()
+
+        # 各特徴量名に対応する単位を生成
+        units = {}
+        for name in base_names:
+            units[name] = HSVStatisticsExtractor._get_unit_for_feature(name)
+
+        return units
+
+    @staticmethod
+    def _get_unit_for_feature(feature_name: str) -> str:
+        """
+        特徴量名から対応する単位を取得する.
+
+        Args:
+            feature_name (str): 特徴量名（例: "hue_mean"）
+
+        Returns:
+            str: 対応する単位
+        """
+        return HSVStatisticsExtractor._FEATURE_UNITS.get(feature_name, "unknown")

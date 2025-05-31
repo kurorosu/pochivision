@@ -14,7 +14,7 @@
       "exclude_black_pixels": true
     },
     "glcm": {
-      "distances": [1, 2, 3],
+      "distances": [1],
       "angles": [0, 45, 90, 135],
       "levels": 256,
       "symmetric": true,

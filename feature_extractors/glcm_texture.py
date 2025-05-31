@@ -17,17 +17,28 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
 
     GLCMは画像のテクスチャ解析に使用される重要な特徴量で、
     指定された距離と角度でのグレーレベルの共起関係を表現します。
+    テクスチャの粗さ、方向性、規則性などを定量化できます。
 
     抽出する特徴量:
-    - contrast: コントラスト（局所的な強度変化）
-    - dissimilarity: 非類似度（隣接ピクセル間の差異）
-    - homogeneity: 均質性（局所的な均一性）
-    - energy: エネルギー（テクスチャの均一性）
-    - correlation: 相関（ピクセル間の線形依存関係）
-    - asm: Angular Second Moment（エネルギーの二乗）
+    - contrast: コントラスト（局所的な強度変化） [intensity_squared]
+    - dissimilarity: 非類似度（隣接ピクセル間の差異） [intensity]
+    - homogeneity: 均質性（局所的な均一性） [ratio]
+    - energy: エネルギー（テクスチャの均一性） [ratio]
+    - correlation: 相関（ピクセル間の線形依存関係） [correlation coefficient]
+    - asm: Angular Second Moment（エネルギーの二乗） [ratio]
 
     設定により、距離、角度、グレーレベル数、対称性、正規化などを調整できます。
     """
+
+    # 特徴量の単位定義
+    _FEATURE_UNITS = {
+        "contrast": "intensity_squared",
+        "dissimilarity": "intensity",
+        "homogeneity": "ratio",
+        "energy": "ratio",
+        "correlation": "correlation_coefficient",
+        "ASM": "ratio",
+    }
 
     def __init__(
         self,
@@ -219,10 +230,24 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
     @staticmethod
     def get_feature_names() -> List[str]:
         """
-        この特徴量抽出器が出力する特徴量名のリストを返す.
+        この特徴量抽出器が出力する特徴量名のリストを返す（単位付き）.
 
         Returns:
-            List[str]: 特徴量名のリスト.
+            List[str]: 特徴量名のリスト（単位付き）.
+        """
+        base_names = GLCMTextureExtractor.get_base_feature_names()
+        return [
+            f"{name}[{GLCMTextureExtractor._get_unit_for_feature(name)}]"
+            for name in base_names
+        ]
+
+    @staticmethod
+    def get_base_feature_names() -> List[str]:
+        """
+        この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
+
+        Returns:
+            List[str]: 基本特徴量名のリスト.
         """
         # デフォルト設定を使用して特徴量名を生成
         default_config = GLCMTextureExtractor.get_default_config()
@@ -239,3 +264,39 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
                     feature_names.append(f"{prop}_{distance}_{angle_deg}")
 
         return feature_names
+
+    @staticmethod
+    def get_feature_units() -> Dict[str, str]:
+        """
+        特徴量の単位辞書を返す.
+
+        Returns:
+            Dict[str, str]: 特徴量名と単位の対応辞書.
+        """
+        # 基本特徴量名を取得
+        base_names = GLCMTextureExtractor.get_base_feature_names()
+
+        # 各特徴量名に対応する単位を生成
+        units = {}
+        for name in base_names:
+            units[name] = GLCMTextureExtractor._get_unit_for_feature(name)
+
+        return units
+
+    @staticmethod
+    def _get_unit_for_feature(feature_name: str) -> str:
+        """
+        特徴量名から対応する単位を取得する.
+
+        Args:
+            feature_name (str): 特徴量名（例: "contrast_1_0"）
+
+        Returns:
+            str: 対応する単位
+        """
+        # 特徴量名からプロパティ部分を抽出
+        parts = feature_name.split("_")
+        if len(parts) >= 1:
+            prop = parts[0]
+            return GLCMTextureExtractor._FEATURE_UNITS.get(prop, "unknown")
+        return "unknown"

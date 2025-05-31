@@ -219,9 +219,33 @@ class FeatureExtractionRunner:
             for extractor_name, extractor in self.extractors.items():
                 try:
                     extracted = extractor.extract(image)
-                    # 特徴量名に抽出器名をプレフィックスとして追加
-                    for feature_name, value in extracted.items():
-                        features[f"{extractor_name}_{feature_name}"] = value
+
+                    # 抽出器が単位管理機能を持っているかチェック
+                    has_unit_support = hasattr(
+                        extractor.__class__, "get_base_feature_names"
+                    ) and hasattr(extractor.__class__, "get_feature_units")
+
+                    if has_unit_support:
+                        # 単位付きの特徴量名を使用
+                        try:
+                            units = extractor.__class__.get_feature_units()
+
+                            for base_name, value in extracted.items():
+                                if base_name in units:
+                                    unit_name = f"{base_name}[{units[base_name]}]"
+                                    features[f"{extractor_name}_{unit_name}"] = value
+                                else:
+                                    # 単位が見つからない場合は基本名を使用
+                                    features[f"{extractor_name}_{base_name}"] = value
+                        except Exception:
+                            # 単位機能でエラーが発生した場合は基本名を使用
+                            for feature_name, value in extracted.items():
+                                features[f"{extractor_name}_{feature_name}"] = value
+                    else:
+                        # 単位管理機能がない場合は基本特徴量名を使用
+                        for feature_name, value in extracted.items():
+                            features[f"{extractor_name}_{feature_name}"] = value
+
                 except Exception as e:
                     print(
                         f"警告: 特徴量抽出に失敗しました ({extractor_name}, {image_path}): {e}"

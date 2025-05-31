@@ -55,7 +55,13 @@ def test_brightness_statistics():
         print(f"  {name}: {value:.3f}")
 
     # 特徴量名の取得テスト
-    print(f"\n特徴量名リスト: {BrightnessStatisticsExtractor.get_feature_names()}")
+    print(
+        f"\n特徴量名リスト（単位付き）: {BrightnessStatisticsExtractor.get_feature_names()}"
+    )
+    print(
+        f"基本特徴量名リスト（単位なし）: {BrightnessStatisticsExtractor.get_base_feature_names()}"
+    )
+    print(f"特徴量単位辞書: {BrightnessStatisticsExtractor.get_feature_units()}")
     print(f"デフォルト設定: {BrightnessStatisticsExtractor.get_default_config()}")
 
 
@@ -250,10 +256,64 @@ def test_edge_cases():
         print(f"  {name}: {value:.3f}")
 
 
+def test_feature_names_and_units():
+    """特徴量名と単位のテスト."""
+    print("\n=== 特徴量名・単位テスト ===")
+
+    # 基本特徴量名の確認
+    base_names = BrightnessStatisticsExtractor.get_base_feature_names()
+    expected_base_names = ["mean", "median", "variance", "std_dev", "cv"]
+    print(f"基本特徴量名: {base_names}")
+    assert (
+        base_names == expected_base_names
+    ), f"Expected {expected_base_names}, got {base_names}"
+
+    # 単位付き特徴量名の確認
+    unit_names = BrightnessStatisticsExtractor.get_feature_names()
+    expected_unit_names = [
+        "mean[0-255]",
+        "median[0-255]",
+        "variance[0-255_squared]",
+        "std_dev[0-255]",
+        "cv[ratio]",
+    ]
+    print(f"単位付き特徴量名: {unit_names}")
+    assert (
+        unit_names == expected_unit_names
+    ), f"Expected {expected_unit_names}, got {unit_names}"
+
+    # 単位辞書の確認
+    units = BrightnessStatisticsExtractor.get_feature_units()
+    expected_units = {
+        "mean": "0-255",
+        "median": "0-255",
+        "variance": "0-255_squared",
+        "std_dev": "0-255",
+        "cv": "ratio",
+    }
+    print(f"特徴量単位辞書: {units}")
+    assert units == expected_units, f"Expected {expected_units}, got {units}"
+
+    # 抽出結果と特徴量名の整合性確認
+    extractor = BrightnessStatisticsExtractor()
+    test_image = np.full((50, 50, 3), 100, dtype=np.uint8)
+    features = extractor.extract(test_image)
+
+    # 抽出された特徴量のキーが基本特徴量名と一致することを確認
+    feature_keys = list(features.keys())
+    print(f"抽出された特徴量のキー: {feature_keys}")
+    assert set(feature_keys) == set(
+        base_names
+    ), f"Feature keys {feature_keys} don't match base names {base_names}"
+
+    print("特徴量名・単位テスト: 成功")
+
+
 if __name__ == "__main__":
     test_brightness_statistics()
     test_zero_pixel_exclusion()
     test_exclude_zero_pixels_option()
     test_default_config_merging()
     test_edge_cases()
+    test_feature_names_and_units()
     print("\n=== 輝度統計特徴量抽出テスト完了 ===")

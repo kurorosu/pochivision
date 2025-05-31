@@ -48,7 +48,8 @@ def test_hsv_statistics():
         print(f"  {name}: {value:.3f}")
 
     # 特徴量名の取得テスト
-    print(f"\n特徴量名リスト: {HSVStatisticsExtractor.get_feature_names()}")
+    print(f"\n基本特徴量名リスト: {HSVStatisticsExtractor.get_base_feature_names()}")
+    print(f"単位付き特徴量名リスト: {HSVStatisticsExtractor.get_feature_names()}")
     print(f"デフォルト設定: {HSVStatisticsExtractor.get_default_config()}")
 
 
@@ -305,11 +306,125 @@ def test_grayscale_support():
     print("  ✓ すべての形状で一貫した結果が得られました")
 
 
+def test_feature_names_and_units():
+    """特徴量名と単位のテスト."""
+    print("\n=== 特徴量名・単位テスト ===")
+
+    # 基本特徴量名の確認
+    base_names = HSVStatisticsExtractor.get_base_feature_names()
+    expected_base_names = []
+    channels = ["hue", "saturation", "value"]
+    stats = ["mean", "median", "variance", "std_dev", "cv"]
+    for channel in channels:
+        for stat in stats:
+            expected_base_names.append(f"{channel}_{stat}")
+
+    print(f"基本特徴量名の数: {len(base_names)}")
+    print(f"基本特徴量名の例: {base_names[:5]}")
+    assert (
+        base_names == expected_base_names
+    ), f"Expected {expected_base_names}, got {base_names}"
+
+    # 単位付き特徴量名の確認
+    unit_names = HSVStatisticsExtractor.get_feature_names()
+    expected_unit_names = [
+        "hue_mean[degree]",
+        "hue_median[degree]",
+        "hue_variance[squared_degree]",
+        "hue_std_dev[degree]",
+        "hue_cv[ratio]",
+        "saturation_mean[intensity]",
+        "saturation_median[intensity]",
+        "saturation_variance[squared_intensity]",
+        "saturation_std_dev[intensity]",
+        "saturation_cv[ratio]",
+        "value_mean[intensity]",
+        "value_median[intensity]",
+        "value_variance[squared_intensity]",
+        "value_std_dev[intensity]",
+        "value_cv[ratio]",
+    ]
+    print(f"単位付き特徴量名の数: {len(unit_names)}")
+    print(f"単位付き特徴量名の例: {unit_names[:5]}")
+    assert (
+        unit_names == expected_unit_names
+    ), f"Expected {expected_unit_names}, got {unit_names}"
+
+    # 単位辞書の確認
+    units = HSVStatisticsExtractor.get_feature_units()
+    expected_units = {
+        "hue_mean": "degree",
+        "hue_median": "degree",
+        "hue_variance": "squared_degree",
+        "hue_std_dev": "degree",
+        "hue_cv": "ratio",
+        "saturation_mean": "intensity",
+        "saturation_median": "intensity",
+        "saturation_variance": "squared_intensity",
+        "saturation_std_dev": "intensity",
+        "saturation_cv": "ratio",
+        "value_mean": "intensity",
+        "value_median": "intensity",
+        "value_variance": "squared_intensity",
+        "value_std_dev": "intensity",
+        "value_cv": "ratio",
+    }
+    print(f"特徴量単位辞書のサイズ: {len(units)}")
+    print(f"特徴量単位辞書の例: {dict(list(units.items())[:5])}")
+    assert units == expected_units, f"Expected {expected_units}, got {units}"
+
+    # 抽出結果と特徴量名の整合性確認
+    extractor = HSVStatisticsExtractor()
+    test_image = np.full((50, 50, 3), [100, 150, 200], dtype=np.uint8)
+    features = extractor.extract(test_image)
+
+    # 抽出された特徴量のキーが基本特徴量名と一致することを確認
+    feature_keys = list(features.keys())
+    print(f"抽出された特徴量のキー数: {len(feature_keys)}")
+    assert set(feature_keys) == set(
+        base_names
+    ), f"Feature keys {feature_keys} don't match base names {base_names}"
+
+    print("特徴量名・単位テスト: 成功")
+
+
+def test_unit_for_feature_method():
+    """_get_unit_for_feature()メソッドのテスト."""
+    print("\n=== 単位取得メソッドテスト ===")
+
+    # 正常なHSV特徴量名
+    test_cases = [
+        ("hue_mean", "degree"),
+        ("hue_variance", "squared_degree"),
+        ("saturation_mean", "intensity"),
+        ("saturation_variance", "squared_intensity"),
+        ("value_cv", "ratio"),
+    ]
+
+    for feature_name, expected_unit in test_cases:
+        unit = HSVStatisticsExtractor._get_unit_for_feature(feature_name)
+        print(f"{feature_name} -> {unit}")
+        assert (
+            unit == expected_unit
+        ), f"Expected {expected_unit}, got {unit} for {feature_name}"
+
+    # 無効な特徴量名
+    invalid_cases = ["invalid_feature", "rgb_mean", ""]
+    for invalid_name in invalid_cases:
+        unit = HSVStatisticsExtractor._get_unit_for_feature(invalid_name)
+        print(f"{invalid_name} -> {unit}")
+        assert unit == "unknown", f"Expected 'unknown', got {unit} for {invalid_name}"
+
+    print("単位取得メソッドテスト: 成功")
+
+
 if __name__ == "__main__":
     test_hsv_statistics()
     test_exclude_black_pixels_option()
     test_hsv_color_space_properties()
     test_default_config_merging()
     test_edge_cases()
-    test_grayscale_support()  # 新しいテストを追加
+    test_grayscale_support()
+    test_feature_names_and_units()
+    test_unit_for_feature_method()
     print("\n=== HSV統計特徴量抽出テスト完了 ===")

@@ -21,15 +21,22 @@ class HLACTextureExtractor(BaseFeatureExtractor):
     HLACは画像のテクスチャ解析に使用される特徴量で、
     局所的なピクセルパターンの自己相関を計算することで、
     スケール不変性や回転不変性を持つテクスチャ記述子を生成します。
+    高次の空間的相関パターンを定量化できます。
 
     抽出する特徴量:
-    - 標準HLAC: 45次元の特徴量（0次、1次、2次自己相関）
-    - 回転不変HLAC: 11次元の特徴量（回転に対して不変）
-    - スケール不変性: 複数スケールでの特徴抽出
-    - 正規化: 特徴量の正規化による明度変化への頑健性
+    - 標準HLAC: 45次元の特徴量（0次、1次、2次自己相関） [correlation_coefficient]
+    - 回転不変HLAC: 11次元の特徴量（回転に対して不変） [correlation_coefficient]
+    - スケール不変性: 複数スケールでの特徴抽出 [correlation_coefficient]
+    - 正規化: 特徴量の正規化による明度変化への頑健性 [normalized_correlation]
 
     設定により、次数、回転不変性、正規化、スケール係数などを調整できます。
     """
+
+    # 特徴量の単位定義
+    _FEATURE_UNITS = {
+        "hlac_feature": "correlation_coefficient",  # 基本的なHLAC特徴量
+        "normalized_hlac_feature": "normalized_correlation",  # 正規化されたHLAC特徴量
+    }
 
     def __init__(
         self,
@@ -290,10 +297,24 @@ class HLACTextureExtractor(BaseFeatureExtractor):
     @staticmethod
     def get_feature_names() -> List[str]:
         """
-        この特徴量抽出器が出力する特徴量名のリストを返す.
+        この特徴量抽出器が出力する特徴量名のリストを返す（単位付き）.
 
         Returns:
-            List[str]: 特徴量名のリスト.
+            List[str]: 特徴量名のリスト（単位付き）.
+        """
+        base_names = HLACTextureExtractor.get_base_feature_names()
+        return [
+            f"{name}[{HLACTextureExtractor._get_unit_for_feature(name)}]"
+            for name in base_names
+        ]
+
+    @staticmethod
+    def get_base_feature_names() -> List[str]:
+        """
+        この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
+
+        Returns:
+            List[str]: 基本特徴量名のリスト.
         """
         # デフォルト設定での特徴量名を返す
         default_config = HLACTextureExtractor.get_default_config()
@@ -308,3 +329,39 @@ class HLACTextureExtractor(BaseFeatureExtractor):
                 num_features = 45  # 0次(1) + 1次(8) + 2次(36)
 
         return [f"hlac_feature_{i:02d}" for i in range(num_features)]
+
+    @staticmethod
+    def get_feature_units() -> Dict[str, str]:
+        """
+        特徴量の単位辞書を返す.
+
+        Returns:
+            Dict[str, str]: 特徴量名と単位の対応辞書.
+        """
+        # 基本特徴量名を取得
+        base_names = HLACTextureExtractor.get_base_feature_names()
+
+        # 各特徴量名に対応する単位を生成
+        units = {}
+        for name in base_names:
+            units[name] = HLACTextureExtractor._get_unit_for_feature(name)
+
+        return units
+
+    @staticmethod
+    def _get_unit_for_feature(feature_name: str) -> str:
+        """
+        特徴量名から対応する単位を取得する.
+
+        Args:
+            feature_name (str): 特徴量名（例: "hlac_feature_00"）
+
+        Returns:
+            str: 対応する単位
+        """
+        # HLAC特徴量は基本的にcorrelation_coefficient
+        # 正規化が有効な場合はnormalized_correlationになるが、
+        # 特徴量名からは判別できないため、基本単位を返す
+        if feature_name.startswith("hlac_feature"):
+            return HLACTextureExtractor._FEATURE_UNITS["hlac_feature"]
+        return "unknown"

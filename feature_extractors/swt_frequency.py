@@ -21,30 +21,40 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
     平行移動不変性を持ち、より詳細な周波数解析が可能です。
 
     抽出する特徴量:
-    - mean_ll: 低周波成分（LL）の平均値
-    - mean_lh: 水平高周波成分（LH）の平均値
-    - mean_hl: 垂直高周波成分（HL）の平均値
-    - mean_hh: 対角高周波成分（HH）の平均値
-    - energy_ll: 低周波成分（LL）のエネルギー
-    - energy_lh: 水平高周波成分（LH）のエネルギー
-    - energy_hl: 垂直高周波成分（HL）のエネルギー
-    - energy_hh: 対角高周波成分（HH）のエネルギー
-    - energy_ratio_h: 水平方向エネルギー比
-    - energy_ratio_v: 垂直方向エネルギー比
-    - energy_ratio_d: 対角方向エネルギー比
-    - total_energy: 全エネルギー
-    - entropy_ll: 低周波成分のエントロピー
-    - entropy_lh: 水平高周波成分のエントロピー
-    - entropy_hl: 垂直高周波成分のエントロピー
-    - entropy_hh: 対角高周波成分のエントロピー
-    - std_ll: 低周波成分の標準偏差
-    - std_lh: 水平高周波成分の標準偏差
-    - std_hl: 垂直高周波成分の標準偏差
-    - std_hh: 対角高周波成分の標準偏差
+    - mean_ll: 低周波成分（LL）の平均値 [coefficient]
+    - mean_lh: 水平高周波成分（LH）の平均値 [coefficient]
+    - mean_hl: 垂直高周波成分（HL）の平均値 [coefficient]
+    - mean_hh: 対角高周波成分（HH）の平均値 [coefficient]
+    - energy_ll: 低周波成分（LL）のエネルギー [coefficient²]
+    - energy_lh: 水平高周波成分（LH）のエネルギー [coefficient²]
+    - energy_hl: 垂直高周波成分（HL）のエネルギー [coefficient²]
+    - energy_hh: 対角高周波成分（HH）のエネルギー [coefficient²]
+    - energy_ratio_h: 水平方向エネルギー比 [ratio]
+    - energy_ratio_v: 垂直方向エネルギー比 [ratio]
+    - energy_ratio_d: 対角方向エネルギー比 [ratio]
+    - total_energy: 全エネルギー [coefficient²]
+    - entropy_ll: 低周波成分のエントロピー [bits]
+    - entropy_lh: 水平高周波成分のエントロピー [bits]
+    - entropy_hl: 垂直高周波成分のエントロピー [bits]
+    - entropy_hh: 対角高周波成分のエントロピー [bits]
+    - std_ll: 低周波成分の標準偏差 [coefficient]
+    - std_lh: 水平高周波成分の標準偏差 [coefficient]
+    - std_hl: 垂直高周波成分の標準偏差 [coefficient]
+    - std_hh: 対角高周波成分の標準偏差 [coefficient]
 
     マルチスケール解析を行う場合、各レベルの特徴量が追加されます。
     マルチスケールでない場合は、最高レベル（最も詳細な分解レベル）の特徴量のみが抽出されます。
     """
+
+    # 特徴量の単位定義
+    _FEATURE_UNITS = {
+        "mean": "coefficient",
+        "energy": "coefficient²",
+        "energy_ratio": "ratio",
+        "total_energy": "coefficient²",
+        "entropy": "bits",
+        "std": "coefficient",
+    }
 
     def _compute_mean(self, coeffs: np.ndarray) -> float:
         """
@@ -254,10 +264,24 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
     @staticmethod
     def get_feature_names() -> List[str]:
         """
-        抽出される特徴量名のリストを取得する.
+        抽出される特徴量名のリストを取得する（単位付き）.
 
         Returns:
-            List[str]: 特徴量名のリスト
+            List[str]: 特徴量名のリスト（単位付き）.
+        """
+        base_names = SWTFrequencyExtractor.get_base_feature_names()
+        return [
+            f"{name}[{SWTFrequencyExtractor._get_unit_for_feature(name)}]"
+            for name in base_names
+        ]
+
+    @staticmethod
+    def get_base_feature_names() -> List[str]:
+        """
+        抽出される基本特徴量名のリストを取得する（単位なし）.
+
+        Returns:
+            List[str]: 基本特徴量名のリスト.
         """
         base_features = [
             "mean_ll",
@@ -282,3 +306,53 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             "std_hh",
         ]
         return base_features
+
+    @staticmethod
+    def get_feature_units() -> Dict[str, str]:
+        """
+        特徴量の単位辞書を返す.
+
+        Returns:
+            Dict[str, str]: 特徴量名と単位の対応辞書.
+        """
+        # 基本特徴量名を取得
+        base_names = SWTFrequencyExtractor.get_base_feature_names()
+
+        # 各特徴量名に対応する単位を生成
+        units = {}
+        for name in base_names:
+            units[name] = SWTFrequencyExtractor._get_unit_for_feature(name)
+
+        return units
+
+    @staticmethod
+    def _get_unit_for_feature(feature_name: str) -> str:
+        """
+        特徴量名から対応する単位を取得する.
+
+        Args:
+            feature_name (str): 特徴量名（例: "mean_ll", "L1_energy_hh"）
+
+        Returns:
+            str: 対応する単位
+        """
+        # マルチレベルプレフィックスを除去（L1_, L2_など）
+        clean_name = feature_name
+        if clean_name.startswith("L") and "_" in clean_name:
+            parts = clean_name.split("_", 1)
+            if len(parts) > 1 and parts[0][1:].isdigit():
+                clean_name = parts[1]
+
+        # 特徴量タイプを判定
+        if clean_name.startswith("mean_"):
+            return SWTFrequencyExtractor._FEATURE_UNITS["mean"]
+        elif clean_name.startswith("energy_ratio_"):
+            return SWTFrequencyExtractor._FEATURE_UNITS["energy_ratio"]
+        elif clean_name.startswith("energy_") or clean_name == "total_energy":
+            return SWTFrequencyExtractor._FEATURE_UNITS["energy"]
+        elif clean_name.startswith("entropy_"):
+            return SWTFrequencyExtractor._FEATURE_UNITS["entropy"]
+        elif clean_name.startswith("std_"):
+            return SWTFrequencyExtractor._FEATURE_UNITS["std"]
+        else:
+            return "unknown"

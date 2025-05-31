@@ -295,6 +295,35 @@ class TestFFTFrequencyExtractor:
         feature_names = FFTFrequencyExtractor.get_feature_names()
 
         expected_features = [
+            "high_low_ratio[ratio]",
+            "spectral_std[cycle/mm_or_cycle/pixel]",
+            "horizontal_energy[ratio]",
+            "vertical_energy[ratio]",
+            "num_peaks[count]",
+            "max_peak_amp[amplitude]",
+            "spectral_centroid[cycle/mm_or_cycle/pixel]",
+            "spectral_entropy[bits]",
+            "horizontal_entropy[bits]",
+            "vertical_entropy[bits]",
+            "band_1_0.00_0.10[ratio]",
+            "band_2_0.10_0.30[ratio]",
+            "band_3_0.30_0.50[ratio]",
+            "band_1_0.00_0.10_entropy[bits]",
+            "band_2_0.10_0.30_entropy[bits]",
+            "band_3_0.30_0.50_entropy[bits]",
+        ]
+
+        assert len(feature_names) == len(expected_features)
+        for feature_name in expected_features:
+            assert feature_name in feature_names
+
+    def test_feature_names_and_units(self):
+        """特徴量名と単位の包括的なテスト."""
+        print("\n=== FFT特徴量名・単位テスト ===")
+
+        # 基本特徴量名の確認
+        base_names = FFTFrequencyExtractor.get_base_feature_names()
+        expected_base_names = [
             "high_low_ratio",
             "spectral_std",
             "horizontal_energy",
@@ -312,10 +341,71 @@ class TestFFTFrequencyExtractor:
             "band_2_0.10_0.30_entropy",
             "band_3_0.30_0.50_entropy",
         ]
+        print(f"基本特徴量名: {base_names}")
+        assert (
+            base_names == expected_base_names
+        ), f"Expected {expected_base_names}, got {base_names}"
 
-        assert len(feature_names) == len(expected_features)
-        for feature_name in expected_features:
-            assert feature_name in feature_names
+        # 単位付き特徴量名の確認
+        unit_names = FFTFrequencyExtractor.get_feature_names()
+        expected_unit_names = [
+            "high_low_ratio[ratio]",
+            "spectral_std[cycle/mm_or_cycle/pixel]",
+            "horizontal_energy[ratio]",
+            "vertical_energy[ratio]",
+            "num_peaks[count]",
+            "max_peak_amp[amplitude]",
+            "spectral_centroid[cycle/mm_or_cycle/pixel]",
+            "spectral_entropy[bits]",
+            "horizontal_entropy[bits]",
+            "vertical_entropy[bits]",
+            "band_1_0.00_0.10[ratio]",
+            "band_2_0.10_0.30[ratio]",
+            "band_3_0.30_0.50[ratio]",
+            "band_1_0.00_0.10_entropy[bits]",
+            "band_2_0.10_0.30_entropy[bits]",
+            "band_3_0.30_0.50_entropy[bits]",
+        ]
+        print(f"単位付き特徴量名: {unit_names}")
+        assert (
+            unit_names == expected_unit_names
+        ), f"Expected {expected_unit_names}, got {unit_names}"
+
+        # 単位辞書の確認
+        units = FFTFrequencyExtractor.get_feature_units()
+        expected_units = {
+            "high_low_ratio": "ratio",
+            "spectral_std": "cycle/mm_or_cycle/pixel",
+            "horizontal_energy": "ratio",
+            "vertical_energy": "ratio",
+            "num_peaks": "count",
+            "max_peak_amp": "amplitude",
+            "spectral_centroid": "cycle/mm_or_cycle/pixel",
+            "spectral_entropy": "bits",
+            "horizontal_entropy": "bits",
+            "vertical_entropy": "bits",
+            "band_1_0.00_0.10": "ratio",
+            "band_2_0.10_0.30": "ratio",
+            "band_3_0.30_0.50": "ratio",
+            "band_1_0.00_0.10_entropy": "bits",
+            "band_2_0.10_0.30_entropy": "bits",
+            "band_3_0.30_0.50_entropy": "bits",
+        }
+        print(f"特徴量単位辞書: {units}")
+        assert units == expected_units, f"Expected {expected_units}, got {units}"
+
+        # 抽出結果と特徴量名の整合性確認
+        test_image = np.random.randint(0, 256, (64, 64), dtype=np.uint8)
+        features = self.extractor.extract(test_image)
+
+        # 抽出された特徴量のキーが基本特徴量名と一致することを確認
+        feature_keys = list(features.keys())
+        print(f"抽出された特徴量のキー: {feature_keys}")
+        assert set(feature_keys) == set(
+            base_names
+        ), f"Feature keys {feature_keys} don't match base names {base_names}"
+
+        print("FFT特徴量名・単位テスト: 成功")
 
     def test_feature_consistency(self):
         """同じ画像に対して一貫した結果が得られることをテスト."""
