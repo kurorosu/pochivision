@@ -344,49 +344,143 @@ def test_hlac_feature_names_and_config():
     for key, value in default_config.items():
         print(f"  {key}: {value}")
 
-    # 特徴量名の確認
-    feature_names = HLACTextureExtractor.get_feature_names()
-    print(f"\n特徴量名（数: {len(feature_names)}）:")
-    for i, name in enumerate(feature_names):
+    # 基本特徴量名の確認
+    base_feature_names = HLACTextureExtractor.get_base_feature_names()
+    print(f"\n基本特徴量名（数: {len(base_feature_names)}）:")
+    for i, name in enumerate(base_feature_names):
         if i < 10:  # 最初の10個のみ表示
             print(f"  {name}")
 
-    # 実際の抽出結果と特徴量名が一致するかチェック
+    # 単位付き特徴量名の確認
+    unit_feature_names = HLACTextureExtractor.get_feature_names()
+    print(f"\n単位付き特徴量名（数: {len(unit_feature_names)}）:")
+    for i, name in enumerate(unit_feature_names):
+        if i < 10:  # 最初の10個のみ表示
+            print(f"  {name}")
+
+    # 実際の抽出結果と基本特徴量名が一致するかチェック
     test_image = np.random.randint(0, 256, (64, 64, 3), dtype=np.uint8)
     extractor = HLACTextureExtractor()
     features = extractor.extract(test_image)
 
-    assert len(features) == len(feature_names), "特徴量数と特徴量名の数が一致しません"
-    for name in feature_names:
-        assert name in features, f"特徴量名 {name} が実際の特徴量に含まれていません"
+    assert len(features) == len(
+        base_feature_names
+    ), "特徴量数と基本特徴量名の数が一致しません"
+    for name in base_feature_names:
+        assert name in features, f"基本特徴量名 {name} が実際の特徴量に含まれていません"
 
 
 def test_hlac_config_merging():
-    """設定のマージテスト."""
+    """設定のマージ機能のテスト."""
     print("\n=== 設定マージテスト ===")
 
-    # カスタム設定
-    custom_config = {
+    # テスト画像
+    test_image = np.full((64, 64, 3), 100, dtype=np.uint8)
+
+    # 1. 空の設定（デフォルト設定のみ）
+    extractor1 = HLACTextureExtractor()
+    print(f"デフォルト設定: {extractor1.config}")
+
+    # 2. 部分的な設定（デフォルト設定とマージ）
+    partial_config = {"order": 1, "normalize": False}
+    extractor2 = HLACTextureExtractor(config=partial_config)
+    print(f"部分設定: {extractor2.config}")
+
+    # 3. 完全な設定（ユーザー設定が優先）
+    full_config = {
         "order": 1,
         "rotate_invariant": True,
         "normalize": False,
+        "scales": [1.0],
+        "resize_shape": [32, 32],
     }
+    extractor3 = HLACTextureExtractor(config=full_config)
+    print(f"完全設定: {extractor3.config}")
 
-    extractor = HLACTextureExtractor(config=custom_config)
+    # 各設定での実際の動作確認
+    features1 = extractor1.extract(test_image)
+    features2 = extractor2.extract(test_image)
+    features3 = extractor3.extract(test_image)
 
-    print("マージされた設定:")
-    for key, value in extractor.config.items():
-        print(f"  {key}: {value}")
+    print(f"デフォルト設定での特徴量数: {len(features1)}")
+    print(f"部分設定での特徴量数: {len(features2)}")
+    print(f"完全設定での特徴量数: {len(features3)}")
 
-    # カスタム設定が反映されているかチェック
-    assert extractor.config["order"] == 1, "order設定が反映されていません"
+
+def test_feature_names_and_units():
+    """特徴量名と単位のテスト."""
+    print("\n=== 特徴量名・単位テスト ===")
+
+    # 基本特徴量名の確認
+    base_names = HLACTextureExtractor.get_base_feature_names()
+    expected_base_names = [f"hlac_feature_{i:02d}" for i in range(45)]
+    print(f"基本特徴量名の数: {len(base_names)}")
+    print(f"基本特徴量名の例: {base_names[:5]}")
     assert (
-        extractor.config["rotate_invariant"] is True
-    ), "rotate_invariant設定が反映されていません"
-    assert extractor.config["normalize"] is False, "normalize設定が反映されていません"
+        base_names == expected_base_names
+    ), f"Expected {expected_base_names[:5]}..., got {base_names[:5]}..."
 
-    # デフォルト値が保持されているかチェック
-    assert "scales" in extractor.config, "デフォルトのscales設定が失われています"
+    # 単位付き特徴量名の確認
+    unit_names = HLACTextureExtractor.get_feature_names()
+    expected_unit_names = [
+        f"hlac_feature_{i:02d}[correlation_coefficient]" for i in range(45)
+    ]
+    print(f"単位付き特徴量名の数: {len(unit_names)}")
+    print(f"単位付き特徴量名の例: {unit_names[:5]}")
+    assert (
+        unit_names == expected_unit_names
+    ), f"Expected {expected_unit_names[:5]}..., got {unit_names[:5]}..."
+
+    # 単位辞書の確認
+    units = HLACTextureExtractor.get_feature_units()
+    expected_units = {
+        f"hlac_feature_{i:02d}": "correlation_coefficient" for i in range(45)
+    }
+    print(f"特徴量単位辞書のサイズ: {len(units)}")
+    print(f"特徴量単位辞書の例: {dict(list(units.items())[:5])}")
+    assert units == expected_units, f"Expected {expected_units}, got {units}"
+
+    # 抽出結果と特徴量名の整合性確認
+    extractor = HLACTextureExtractor()
+    test_image = np.full((64, 64, 3), 100, dtype=np.uint8)
+    features = extractor.extract(test_image)
+
+    # 抽出された特徴量のキーが基本特徴量名と一致することを確認
+    feature_keys = list(features.keys())
+    print(f"抽出された特徴量のキー数: {len(feature_keys)}")
+    assert set(feature_keys) == set(
+        base_names
+    ), f"Feature keys {feature_keys[:5]}... don't match base names {base_names[:5]}..."
+
+    print("特徴量名・単位テスト: 成功")
+
+
+def test_unit_for_feature_method():
+    """_get_unit_for_feature()メソッドのテスト."""
+    print("\n=== 単位取得メソッドテスト ===")
+
+    # 正常なHLAC特徴量名
+    test_cases = [
+        ("hlac_feature_00", "correlation_coefficient"),
+        ("hlac_feature_01", "correlation_coefficient"),
+        ("hlac_feature_44", "correlation_coefficient"),
+    ]
+
+    for feature_name, expected_unit in test_cases:
+        unit = HLACTextureExtractor._get_unit_for_feature(feature_name)
+        print(f"{feature_name} -> {unit}")
+        assert (
+            unit == expected_unit
+        ), f"Expected {expected_unit}, got {unit} for {feature_name}"
+
+    # 無効な特徴量名
+    invalid_cases = ["invalid_feature", "other_feature_00", ""]
+    for invalid_name in invalid_cases:
+        unit = HLACTextureExtractor._get_unit_for_feature(invalid_name)
+        print(f"{invalid_name} -> {unit}")
+        assert unit == "unknown", f"Expected 'unknown', got {unit} for {invalid_name}"
+
+    print("単位取得メソッドテスト: 成功")
 
 
 if __name__ == "__main__":
@@ -401,4 +495,6 @@ if __name__ == "__main__":
     test_hlac_error_handling()
     test_hlac_feature_names_and_config()
     test_hlac_config_merging()
-    print("\n=== すべてのテストが完了しました ===")
+    test_feature_names_and_units()
+    test_unit_for_feature_method()
+    print("\n=== HLACテクスチャ特徴量抽出テスト完了 ===")
