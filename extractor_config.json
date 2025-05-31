@@ -66,6 +66,14 @@
     "include_filename": true,
     "include_timestamp": true,
     "csv_separator": ",",
-    "output_filename": "features.csv"
+    "output_filename": "features.csv",
+    "enable_long_format": true,
+    "long_format_filename": "features_long.csv",
+    "class_extraction": {
+      "enabled": true,
+      "delimiter": "_",
+      "position": 2,
+      "column_name": "class"
+    }
   }
 } 
