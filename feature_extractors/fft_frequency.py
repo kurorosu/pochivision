@@ -35,6 +35,26 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
     設定により、周波数帯域、閾値、ピクセル解像度などを調整できます。
     """
 
+    # 特徴量の単位定義
+    _FEATURE_UNITS = {
+        "high_low_ratio": "ratio",
+        "spectral_std": "cycle/mm_or_cycle/pixel",
+        "horizontal_energy": "ratio",
+        "vertical_energy": "ratio",
+        "num_peaks": "count",
+        "max_peak_amp": "amplitude",
+        "spectral_centroid": "cycle/mm_or_cycle/pixel",
+        "spectral_entropy": "bits",
+        "horizontal_entropy": "bits",
+        "vertical_entropy": "bits",
+        "band_1_0.00_0.10": "ratio",
+        "band_2_0.10_0.30": "ratio",
+        "band_3_0.30_0.50": "ratio",
+        "band_1_0.00_0.10_entropy": "bits",
+        "band_2_0.10_0.30_entropy": "bits",
+        "band_3_0.30_0.50_entropy": "bits",
+    }
+
     def __init__(
         self,
         name: str = "fft_frequency",
@@ -465,6 +485,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
             # エラーが発生した場合、すべて0で埋める
             feature_names = self.get_feature_names()
             results = {name: 0.0 for name in feature_names}
+            return results
 
         return results
 
@@ -496,15 +517,26 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
     @staticmethod
     def get_feature_names() -> List[str]:
         """
-        この特徴量抽出器が出力する特徴量名のリストを返す.
+        この特徴量抽出器が出力する特徴量名のリストを返す（単位付き）.
 
         Returns:
-            List[str]: 特徴量名のリスト.
+            List[str]: 特徴量名のリスト（単位付き）.
         """
-        # デフォルト設定を使用して特徴量名を生成
-        default_config = FFTFrequencyExtractor.get_default_config()
+        base_names = FFTFrequencyExtractor.get_base_feature_names()
+        return [
+            f"{name}[{FFTFrequencyExtractor._get_unit_for_feature(name)}]"
+            for name in base_names
+        ]
 
-        feature_names = [
+    @staticmethod
+    def get_base_feature_names() -> List[str]:
+        """
+        この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
+
+        Returns:
+            List[str]: 基本特徴量名のリスト.
+        """
+        return [
             "high_low_ratio",
             "spectral_std",
             "horizontal_energy",
@@ -515,16 +547,33 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
             "spectral_entropy",
             "horizontal_entropy",
             "vertical_entropy",
+            "band_1_0.00_0.10",
+            "band_2_0.10_0.30",
+            "band_3_0.30_0.50",
+            "band_1_0.00_0.10_entropy",
+            "band_2_0.10_0.30_entropy",
+            "band_3_0.30_0.50_entropy",
         ]
 
-        # 周波数帯域の特徴量名を追加
-        for i, (fmin, fmax) in enumerate(default_config["frequency_bands"]):
-            band_key = f"band_{i+1}_{fmin:.2f}_{fmax:.2f}"
-            feature_names.append(band_key)
+    @staticmethod
+    def get_feature_units() -> Dict[str, str]:
+        """
+        特徴量の単位辞書を返す.
 
-        # エントロピーの特徴量名を追加
-        for i, (fmin, fmax) in enumerate(default_config["frequency_bands"]):
-            band_key = f"band_{i+1}_{fmin:.2f}_{fmax:.2f}_entropy"
-            feature_names.append(band_key)
+        Returns:
+            Dict[str, str]: 特徴量名と単位の対応辞書.
+        """
+        return FFTFrequencyExtractor._FEATURE_UNITS.copy()
 
-        return feature_names
+    @staticmethod
+    def _get_unit_for_feature(feature_name: str) -> str:
+        """
+        特徴量名から対応する単位を取得する.
+
+        Args:
+            feature_name (str): 特徴量名
+
+        Returns:
+            str: 対応する単位
+        """
+        return FFTFrequencyExtractor._FEATURE_UNITS.get(feature_name, "unknown")

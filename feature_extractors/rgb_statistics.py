@@ -15,15 +15,27 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
     """
     画像のRGB統計特徴量を抽出するクラス.
 
+    RGB色空間における各チャンネル（赤、緑、青）の統計的特性を定量化します。
+    色の分布や変動性を把握することで、画像の色彩特性を分析できます。
+
     抽出する特徴量（R、G、Bチャンネルそれぞれ）:
-    - mean: RGB平均値
-    - median: RGB中央値
-    - variance: RGB分散
-    - std_dev: RGB標準偏差
-    - cv: 変動係数（標準偏差/平均値）
+    - mean: RGB平均値 [0-255]
+    - median: RGB中央値 [0-255]
+    - variance: RGB分散 [0-255_squared]
+    - std_dev: RGB標準偏差 [0-255]
+    - cv: 変動係数（標準偏差/平均値） [ratio]
 
     設定により、RGB値がすべて0のピクセルを計算から除外することができます。
     """
+
+    # 特徴量の単位定義
+    _FEATURE_UNITS = {
+        "mean": "0-255",
+        "median": "0-255",
+        "variance": "0-255_squared",
+        "std_dev": "0-255",
+        "cv": "ratio",
+    }
 
     def __init__(
         self,
@@ -132,10 +144,24 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
     @staticmethod
     def get_feature_names() -> list[str]:
         """
-        この特徴量抽出器が出力する特徴量名のリストを返す.
+        この特徴量抽出器が出力する特徴量名のリストを返す（単位付き）.
 
         Returns:
-            list[str]: 特徴量名のリスト.
+            list[str]: 特徴量名のリスト（単位付き）.
+        """
+        base_names = RGBStatisticsExtractor.get_base_feature_names()
+        return [
+            f"{name}[{RGBStatisticsExtractor._get_unit_for_feature(name)}]"
+            for name in base_names
+        ]
+
+    @staticmethod
+    def get_base_feature_names() -> list[str]:
+        """
+        この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
+
+        Returns:
+            list[str]: 基本特徴量名のリスト.
         """
         feature_names = []
         channels = ["red", "green", "blue"]
@@ -146,3 +172,40 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
                 feature_names.append(f"{channel}_{stat}")
 
         return feature_names
+
+    @staticmethod
+    def get_feature_units() -> Dict[str, str]:
+        """
+        特徴量の単位辞書を返す.
+
+        Returns:
+            Dict[str, str]: 特徴量名と単位の対応辞書.
+        """
+        # 基本特徴量名を取得
+        base_names = RGBStatisticsExtractor.get_base_feature_names()
+
+        # 各特徴量名に対応する単位を生成
+        units = {}
+        for name in base_names:
+            units[name] = RGBStatisticsExtractor._get_unit_for_feature(name)
+
+        return units
+
+    @staticmethod
+    def _get_unit_for_feature(feature_name: str) -> str:
+        """
+        特徴量名から対応する単位を取得する.
+
+        Args:
+            feature_name (str): 特徴量名（例: "red_mean"）
+
+        Returns:
+            str: 対応する単位
+        """
+        # 特徴量名から統計量部分を抽出
+        parts = feature_name.split("_")
+        if len(parts) >= 2:
+            # "red_std_dev" -> "std_dev", "red_mean" -> "mean"
+            stat = "_".join(parts[1:])  # チャンネル名以外の部分を結合
+            return RGBStatisticsExtractor._FEATURE_UNITS.get(stat, "unknown")
+        return "unknown"

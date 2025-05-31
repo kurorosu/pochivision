@@ -292,30 +292,133 @@ def test_lbp_feature_names_and_config():
     """特徴量名とデフォルト設定のテスト."""
     print("\n=== 特徴量名とデフォルト設定テスト ===")
 
-    # 特徴量名の取得
+    # 特徴量名の取得（単位付き）
     feature_names = LBPTextureExtractor.get_feature_names()
-    print(f"特徴量名リスト: {feature_names}")
+    print(f"特徴量名リスト（単位付き）: {feature_names}")
     print(f"特徴量数: {len(feature_names)}")
+
+    # 特徴量名の取得（単位なし）
+    feature_names_no_units = LBPTextureExtractor.get_base_feature_names()
+    print(f"特徴量名リスト（単位なし）: {feature_names_no_units}")
+
+    # 特徴量の単位辞書の取得
+    feature_units = LBPTextureExtractor.get_feature_units()
+    print(f"特徴量の単位辞書: {feature_units}")
+
+    # 個別の特徴量の単位取得テスト
+    test_features = ["lbp_mean", "lbp_entropy", "lbp_uniformity", "nonexistent_feature"]
+    for feature in test_features:
+        unit = LBPTextureExtractor._get_unit_for_feature(feature)
+        print(f"特徴量 '{feature}' の単位: {unit}")
+
+    # 単位付きと単位なしの特徴量名の数が一致することを確認
+    assert len(feature_names) == len(
+        feature_names_no_units
+    ), "単位付きと単位なしの特徴量名の数が一致しません"
+
+    # 単位付きの特徴量名が正しい形式であることを確認
+    for i, (name_with_unit, name_without_unit) in enumerate(
+        zip(feature_names, feature_names_no_units)
+    ):
+        expected_unit = feature_units.get(name_without_unit, "unknown")
+        expected_name_with_unit = f"{name_without_unit}[{expected_unit}]"
+        assert (
+            name_with_unit == expected_name_with_unit
+        ), f"特徴量名 {i}: 期待値 '{expected_name_with_unit}', 実際 '{name_with_unit}'"
 
     # デフォルト設定の取得
     default_config = LBPTextureExtractor.get_default_config()
     print(f"デフォルト設定: {default_config}")
 
-    # 実際の抽出結果と特徴量名が一致するかチェック
+    # 実際の抽出結果と特徴量名（単位なし）が一致するかチェック
     test_image = np.random.randint(0, 256, (64, 64, 3), dtype=np.uint8)
     extractor = LBPTextureExtractor()
     features = extractor.extract(test_image)
 
     extracted_names = set(features.keys())
-    expected_names = set(feature_names)
+    expected_names = set(feature_names_no_units)
 
     print(f"抽出された特徴量名: {sorted(extracted_names)}")
-    print(f"期待される特徴量名: {sorted(expected_names)}")
+    print(f"期待される特徴量名（単位なし）: {sorted(expected_names)}")
 
     assert (
         extracted_names == expected_names
-    ), "抽出された特徴量名と期待される特徴量名が一致しません"
+    ), "抽出された特徴量名と期待される特徴量名（単位なし）が一致しません"
     print("特徴量名の一致を確認しました")
+
+    # 基本的な単位の確認
+    expected_units = {
+        "lbp_mean": "pattern_index",
+        "lbp_std": "pattern_index",
+        "lbp_skewness": "dimensionless",
+        "lbp_kurtosis": "dimensionless",
+        "lbp_entropy": "bits",
+        "lbp_uniformity": "ratio",
+    }
+
+    for feature, expected_unit in expected_units.items():
+        actual_unit = LBPTextureExtractor._get_unit_for_feature(feature)
+        assert (
+            actual_unit == expected_unit
+        ), f"特徴量 '{feature}' の単位が期待値と異なります: 期待値 '{expected_unit}', 実際 '{actual_unit}'"
+
+    print("基本特徴量の単位確認が完了しました")
+
+
+def test_lbp_units_with_histogram():
+    """ヒストグラムを含む場合の単位管理機能のテスト."""
+    print("\n=== ヒストグラム含有時の単位管理テスト ===")
+
+    # ヒストグラムを含む設定
+    config_with_histogram = {"include_histogram": True}
+    extractor = LBPTextureExtractor(config=config_with_histogram)
+
+    # テスト画像
+    test_image = np.random.randint(0, 256, (64, 64, 3), dtype=np.uint8)
+    features = extractor.extract(test_image)
+
+    # 特徴量名の取得（単位付き、インスタンス設定反映）
+    feature_names = extractor.get_feature_names_instance()
+    print(f"ヒストグラム含有時の特徴量名（単位付き）: {feature_names}")
+
+    # 特徴量名の取得（単位なし、インスタンス設定反映）
+    feature_names_no_units = extractor.get_base_feature_names_instance()
+    print(f"ヒストグラム含有時の特徴量名（単位なし）: {feature_names_no_units}")
+
+    # 特徴量の単位辞書の取得（インスタンス設定反映）
+    feature_units = extractor.get_feature_units_instance()
+    print(f"ヒストグラム含有時の特徴量の単位辞書: {feature_units}")
+
+    # ヒストグラムビンの単位確認
+    histogram_features = [
+        name for name in feature_names_no_units if name.startswith("lbp_bin_")
+    ]
+    print(f"ヒストグラムビン特徴量: {histogram_features}")
+
+    for bin_feature in histogram_features:
+        unit = extractor.get_feature_unit_instance(bin_feature)
+        assert (
+            unit == "ratio"
+        ), f"ヒストグラムビン '{bin_feature}' の単位が 'ratio' ではありません: {unit}"
+
+    # 実際の抽出結果と特徴量名（単位なし）が一致するかチェック
+    extracted_names = set(features.keys())
+    expected_names = set(feature_names_no_units)
+
+    assert (
+        extracted_names == expected_names
+    ), "ヒストグラム含有時の抽出された特徴量名と期待される特徴量名が一致しません"
+
+    # 単位付きの特徴量名が正しい形式であることを確認
+    for name_with_unit, name_without_unit in zip(feature_names, feature_names_no_units):
+        expected_unit = feature_units.get(name_without_unit, "unknown")
+        expected_name_with_unit = f"{name_without_unit}[{expected_unit}]"
+        assert name_with_unit == expected_name_with_unit, (
+            f"ヒストグラム含有時の特徴量名形式が不正: 期待値 '{expected_name_with_unit}', "
+            f"実際 '{name_with_unit}'"
+        )
+
+    print("ヒストグラム含有時の単位管理機能の確認が完了しました")
 
 
 def test_lbp_config_merging():
@@ -369,5 +472,6 @@ if __name__ == "__main__":
     test_lbp_edge_cases()
     test_lbp_error_handling()
     test_lbp_feature_names_and_config()
+    test_lbp_units_with_histogram()
     test_lbp_config_merging()
     print("\n=== 全てのテストが完了しました ===")

@@ -19,16 +19,29 @@ class LBPTextureExtractor(BaseFeatureExtractor):
 
     LBPは画像のテクスチャ解析に使用される重要な特徴量で、
     各ピクセルの近傍パターンを二進数で表現することで、
-    回転不変性やスケール不変性を持つテクスチャ記述子を生成します。
+    回転不変性やスケール不変性を持つテクスチャ記述子を生成します.
+    局所的なテクスチャパターンの分布を定量化できます.
 
     抽出する特徴量:
-    - ヒストグラム統計量: 平均、標準偏差、歪度、尖度
-    - エントロピー: パターンの複雑さを表す
-    - 均一性: パターンの均一性を表す
-    - 各LBPビンの正規化頻度（オプション）
+    - ヒストグラム統計量:
+       - 平均 [pattern index] 標準偏差 [pattern index]
+       - 歪度 [dimensionless] 尖度 [dimensionless]
+    - エントロピー: パターンの複雑さを表す [bits]
+    - 均一性: パターンの均一性を表す [ratio]
+    - 各LBPビンの正規化頻度（オプション） [ratio]
 
-    設定により、近傍点数、半径、手法、画像リサイズなどを調整できます。
+    設定により、近傍点数、半径、手法、画像リサイズなどを調整できます.
     """
+
+    # 特徴量の単位定義
+    _FEATURE_UNITS = {
+        "lbp_mean": "pattern_index",
+        "lbp_std": "pattern_index",
+        "lbp_skewness": "dimensionless",
+        "lbp_kurtosis": "dimensionless",
+        "lbp_entropy": "bits",
+        "lbp_uniformity": "ratio",
+    }
 
     def __init__(
         self,
@@ -270,10 +283,24 @@ class LBPTextureExtractor(BaseFeatureExtractor):
     @staticmethod
     def get_feature_names() -> List[str]:
         """
-        この特徴量抽出器が出力する特徴量名のリストを返す.
+        この特徴量抽出器が出力する特徴量名のリストを返す（単位付き）.
 
         Returns:
-            List[str]: 特徴量名のリスト.
+            List[str]: 特徴量名のリスト（単位付き）.
+        """
+        base_names = LBPTextureExtractor.get_base_feature_names()
+        return [
+            f"{name}[{LBPTextureExtractor._get_unit_for_feature(name)}]"
+            for name in base_names
+        ]
+
+    @staticmethod
+    def get_base_feature_names() -> List[str]:
+        """
+        この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
+
+        Returns:
+            List[str]: 基本特徴量名のリスト.
         """
         # 基本統計量
         feature_names = [
@@ -301,3 +328,149 @@ class LBPTextureExtractor(BaseFeatureExtractor):
                 feature_names.append(f"lbp_bin_{i}")
 
         return feature_names
+
+    @staticmethod
+    def get_feature_units() -> Dict[str, str]:
+        """
+        特徴量の単位辞書を返す.
+
+        Returns:
+            Dict[str, str]: 特徴量名と単位の対応辞書.
+        """
+        # 基本特徴量名を取得
+        base_names = LBPTextureExtractor.get_base_feature_names()
+
+        # 各特徴量名に対応する単位を生成
+        units = {}
+        for name in base_names:
+            units[name] = LBPTextureExtractor._get_unit_for_feature(name)
+
+        return units
+
+    @staticmethod
+    def _get_unit_for_feature(feature_name: str) -> str:
+        """
+        特徴量名から対応する単位を取得する.
+
+        Args:
+            feature_name (str): 特徴量名（例: "lbp_mean"）
+
+        Returns:
+            str: 対応する単位
+        """
+        # ヒストグラムビンの場合
+        if feature_name.startswith("lbp_bin_"):
+            return "ratio"
+
+        # 基本統計量の場合
+        return LBPTextureExtractor._FEATURE_UNITS.get(feature_name, "unknown")
+
+    # インスタンスメソッド版（後方互換性のため残す）
+    def get_feature_names_instance(self) -> List[str]:
+        """
+        この特徴量抽出器が出力する特徴量名のリストを返す（単位付き、インスタンス設定反映）.
+
+        Returns:
+            List[str]: 特徴量名のリスト（単位付き）.
+        """
+        # 基本統計量（単位付き）
+        feature_names = []
+        base_features = [
+            "lbp_mean",
+            "lbp_std",
+            "lbp_skewness",
+            "lbp_kurtosis",
+            "lbp_entropy",
+            "lbp_uniformity",
+        ]
+
+        for feature in base_features:
+            unit = self._FEATURE_UNITS.get(feature, "unknown")
+            feature_names.append(f"{feature}[{unit}]")
+
+        # インスタンスの設定でヒストグラムを含む場合
+        if self.include_histogram:
+            # uniform LBPの場合のビン数を計算
+            P = self.P
+            method = self.method
+
+            if method == "uniform":
+                max_bins = P + 2  # uniform LBPの場合
+            else:
+                max_bins = 2**P  # 通常のLBPの場合
+
+            for i in range(max_bins):
+                feature_names.append(f"lbp_bin_{i}[ratio]")
+
+        return feature_names
+
+    def get_base_feature_names_instance(self) -> List[str]:
+        """
+        この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし、インスタンス設定反映）.
+
+        Returns:
+            List[str]: 基本特徴量名のリスト.
+        """
+        # 基本統計量
+        feature_names = [
+            "lbp_mean",
+            "lbp_std",
+            "lbp_skewness",
+            "lbp_kurtosis",
+            "lbp_entropy",
+            "lbp_uniformity",
+        ]
+
+        # インスタンスの設定でヒストグラムを含む場合
+        if self.include_histogram:
+            # uniform LBPの場合のビン数を計算
+            P = self.P
+            method = self.method
+
+            if method == "uniform":
+                max_bins = P + 2  # uniform LBPの場合
+            else:
+                max_bins = 2**P  # 通常のLBPの場合
+
+            for i in range(max_bins):
+                feature_names.append(f"lbp_bin_{i}")
+
+        return feature_names
+
+    def get_feature_units_instance(self) -> Dict[str, str]:
+        """
+        この特徴量抽出器が出力する特徴量の単位を返す（インスタンス設定反映）.
+
+        Returns:
+            Dict[str, str]: 特徴量名と単位の辞書.
+        """
+        units = self._FEATURE_UNITS.copy()
+
+        # インスタンスの設定でヒストグラムを含む場合
+        if self.include_histogram:
+            # uniform LBPの場合のビン数を計算
+            P = self.P
+            method = self.method
+
+            if method == "uniform":
+                max_bins = P + 2  # uniform LBPの場合
+            else:
+                max_bins = 2**P  # 通常のLBPの場合
+
+            for i in range(max_bins):
+                units[f"lbp_bin_{i}"] = "ratio"
+
+        return units
+
+    def get_feature_unit_instance(self, feature_name: str) -> str:
+        """
+        指定された特徴量の単位を返す（インスタンス設定反映）.
+
+        Args:
+            feature_name (str): 特徴量名.
+
+        Returns:
+            str: 特徴量の単位.
+        """
+        units = self.get_feature_units_instance()
+        return units.get(feature_name, "unknown")
