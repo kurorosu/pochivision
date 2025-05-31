@@ -14,15 +14,27 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
     """
     画像の輝度統計特徴量を抽出するクラス.
 
+    画像の明るさの分布や変動性を定量化します。
+    輝度の統計的特性を分析することで、画像の明度特性を把握できます。
+
     抽出する特徴量:
-    - mean: 輝度平均値
-    - median: 輝度中央値
-    - variance: 輝度分散
-    - std_dev: 輝度標準偏差
-    - cv: 変動係数（標準偏差/平均値）
+    - mean: 輝度平均値 [0-255]
+    - median: 輝度中央値 [0-255]
+    - variance: 輝度分散 [0-255_squared]
+    - std_dev: 輝度標準偏差 [0-255]
+    - cv: 変動係数（標準偏差/平均値） [ratio]
 
     設定により、輝度値が0のピクセルを計算から除外することができます。
     """
+
+    # 特徴量の単位定義
+    _FEATURE_UNITS = {
+        "mean": "0-255",
+        "median": "0-255",
+        "variance": "0-255_squared",
+        "std_dev": "0-255",
+        "cv": "ratio",
+    }
 
     def __init__(
         self,
@@ -156,6 +168,30 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
         この特徴量抽出器が出力する特徴量名のリストを返す.
 
         Returns:
-            list[str]: 特徴量名のリスト.
+            list[str]: 特徴量名のリスト（単位付き）.
+        """
+        base_names = ["mean", "median", "variance", "std_dev", "cv"]
+        return [
+            f"{name}[{BrightnessStatisticsExtractor._FEATURE_UNITS[name]}]"
+            for name in base_names
+        ]
+
+    @staticmethod
+    def get_base_feature_names() -> list[str]:
+        """
+        この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
+
+        Returns:
+            list[str]: 基本特徴量名のリスト.
         """
         return ["mean", "median", "variance", "std_dev", "cv"]
+
+    @staticmethod
+    def get_feature_units() -> Dict[str, str]:
+        """
+        特徴量の単位辞書を返す.
+
+        Returns:
+            Dict[str, str]: 特徴量名と単位の対応辞書.
+        """
+        return BrightnessStatisticsExtractor._FEATURE_UNITS.copy()

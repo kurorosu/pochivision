@@ -279,11 +279,86 @@ class TestGLCMTextureExtractor:
         expected_count = 6 * 3 * 4
         assert len(feature_names) == expected_count
 
-        # 特徴量名の形式を確認
+        # 特徴量名の形式を確認（単位付き）
         for name in feature_names:
-            assert "_" in name
-            parts = name.split("_")
-            assert len(parts) == 3  # property_distance_angle
+            assert (
+                "[" in name and "]" in name
+            ), f"単位付き特徴量名に[]が含まれていません: {name}"
+            # 単位部分を抽出
+            if "[" in name and "]" in name:
+                base_part = name.split("[")[0]
+                unit_part = name.split("[")[1].split("]")[0]
+
+                # 基本部分の形式確認
+                parts = base_part.split("_")
+                assert (
+                    len(parts) == 3
+                ), f"基本特徴量名の形式が正しくありません: {base_part}"
+                prop, distance, angle = parts
+                assert prop in [
+                    "contrast",
+                    "dissimilarity",
+                    "homogeneity",
+                    "energy",
+                    "correlation",
+                    "ASM",
+                ]
+                assert distance in ["1", "2", "3"]
+                assert angle in ["0", "45", "90", "135"]
+
+                # 単位の確認
+                expected_units = [
+                    "intensity_squared",
+                    "intensity",
+                    "ratio",
+                    "correlation_coefficient",
+                ]
+                assert unit_part in expected_units, f"予期しない単位: {unit_part}"
+
+        # 単位辞書の確認
+        units = GLCMTextureExtractor.get_feature_units()
+        print(f"特徴量単位辞書のサイズ: {len(units)}")
+        print(f"特徴量単位辞書の例: {dict(list(units.items())[:5])}")
+
+        # 基本特徴量名と単位辞書のキーが一致することを確認
+        base_names = GLCMTextureExtractor.get_base_feature_names()
+        assert set(base_names) == set(
+            units.keys()
+        ), "基本特徴量名と単位辞書のキーが一致しません"
+
+        # 各プロパティの単位が正しいことを確認
+        expected_property_units = {
+            "contrast": "intensity_squared",
+            "dissimilarity": "intensity",
+            "homogeneity": "ratio",
+            "energy": "ratio",
+            "correlation": "correlation_coefficient",
+            "ASM": "ratio",
+        }
+
+        for name in feature_names:
+            prop = name.split("_")[0]
+            expected_unit = expected_property_units[prop]
+            assert name.endswith(f"[{expected_unit}]"), (
+                f"プロパティ {prop} の単位が正しくありません: "
+                f"期待値={expected_unit}, 実際={name[-len(expected_unit):]}"
+            )
+
+        # 抽出結果と特徴量名の整合性確認
+        extractor = GLCMTextureExtractor()
+        test_image = np.random.randint(0, 256, (50, 50, 3), dtype=np.uint8)
+        features = extractor.extract(test_image)
+
+        # 抽出された特徴量のキーが基本特徴量名と一致することを確認
+        feature_keys = set(features.keys())
+        base_names_set = set(base_names)
+        print(f"抽出された特徴量のキー数: {len(feature_keys)}")
+        print(f"基本特徴量名の数: {len(base_names_set)}")
+        assert (
+            feature_keys == base_names_set
+        ), "抽出された特徴量のキーと基本特徴量名が一致しません"
+
+        print("GLCM特徴量名・単位テスト: 成功")
 
     def test_feature_name_consistency(self):
         """特徴量名の一貫性をテスト."""
@@ -294,8 +369,8 @@ class TestGLCMTextureExtractor:
         features = extractor.extract(image)
         actual_names = set(features.keys())
 
-        # get_feature_names()で得られる特徴量名
-        expected_names = set(GLCMTextureExtractor.get_feature_names())
+        # get_base_feature_names()で得られる特徴量名（基本特徴量名）
+        expected_names = set(GLCMTextureExtractor.get_base_feature_names())
 
         # 両者が一致することを確認
         assert actual_names == expected_names
@@ -334,3 +409,113 @@ class TestGLCMTextureExtractor:
         image_int = np.random.randint(0, 256, (50, 50, 3), dtype=np.int32)
         features_int = extractor.extract(image_int)
         assert len(features_int) > 0
+
+    def test_feature_names_and_units(self):
+        """特徴量名と単位の包括的なテスト."""
+        print("\n=== GLCM特徴量名・単位テスト ===")
+
+        # 基本特徴量名の確認
+        base_names = GLCMTextureExtractor.get_base_feature_names()
+        print(f"基本特徴量名の数: {len(base_names)}")
+        print(f"基本特徴量名の例: {base_names[:5]}")
+
+        # 基本特徴量名の形式確認
+        for name in base_names:
+            parts = name.split("_")
+            assert len(parts) == 3, f"基本特徴量名の形式が正しくありません: {name}"
+            prop, distance, angle = parts
+            assert prop in [
+                "contrast",
+                "dissimilarity",
+                "homogeneity",
+                "energy",
+                "correlation",
+                "ASM",
+            ]
+            assert distance in ["1", "2", "3"]
+            assert angle in ["0", "45", "90", "135"]
+
+        # 単位付き特徴量名の確認
+        unit_names = GLCMTextureExtractor.get_feature_names()
+        print(f"単位付き特徴量名の数: {len(unit_names)}")
+        print(f"単位付き特徴量名の例: {unit_names[:5]}")
+
+        # 単位付き特徴量名の形式確認
+        for name in unit_names:
+            assert (
+                "[" in name and "]" in name
+            ), f"単位付き特徴量名に[]が含まれていません: {name}"
+            # 単位部分を抽出
+            if "[" in name and "]" in name:
+                base_part = name.split("[")[0]
+                unit_part = name.split("[")[1].split("]")[0]
+
+                # 基本部分の形式確認
+                parts = base_part.split("_")
+                assert (
+                    len(parts) == 3
+                ), f"基本特徴量名の形式が正しくありません: {base_part}"
+                prop, distance, angle = parts
+                assert prop in [
+                    "contrast",
+                    "dissimilarity",
+                    "homogeneity",
+                    "energy",
+                    "correlation",
+                    "ASM",
+                ]
+                assert distance in ["1", "2", "3"]
+                assert angle in ["0", "45", "90", "135"]
+
+                # 単位の確認
+                expected_units = [
+                    "intensity_squared",
+                    "intensity",
+                    "ratio",
+                    "correlation_coefficient",
+                ]
+                assert unit_part in expected_units, f"予期しない単位: {unit_part}"
+
+        # 単位辞書の確認
+        units = GLCMTextureExtractor.get_feature_units()
+        print(f"特徴量単位辞書のサイズ: {len(units)}")
+        print(f"特徴量単位辞書の例: {dict(list(units.items())[:5])}")
+
+        # 基本特徴量名と単位辞書のキーが一致することを確認
+        base_names = GLCMTextureExtractor.get_base_feature_names()
+        assert set(base_names) == set(
+            units.keys()
+        ), "基本特徴量名と単位辞書のキーが一致しません"
+
+        # 各プロパティの単位が正しいことを確認
+        expected_property_units = {
+            "contrast": "intensity_squared",
+            "dissimilarity": "intensity",
+            "homogeneity": "ratio",
+            "energy": "ratio",
+            "correlation": "correlation_coefficient",
+            "ASM": "ratio",
+        }
+
+        for base_name, unit in units.items():
+            prop = base_name.split("_")[0]
+            expected_unit = expected_property_units[prop]
+            assert (
+                unit == expected_unit
+            ), f"プロパティ {prop} の単位が正しくありません: 期待値={expected_unit}, 実際={unit}"
+
+        # 抽出結果と特徴量名の整合性確認
+        extractor = GLCMTextureExtractor()
+        test_image = np.random.randint(0, 256, (50, 50, 3), dtype=np.uint8)
+        features = extractor.extract(test_image)
+
+        # 抽出された特徴量のキーが基本特徴量名と一致することを確認
+        feature_keys = set(features.keys())
+        base_names_set = set(base_names)
+        print(f"抽出された特徴量のキー数: {len(feature_keys)}")
+        print(f"基本特徴量名の数: {len(base_names_set)}")
+        assert (
+            feature_keys == base_names_set
+        ), "抽出された特徴量のキーと基本特徴量名が一致しません"
+
+        print("GLCM特徴量名・単位テスト: 成功")

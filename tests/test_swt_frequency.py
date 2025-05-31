@@ -185,8 +185,38 @@ class TestSWTFrequencyExtractor:
         assert config["multiscale"] is True
 
     def test_get_feature_names(self):
-        """特徴量名リストの取得をテストする."""
+        """特徴量名リストの取得をテストする（単位付き）."""
         feature_names = SWTFrequencyExtractor.get_feature_names()
+
+        # 単位付きの特徴量名が正しく生成されることを確認
+        expected_names = [
+            "mean_ll[coefficient]",
+            "mean_lh[coefficient]",
+            "mean_hl[coefficient]",
+            "mean_hh[coefficient]",
+            "energy_ll[coefficient²]",
+            "energy_lh[coefficient²]",
+            "energy_hl[coefficient²]",
+            "energy_hh[coefficient²]",
+            "energy_ratio_h[ratio]",
+            "energy_ratio_v[ratio]",
+            "energy_ratio_d[ratio]",
+            "total_energy[coefficient²]",
+            "entropy_ll[bits]",
+            "entropy_lh[bits]",
+            "entropy_hl[bits]",
+            "entropy_hh[bits]",
+            "std_ll[coefficient]",
+            "std_lh[coefficient]",
+            "std_hl[coefficient]",
+            "std_hh[coefficient]",
+        ]
+
+        assert feature_names == expected_names
+
+    def test_get_base_feature_names(self):
+        """基本特徴量名リストの取得をテストする（単位なし）."""
+        feature_names = SWTFrequencyExtractor.get_base_feature_names()
 
         expected_names = [
             "mean_ll",
@@ -212,6 +242,94 @@ class TestSWTFrequencyExtractor:
         ]
 
         assert feature_names == expected_names
+
+    def test_get_feature_units(self):
+        """特徴量の単位辞書の取得をテストする."""
+        feature_units = SWTFrequencyExtractor.get_feature_units()
+
+        # 基本特徴量名を取得
+        base_names = SWTFrequencyExtractor.get_base_feature_names()
+
+        # すべての基本特徴量に対して単位が定義されていることを確認
+        for name in base_names:
+            assert name in feature_units
+            assert isinstance(feature_units[name], str)
+            assert feature_units[name] != "unknown"
+
+        # 特定の特徴量の単位を確認
+        assert feature_units["mean_ll"] == "coefficient"
+        assert feature_units["energy_ll"] == "coefficient²"
+        assert feature_units["energy_ratio_h"] == "ratio"
+        assert feature_units["total_energy"] == "coefficient²"
+        assert feature_units["entropy_ll"] == "bits"
+        assert feature_units["std_ll"] == "coefficient"
+
+    def test_get_unit_for_feature(self):
+        """個別特徴量の単位取得をテストする."""
+        # 基本特徴量のテスト
+        assert SWTFrequencyExtractor._get_unit_for_feature("mean_ll") == "coefficient"
+        assert (
+            SWTFrequencyExtractor._get_unit_for_feature("energy_hh") == "coefficient²"
+        )
+        assert SWTFrequencyExtractor._get_unit_for_feature("energy_ratio_v") == "ratio"
+        assert (
+            SWTFrequencyExtractor._get_unit_for_feature("total_energy")
+            == "coefficient²"
+        )
+        assert SWTFrequencyExtractor._get_unit_for_feature("entropy_lh") == "bits"
+        assert SWTFrequencyExtractor._get_unit_for_feature("std_hl") == "coefficient"
+
+        # マルチレベル特徴量のテスト（プレフィックス除去）
+        assert (
+            SWTFrequencyExtractor._get_unit_for_feature("L1_mean_ll") == "coefficient"
+        )
+        assert (
+            SWTFrequencyExtractor._get_unit_for_feature("L2_energy_hh")
+            == "coefficient²"
+        )
+        assert SWTFrequencyExtractor._get_unit_for_feature("L3_entropy_lh") == "bits"
+
+        # 未知の特徴量のテスト
+        assert (
+            SWTFrequencyExtractor._get_unit_for_feature("unknown_feature") == "unknown"
+        )
+
+    def test_unit_consistency(self):
+        """単位付きと単位なしの特徴量名の整合性をテストする."""
+        feature_names_with_units = SWTFrequencyExtractor.get_feature_names()
+        base_feature_names = SWTFrequencyExtractor.get_base_feature_names()
+        feature_units = SWTFrequencyExtractor.get_feature_units()
+
+        # 数が一致することを確認
+        assert len(feature_names_with_units) == len(base_feature_names)
+
+        # 単位付きの特徴量名が正しい形式であることを確認
+        for i, (name_with_unit, base_name) in enumerate(
+            zip(feature_names_with_units, base_feature_names)
+        ):
+            expected_unit = feature_units[base_name]
+            expected_name_with_unit = f"{base_name}[{expected_unit}]"
+            assert (
+                name_with_unit == expected_name_with_unit
+            ), f"特徴量名 {i}: 期待値 '{expected_name_with_unit}', 実際 '{name_with_unit}'"
+
+    def test_feature_extraction_consistency(self):
+        """特徴量抽出結果と特徴量名の整合性をテストする."""
+        # テスト画像
+        image = np.random.rand(64, 64).astype(np.float32)
+
+        # 単一スケール設定で抽出
+        config = {"multiscale": False}
+        extractor = SWTFrequencyExtractor("swt_frequency", config)
+        features = extractor.extract(image)
+
+        # 抽出された特徴量名と期待される特徴量名が一致することを確認
+        extracted_names = set(features.keys())
+        expected_names = set(SWTFrequencyExtractor.get_base_feature_names())
+
+        assert (
+            extracted_names == expected_names
+        ), "抽出された特徴量名と期待される特徴量名が一致しません"
 
     def test_different_wavelets(self):
         """異なるウェーブレットでの動作をテストする."""
