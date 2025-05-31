@@ -192,6 +192,47 @@ class FeatureExtractionRunner:
 
         return image_files
 
+    def _extract_class_from_filename(self, filename: str) -> str:
+        """
+        ファイル名からクラス名を抽出.
+
+        Args:
+            filename (str): ファイル名（拡張子なし）.
+
+        Returns:
+            str: 抽出されたクラス名. 抽出できない場合は空文字列.
+        """
+        class_config = self.config.get("output_settings", {}).get(
+            "class_extraction", {}
+        )
+
+        if not class_config.get("enabled", False):
+            return ""
+
+        delimiter = class_config.get("delimiter", "_")
+        position = class_config.get("position", 0)
+
+        try:
+            # ファイル名を区切り文字で分割
+            parts = filename.split(delimiter)
+
+            # 指定された位置の文字列を取得
+            if 0 <= position < len(parts):
+                return parts[position]
+            elif position < 0 and abs(position) <= len(parts):
+                # 負の値の場合は後ろから数える
+                return parts[position]
+            else:
+                print(
+                    f"警告: ファイル名 '{filename}' の位置 {position} にクラス名が見つかりません"
+                )
+                return ""
+        except Exception as e:
+            print(
+                f"警告: ファイル名 '{filename}' からクラス名の抽出に失敗しました: {e}"
+            )
+            return ""
+
     def _extract_features_from_image(self, image_path: Path) -> Dict[str, Any]:
         """
         1つの画像から特徴量を抽出.
@@ -211,6 +252,17 @@ class FeatureExtractionRunner:
 
             # 各特徴量抽出器で処理
             features = {"filename": image_path.name}
+
+            # クラス名の抽出（設定で有効な場合）
+            class_config = self.config.get("output_settings", {}).get(
+                "class_extraction", {}
+            )
+            if class_config.get("enabled", False):
+                filename_without_ext = image_path.stem  # 拡張子なしのファイル名
+                class_name = self._extract_class_from_filename(filename_without_ext)
+                if class_name:
+                    column_name = class_config.get("column_name", "class")
+                    features[column_name] = class_name
 
             # タイムスタンプの追加（設定で有効な場合）
             if self.config.get("output_settings", {}).get("include_timestamp", False):
@@ -297,11 +349,22 @@ class FeatureExtractionRunner:
             for result in results:
                 all_feature_names.update(result.keys())
 
-            # ヘッダーの順序を決定（filename, timestamp, その他の順）
+            # ヘッダーの順序を決定（filename, class, timestamp, その他の順）
             headers = []
             if "filename" in all_feature_names:
                 headers.append("filename")
                 all_feature_names.remove("filename")
+
+            # クラス名列を追加（設定で有効な場合）
+            class_config = self.config.get("output_settings", {}).get(
+                "class_extraction", {}
+            )
+            if class_config.get("enabled", False):
+                column_name = class_config.get("column_name", "class")
+                if column_name in all_feature_names:
+                    headers.append(column_name)
+                    all_feature_names.remove(column_name)
+
             if "timestamp" in all_feature_names:
                 headers.append("timestamp")
                 all_feature_names.remove("timestamp")
@@ -313,11 +376,101 @@ class FeatureExtractionRunner:
                 writer.writeheader()
                 writer.writerows(results)
 
-            print(f"特徴量抽出結果を保存しました: {output_path}")
+            print(f"横持ちCSV結果を保存しました: {output_path}")
             print(f"処理された画像数: {len(results)}")
 
         except Exception as e:
             print(f"エラー: CSV保存中にエラーが発生しました: {e}")
+
+    def _save_results_to_long_csv(self, results: List[Dict[str, Any]]) -> None:
+        """
+        抽出結果を縦持ち（long format）CSVファイルに保存.
+
+        Args:
+            results (List[Dict[str, Any]]): 特徴量抽出結果のリスト.
+        """
+        if not results:
+            print("警告: 保存する結果がありません")
+            return
+
+        # 出力ファイル名の決定
+        output_filename = self.config.get("output_settings", {}).get(
+            "long_format_filename", "features_long.csv"
+        )
+        output_path = self.output_dir / output_filename
+
+        # CSV区切り文字の取得
+        separator = self.config.get("output_settings", {}).get("csv_separator", ",")
+
+        try:
+            # 縦持ち形式のデータを作成
+            long_data = []
+
+            for result in results:
+                filename = result.get("filename", "")
+                timestamp = result.get("timestamp", "")
+
+                # クラス名の取得（設定で有効な場合）
+                class_config = self.config.get("output_settings", {}).get(
+                    "class_extraction", {}
+                )
+                class_name = ""
+                if class_config.get("enabled", False):
+                    column_name = class_config.get("column_name", "class")
+                    class_name = result.get(column_name, "")
+
+                # filename, class, timestamp 以外の特徴量を縦持ちに変換
+                excluded_columns = ["filename", "timestamp"]
+                if class_config.get("enabled", False):
+                    excluded_columns.append(class_config.get("column_name", "class"))
+
+                for feature_name, feature_value in result.items():
+                    if feature_name not in excluded_columns:
+                        row = {
+                            "filename": filename,
+                            "feature_name": feature_name,
+                            "feature_value": feature_value,
+                        }
+
+                        # クラス名が有効な場合は追加
+                        if class_name:
+                            row[class_config.get("column_name", "class")] = class_name
+
+                        # タイムスタンプが有効な場合は追加
+                        if timestamp:
+                            row["timestamp"] = timestamp
+
+                        long_data.append(row)
+
+            # ヘッダーの決定
+            headers = ["filename"]
+
+            # クラス名列を追加（設定で有効な場合）
+            class_config = self.config.get("output_settings", {}).get(
+                "class_extraction", {}
+            )
+            if class_config.get("enabled", False) and any(
+                row.get(class_config.get("column_name", "class")) for row in long_data
+            ):
+                headers.append(class_config.get("column_name", "class"))
+
+            headers.extend(["feature_name", "feature_value"])
+
+            if any(row.get("timestamp") for row in long_data):
+                # feature_name, feature_valueの前にtimestampを挿入
+                headers.insert(-2, "timestamp")
+
+            # CSVファイルに書き込み
+            with open(output_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=headers, delimiter=separator)
+                writer.writeheader()
+                writer.writerows(long_data)
+
+            print(f"縦持ちCSV結果を保存しました: {output_path}")
+            print(f"特徴量レコード数: {len(long_data)}")
+
+        except Exception as e:
+            print(f"エラー: 縦持ちCSV保存中にエラーが発生しました: {e}")
 
     def run(self) -> None:
         """特徴量抽出を実行する."""
@@ -346,6 +499,12 @@ class FeatureExtractionRunner:
         # 結果の保存
         if self.config.get("output_format", "csv") == "csv":
             self._save_results_to_csv(results)
+
+            # 縦持ち形式も出力する場合
+            if self.config.get("output_settings", {}).get("enable_long_format", False):
+                self._save_results_to_long_csv(results)
+        elif self.config.get("output_format", "csv") == "long_csv":
+            self._save_results_to_long_csv(results)
 
         print("=== 特徴量抽出が完了しました ===")
 
