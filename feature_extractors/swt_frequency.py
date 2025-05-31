@@ -1,6 +1,6 @@
 """SWT（Stationary Wavelet Transform）周波数変換特徴量抽出を行うモジュール."""
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pywt
@@ -25,14 +25,14 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
     - mean_lh: 水平高周波成分（LH）の平均値 [coefficient]
     - mean_hl: 垂直高周波成分（HL）の平均値 [coefficient]
     - mean_hh: 対角高周波成分（HH）の平均値 [coefficient]
-    - energy_ll: 低周波成分（LL）のエネルギー [coefficient²]
-    - energy_lh: 水平高周波成分（LH）のエネルギー [coefficient²]
-    - energy_hl: 垂直高周波成分（HL）のエネルギー [coefficient²]
-    - energy_hh: 対角高周波成分（HH）のエネルギー [coefficient²]
+    - energy_ll: 低周波成分（LL）のエネルギー [coefficient_squared]
+    - energy_lh: 水平高周波成分（LH）のエネルギー [coefficient_squared]
+    - energy_hl: 垂直高周波成分（HL）のエネルギー [coefficient_squared]
+    - energy_hh: 対角高周波成分（HH）のエネルギー [coefficient_squared]
     - energy_ratio_h: 水平方向エネルギー比 [ratio]
     - energy_ratio_v: 垂直方向エネルギー比 [ratio]
     - energy_ratio_d: 対角方向エネルギー比 [ratio]
-    - total_energy: 全エネルギー [coefficient²]
+    - total_energy: 全エネルギー [coefficient_squared]
     - entropy_ll: 低周波成分のエントロピー [bits]
     - entropy_lh: 水平高周波成分のエントロピー [bits]
     - entropy_hl: 垂直高周波成分のエントロピー [bits]
@@ -49,9 +49,9 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
     # 特徴量の単位定義
     _FEATURE_UNITS = {
         "mean": "coefficient",
-        "energy": "coefficient²",
+        "energy": "coefficient_squared",
         "energy_ratio": "ratio",
-        "total_energy": "coefficient²",
+        "total_energy": "coefficient_squared",
         "entropy": "bits",
         "std": "coefficient",
     }
@@ -262,61 +262,83 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
         }
 
     @staticmethod
-    def get_feature_names() -> List[str]:
+    def get_feature_names(config: Optional[Dict[str, Any]] = None) -> List[str]:
         """
         抽出される特徴量名のリストを取得する（単位付き）.
+
+        Args:
+            config (Optional[Dict[str, Any]]): 設定辞書。Noneの場合はデフォルト設定を使用。
 
         Returns:
             List[str]: 特徴量名のリスト（単位付き）.
         """
-        base_names = SWTFrequencyExtractor.get_base_feature_names()
+        base_names = SWTFrequencyExtractor.get_base_feature_names(config)
         return [
             f"{name}[{SWTFrequencyExtractor._get_unit_for_feature(name)}]"
             for name in base_names
         ]
 
     @staticmethod
-    def get_base_feature_names() -> List[str]:
+    def get_base_feature_names(config: Optional[Dict[str, Any]] = None) -> List[str]:
         """
         抽出される基本特徴量名のリストを取得する（単位なし）.
+
+        Args:
+            config (Optional[Dict[str, Any]]): 設定辞書。Noneの場合はデフォルト設定を使用。
 
         Returns:
             List[str]: 基本特徴量名のリスト.
         """
-        base_features = [
-            "mean_ll",
-            "mean_lh",
-            "mean_hl",
-            "mean_hh",
-            "energy_ll",
-            "energy_lh",
-            "energy_hl",
-            "energy_hh",
-            "energy_ratio_h",
-            "energy_ratio_v",
-            "energy_ratio_d",
-            "total_energy",
-            "entropy_ll",
-            "entropy_lh",
-            "entropy_hl",
-            "entropy_hh",
-            "std_ll",
-            "std_lh",
-            "std_hl",
-            "std_hh",
-        ]
-        return base_features
+        # 設定を取得（引数で指定されない場合はデフォルト設定を使用）
+        if config is None:
+            config = SWTFrequencyExtractor.get_default_config()
+        else:
+            # デフォルト設定とマージ
+            default_config = SWTFrequencyExtractor.get_default_config()
+            merged_config = default_config.copy()
+            merged_config.update(config)
+            config = merged_config
+
+        # _extract_single_level_features()と同じ順序で特徴量名を生成
+        components = ["ll", "lh", "hl", "hh"]
+        stats = ["mean", "energy", "entropy", "std"]
+
+        base_features = []
+
+        # 各成分の基本統計量
+        for comp in components:
+            for stat in stats:
+                base_features.append(f"{stat}_{comp}")
+
+        # エネルギー比と全エネルギー
+        base_features.extend(
+            ["energy_ratio_h", "energy_ratio_v", "energy_ratio_d", "total_energy"]
+        )
+
+        # マルチスケール解析の場合、各レベルの特徴量を追加
+        if config["multiscale"]:
+            max_level = config["max_level"]
+            all_features = []
+            for level in range(1, max_level + 1):
+                for feature in base_features:
+                    all_features.append(f"L{level}_{feature}")
+            return all_features
+        else:
+            return base_features
 
     @staticmethod
-    def get_feature_units() -> Dict[str, str]:
+    def get_feature_units(config: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         """
         特徴量の単位辞書を返す.
+
+        Args:
+            config (Optional[Dict[str, Any]]): 設定辞書。Noneの場合はデフォルト設定を使用。
 
         Returns:
             Dict[str, str]: 特徴量名と単位の対応辞書.
         """
-        # 基本特徴量名を取得
-        base_names = SWTFrequencyExtractor.get_base_feature_names()
+        # 基本特徴量名を取得（設定を渡す）
+        base_names = SWTFrequencyExtractor.get_base_feature_names(config)
 
         # 各特徴量名に対応する単位を生成
         units = {}

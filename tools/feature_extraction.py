@@ -228,7 +228,21 @@ class FeatureExtractionRunner:
                     if has_unit_support:
                         # 単位付きの特徴量名を使用
                         try:
-                            units = extractor.__class__.get_feature_units()
+                            # 抽出器の設定を取得して単位管理機能に渡す
+                            extractor_config = getattr(extractor, "config", None)
+
+                            # get_feature_unitsメソッドが設定パラメータを受け取るかチェック
+                            import inspect
+
+                            sig = inspect.signature(
+                                extractor.__class__.get_feature_units
+                            )
+                            if "config" in sig.parameters:
+                                units = extractor.__class__.get_feature_units(
+                                    extractor_config
+                                )
+                            else:
+                                units = extractor.__class__.get_feature_units()
 
                             for base_name, value in extracted.items():
                                 if base_name in units:
