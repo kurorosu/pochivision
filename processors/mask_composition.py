@@ -1,6 +1,6 @@
 """マスク合成プロセッサを提供するモジュール."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -19,6 +19,7 @@ class MaskCompositionProcessor(BaseProcessor):
 
     2値化画像の白ピクセル部分または黒ピクセル部分を、指定した元画像のピクセルで置き換えます。
     マスク画像とターゲット画像のサイズが異なる場合は、ターゲット画像をリサイズします。
+    オプションで、マスクの白ピクセル領域に基づいてトリミングを行うことができます。
 
     このプロセッサはパイプラインモードでのみ使用可能です。パラレルモードでは動作しません。
 
@@ -30,8 +31,12 @@ class MaskCompositionProcessor(BaseProcessor):
             "mask_composition": {
                 "target_image": "original",
                 # 合成する元画像の識別子（"original"または他のプロセッサ名）
-                "use_white_pixels": true
+                "use_white_pixels": true,
                 # trueの場合、白ピクセル部分を元画像で置き換え。falseの場合は黒ピクセル部分を置き換え
+                "enable_cropping": false,
+                # trueの場合、マスクの白ピクセル領域に基づいてトリミングを実行
+                "crop_margin": 5
+                # トリミング時の余白ピクセル数
             }
         }
     """
@@ -59,6 +64,10 @@ class MaskCompositionProcessor(BaseProcessor):
         self.use_white_pixels = self.config.get(
             "use_white_pixels", default_config["use_white_pixels"]
         )
+        self.enable_cropping = self.config.get(
+            "enable_cropping", default_config["enable_cropping"]
+        )
+        self.crop_margin = self.config.get("crop_margin", default_config["crop_margin"])
 
         # ターゲット画像（実行時に設定）
         self.target_image: Optional[np.ndarray] = None
@@ -94,6 +103,59 @@ class MaskCompositionProcessor(BaseProcessor):
             raise ProcessorRuntimeError(
                 "MaskCompositionProcessor can only be used in pipeline mode"
             )
+
+    def _find_crop_bounds(
+        self, mask: np.ndarray
+    ) -> Optional[Tuple[int, int, int, int]]:
+        """
+        マスクの白ピクセル領域に基づいてトリミング範囲を計算.
+
+        Args:
+            mask (np.ndarray): 2値化マスク画像（グレースケール）.
+
+        Returns:
+            Optional[Tuple[int, int, int, int]]: トリミング範囲 (y_min, y_max, x_min, x_max)
+                                                白ピクセルが見つからない場合はNone
+        """
+        # 白ピクセル（255）の座標を取得
+        white_pixels = np.where(mask == 255)
+
+        if len(white_pixels[0]) == 0:
+            # 白ピクセルが見つからない場合
+            return None
+
+        # Y軸（行）の最小・最大値
+        y_min = np.min(white_pixels[0])
+        y_max = np.max(white_pixels[0])
+
+        # X軸（列）の最小・最大値
+        x_min = np.min(white_pixels[1])
+        x_max = np.max(white_pixels[1])
+
+        # マージンを適用（画像境界を超えないように調整）
+        height, width = mask.shape
+        y_min = max(0, y_min - self.crop_margin)
+        y_max = min(height - 1, y_max + self.crop_margin)
+        x_min = max(0, x_min - self.crop_margin)
+        x_max = min(width - 1, x_max + self.crop_margin)
+
+        return (y_min, y_max, x_min, x_max)
+
+    def _crop_image(
+        self, image: np.ndarray, bounds: Tuple[int, int, int, int]
+    ) -> np.ndarray:
+        """
+        指定された範囲で画像をトリミング.
+
+        Args:
+            image (np.ndarray): トリミング対象の画像.
+            bounds (Tuple[int, int, int, int]): トリミング範囲 (y_min, y_max, x_min, x_max).
+
+        Returns:
+            np.ndarray: トリミングされた画像.
+        """
+        y_min, y_max, x_min, x_max = bounds
+        return image[y_min : y_max + 1, x_min : x_max + 1]
 
     def process(self, mask_image: np.ndarray) -> np.ndarray:
         """
@@ -163,6 +225,14 @@ class MaskCompositionProcessor(BaseProcessor):
             mask_part = cv2.bitwise_and(mask_to_use, mask_to_use, mask=inv_mask)
             result = cv2.add(result, mask_part)
 
+            # トリミング処理（オプション）
+            if self.enable_cropping:
+                # トリミング範囲を計算（白ピクセル領域に基づく）
+                crop_bounds = self._find_crop_bounds(mask_gray)
+                if crop_bounds is not None:
+                    # 結果画像をトリミング
+                    result = self._crop_image(result, crop_bounds)
+
             return result
 
         except cv2.error as e:
@@ -181,4 +251,6 @@ class MaskCompositionProcessor(BaseProcessor):
         return {
             "target_image": "original",  # デフォルトはオリジナル画像
             "use_white_pixels": True,  # デフォルトでは白ピクセル部分を元画像で置き換え
+            "enable_cropping": False,  # デフォルトではトリミング無効
+            "crop_margin": 5,  # デフォルトのトリミング余白は5ピクセル
         }

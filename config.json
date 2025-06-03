@@ -72,7 +72,9 @@
       },
       "mask_composition": {
         "target_image": "original",
-        "use_white_pixels": true
+        "use_white_pixels": true,
+        "enable_cropping": true,
+        "crop_margin": 5
       }
     },
     "all_para": {
