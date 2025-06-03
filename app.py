@@ -14,6 +14,7 @@ from capturelib.camera_setup import CameraSetup
 from capturelib.capture_manager import CaptureManager
 from capturelib.config_handler import ConfigHandler
 from capturelib.log_manager import LogManager
+from capturelib.recording_manager import RecordingManager
 from core import PipelineExecutor
 from exceptions.config import ConfigValidationError
 
@@ -48,6 +49,11 @@ def parse_arguments():
     )
     parser.add_argument(
         "--config", type=str, default="config.json", help="設定ファイルのパス"
+    )
+    parser.add_argument(
+        "--no-recording",
+        action="store_true",
+        help="録画機能を無効にする（録画機能なしで起動）",
     )
     return parser.parse_args()
 
@@ -148,8 +154,20 @@ if __name__ == "__main__":
             profile_name=camera_setup.profile_name,
         )
 
+        # 録画マネージャーの初期化（オプション）
+        recording_manager = None
+        if not args.no_recording:
+            # 設定ファイルから録画形式を取得
+            recording_config = config.get("recording", {})
+            select_format = recording_config.get("select_format", "mjpg")
+
+            recording_manager = RecordingManager(default_format=select_format)
+            logger.info(f"Recording manager initialized with format: {select_format}")
+        else:
+            logger.info("Recording functionality disabled")
+
         # アプリケーションの作成と実行
-        app = LivePreviewRunner(cap, pipeline)
+        app = LivePreviewRunner(cap, pipeline, recording_manager)
         logger.info("Starting application main loop")
         app.run()
 
