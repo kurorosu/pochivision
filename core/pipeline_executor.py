@@ -23,6 +23,7 @@ class PipelineExecutor:
         mode (str): 実行モード. "parallel" または "pipeline".
         camera_index (int): このパイプラインが対応するカメラのインデックス.
         id_interval (int): ID値が増加する画像数の間隔.
+        config_fps (float): 設定ファイルから取得したFPS値.
     """
 
     def __init__(
@@ -32,6 +33,7 @@ class PipelineExecutor:
         mode: str = "parallel",
         camera_index: int = 0,
         id_interval: int = 1,
+        config_fps: float = 30.0,
     ) -> None:
         """
         PipelineExecutorのコンストラクタ.
@@ -42,12 +44,14 @@ class PipelineExecutor:
             mode (str): 実行モード（"parallel" または "pipeline"）. デフォルトは "parallel".
             camera_index (int): このパイプラインが対応するカメラのインデックス.
             id_interval (int): ID値が増加する画像数の間隔 デフォルトは1.
+            config_fps (float): 設定ファイルから取得したFPS値. デフォルトは30.0.
         """
         self.processors = processors
         self.capture_manager = capture_manager
         self.mode = mode
         self.camera_index = camera_index
         self.id_interval = id_interval
+        self.config_fps = config_fps
         self.logger = LogManager().get_logger()
 
         # モード制限のあるプロセッサに対して実行モードを設定
@@ -108,6 +112,7 @@ class PipelineExecutor:
             # カメラごとのid_intervalを参照
             camera_config = config.get("cameras", {}).get(profile_name, {})
             id_interval = camera_config.get("id_interval", config.get("id_interval", 1))
+            config_fps = camera_config.get("fps", 30.0)
 
             label = camera_config.get("label", "NA_NA")
             file_naming_manager = get_file_naming_manager()
@@ -132,6 +137,7 @@ class PipelineExecutor:
                 mode=mode,
                 camera_index=camera_index,
                 id_interval=id_interval,
+                config_fps=config_fps,
             )
         except Exception as e:
             logger = LogManager().get_logger()
