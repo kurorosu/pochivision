@@ -10,3 +10,4 @@ from .config_handler import (
     ConfigLoadError,
 )
 from .log_manager import LogManager
+from .recording_manager import RecordingManager
