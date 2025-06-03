@@ -1,5 +1,5 @@
 {
-  "input_directory": "image_aggregated/20250524_0/pipeline",
+  "input_directory": "image_aggregated/20250603_0/pipeline",
   "output_directory": "extraction_results",
   "output_format": "csv",
   "feature_extractors": {
@@ -40,7 +40,7 @@
     },
     "swt": {
       "wavelet": "db4",
-      "max_level": 3,
+      "max_level": 1,
       "multiscale": true
     },
     "lbp": {

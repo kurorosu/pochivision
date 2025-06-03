@@ -195,6 +195,72 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
 
         return features
 
+    def _adjust_image_size_for_swt(self, image: np.ndarray) -> np.ndarray:
+        """
+        SWT変換のために画像サイズを調整する.
+
+        SWTは各軸のデータ長が偶数である必要があるため、
+        奇数サイズの場合は1ピクセル追加して偶数サイズにする。
+
+        Args:
+            image (np.ndarray): 入力画像
+
+        Returns:
+            np.ndarray: サイズ調整された画像
+        """
+        height, width = image.shape[:2]
+
+        # 調整が必要かチェック
+        height_adjustment = 1 if height % 2 == 1 else 0
+        width_adjustment = 1 if width % 2 == 1 else 0
+
+        if height_adjustment == 0 and width_adjustment == 0:
+            # 調整不要
+            return image
+
+        # 新しいサイズを計算
+        new_height = height + height_adjustment
+        new_width = width + width_adjustment
+
+        # パディングで1ピクセル追加（端を複製）
+        if len(image.shape) == 2:
+            # グレースケール画像
+            adjusted_image = np.zeros((new_height, new_width), dtype=image.dtype)
+            adjusted_image[:height, :width] = image
+
+            # 右端を複製（幅が奇数の場合）
+            if width_adjustment > 0:
+                adjusted_image[:height, width:] = image[:, -1:]
+
+            # 下端を複製（高さが奇数の場合）
+            if height_adjustment > 0:
+                adjusted_image[height:, :width] = image[-1:, :]
+
+            # 右下角を複製（両方とも奇数の場合）
+            if height_adjustment > 0 and width_adjustment > 0:
+                adjusted_image[height:, width:] = image[-1, -1]
+
+        else:
+            # カラー画像
+            adjusted_image = np.zeros(
+                (new_height, new_width, image.shape[2]), dtype=image.dtype
+            )
+            adjusted_image[:height, :width, :] = image
+
+            # 右端を複製（幅が奇数の場合）
+            if width_adjustment > 0:
+                adjusted_image[:height, width:, :] = image[:, -1:, :]
+
+            # 下端を複製（高さが奇数の場合）
+            if height_adjustment > 0:
+                adjusted_image[height:, :width, :] = image[-1:, :, :]
+
+            # 右下角を複製（両方とも奇数の場合）
+            if height_adjustment > 0 and width_adjustment > 0:
+                adjusted_image[height:, width:, :] = image[-1:, -1:, :]
+
+        return adjusted_image
+
     def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
         """
         画像からSWT周波数変換特徴量を抽出する.
@@ -213,17 +279,21 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             # 画像をグレースケールに変換（既にグレースケールの場合はそのまま）
             gray_image = to_grayscale(image)
 
+            # SWT変換のために画像サイズを調整（奇数サイズを偶数サイズに）
+            gray_image = self._adjust_image_size_for_swt(gray_image)
+
             # 画像を0-1の範囲に正規化
             if gray_image.max() > 1.0:
                 gray_image = gray_image.astype(np.float32) / 255.0
             else:
                 gray_image = gray_image.astype(np.float32)
 
-            # SWT変換を実行
+            # 設定値を使用してSWT変換を実行
+            max_level = self.config.get("max_level", 1)
             coeffs = pywt.swt2(
                 gray_image,
                 wavelet=self.config.get("wavelet", "db1"),
-                level=self.config.get("max_level", 1),
+                level=max_level,
             )
 
             features = {}
@@ -243,9 +313,16 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             return features
 
         except Exception as e:
-            raise RuntimeError(
-                f"SWT特徴量抽出中にエラーが発生しました: {str(e)}"
-            ) from e
+            # より詳細なエラーメッセージを提供
+            max_level = self.config.get("max_level", 1)
+
+            error_msg = f"SWT特徴量抽出中にエラーが発生しました: {str(e)}"
+            error_msg += f" (画像サイズ: {image.shape})"
+            if "gray_image" in locals():
+                error_msg += f" (調整後サイズ: {gray_image.shape})"
+            error_msg += f" (設定レベル: {max_level})"
+
+            raise RuntimeError(error_msg) from e
 
     @staticmethod
     def get_default_config() -> Dict[str, Any]:
