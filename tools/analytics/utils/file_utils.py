@@ -19,19 +19,6 @@ def get_extraction_results_path() -> Path:
     return project_root / "extraction_results"
 
 
-def get_root_directories() -> List[Path]:
-    """ルートディレクトリ（ドライブ）の一覧を取得します."""
-    if os.name == "nt":  # Windows
-        drives = []
-        for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-            drive_path = Path(f"{letter}:\\")
-            if drive_path.exists():
-                drives.append(drive_path)
-        return drives
-    else:  # Unix系
-        return [Path("/")]
-
-
 def get_directories_in_path(directory_path: Path) -> List[Path]:
     """指定されたパス内のディレクトリを取得します（隠しフォルダを除く）."""
     if not directory_path.exists() or not directory_path.is_dir():
@@ -117,3 +104,60 @@ def validate_file_path(file_path: str) -> bool:
         return False
 
     return True
+
+
+def export_topn_features_to_csv(
+    feature_choices: List[str], csv_file_path: str, ranking_count: int
+) -> Optional[str]:
+    """JSD距離順上位N位の特徴量をCSVファイルに出力します.
+
+    Args:
+        feature_choices (List[str]): 特徴量の選択肢リスト（JSD距離順）
+        csv_file_path (str): 元のCSVファイルのパス
+        ranking_count (int): 出力する順位数（-1の場合は全特徴量）
+
+    Returns:
+        Optional[str]: 出力されたCSVファイルのパス、失敗時はNone
+    """
+    try:
+        # 特徴量名のみを抽出
+        feature_names = []
+        if ranking_count == -1:
+            # 全特徴量を出力
+            target_choices = feature_choices
+            rank_text = "all"
+        else:
+            # 指定された順位まで出力
+            target_choices = feature_choices[:ranking_count]
+            rank_text = f"top{ranking_count}"
+
+        for choice in target_choices:
+            feature_name = choice.split(" (")[0]
+            feature_names.append(feature_name)
+
+        # 出力先のパスを決定（元のCSVファイルと同じフォルダ）
+        csv_path = Path(csv_file_path)
+        output_dir = csv_path.parent
+        output_filename = f"{csv_path.stem}_{rank_text}_features.csv"
+        output_path = output_dir / output_filename
+
+        # CSVファイルに出力
+        df_features = pd.DataFrame({"feature_name": feature_names})
+        df_features.to_csv(output_path, index=False, encoding="utf-8")
+
+        if ranking_count == -1:
+            console.print(
+                "[green]✓ JSD距離順全特徴量をCSVファイルに出力しました[/green]"
+            )
+        else:
+            console.print(
+                f"[green]✓ JSD距離順上位{ranking_count}位の特徴量をCSVファイルに出力しました[/green]"
+            )
+        console.print(f"  - 出力先: {output_path}")
+        console.print(f"  - 特徴量数: {len(feature_names)}")
+
+        return str(output_path)
+
+    except Exception as e:
+        console.print(f"[red]CSV出力に失敗しました: {str(e)}[/red]")
+        return None

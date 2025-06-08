@@ -1,6 +1,6 @@
 """Histogram display commands for CSV Analytics."""
 
-from typing import Optional
+from typing import List, Optional
 
 from analytics.core.data_processor import DataProcessor
 from analytics.ui.display import (
@@ -16,6 +16,7 @@ from analytics.ui.prompts import (
     select_feature_for_histogram,
     select_post_histogram_action,
 )
+from analytics.utils.file_utils import export_topn_features_to_csv
 from rich.console import Console
 
 console = Console()
@@ -63,9 +64,18 @@ class HistogramManager:
                 f"\n[bold]特徴量選択（{len(numeric_columns)}個の数値列から選択）[/bold]"
             )
 
-        selected_feature = select_feature_for_histogram(feature_choices)
+        # クラス分けヒストグラム時のみCSV出力オプションを表示
+        show_export_option = self.display_mode == "class"
+        selected_feature = select_feature_for_histogram(
+            feature_choices, show_export_option
+        )
         if not selected_feature:
             return False
+
+        # CSV出力が選択された場合
+        if selected_feature == "EXPORT_TOPN_FEATURES":
+            self._export_topn_features(data_processor, feature_choices)
+            return True
 
         console.print(f"[green]✓ 選択された特徴量: {selected_feature}[/green]")
 
@@ -160,3 +170,36 @@ class HistogramManager:
         """設定をリセットします."""
         self.display_mode = None
         self.selected_class_column = None
+
+    def _export_topn_features(
+        self, data_processor: DataProcessor, feature_choices: List[str]
+    ) -> None:
+        """JSD距離順上位N位の特徴量をCSVファイルに出力します."""
+        if data_processor.file_path is None:
+            console.print("[red]CSVファイルのパスが取得できません。[/red]")
+            return
+
+        console.print("\n[bold]JSD距離順上位の特徴量をCSV出力[/bold]")
+
+        # 順位数を選択
+        from analytics.ui.prompts import select_ranking_count
+
+        ranking_count = select_ranking_count()
+        if ranking_count is None:
+            return
+
+        # CSV出力を実行
+        output_path = export_topn_features_to_csv(
+            feature_choices, data_processor.file_path, ranking_count
+        )
+
+        if output_path:
+            console.print(
+                "\n[dim]このCSVファイルをPythonで読み込むには以下のコードを使用してください:[/dim]"
+            )
+            console.print("[dim]import pandas as pd[/dim]")
+            console.print(f"[dim]df = pd.read_csv('{output_path}')[/dim]")
+            console.print("[dim]features = df['feature_name'].tolist()[/dim]")
+            console.print("[dim]print(features)[/dim]")
+        else:
+            console.print("[red]CSV出力に失敗しました。[/red]")

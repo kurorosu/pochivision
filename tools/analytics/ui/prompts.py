@@ -14,7 +14,6 @@ from analytics.utils.file_utils import (
     get_subdirectories,
 )
 from rich.console import Console
-from rich.prompt import Prompt
 
 # プロジェクトルートをパスに追加
 current_file = Path(__file__)
@@ -225,22 +224,33 @@ def select_csv_file_from_folder(folder_path: str) -> Optional[str]:
     return str(folder_path_obj / selected_csv_name)
 
 
-def input_csv_path() -> Optional[str]:
-    """CSVファイルのパスを手動入力します."""
-    file_path = Prompt.ask("CSVファイルのパスを入力してください")
-    return file_path if file_path else None
+def select_feature_for_histogram(
+    feature_choices: List[str], show_export_option: bool = False
+) -> Optional[str]:
+    """ヒストグラム表示用の特徴量を選択します.
 
+    Args:
+        feature_choices (List[str]): 特徴量の選択肢リスト
+        show_export_option (bool): CSV出力オプションを表示するかどうか
+    """
+    choices = feature_choices.copy()
 
-def select_feature_for_histogram(feature_choices: List[str]) -> Optional[str]:
-    """ヒストグラム表示用の特徴量を選択します."""
+    # クラス分けヒストグラム時のみCSV出力オプションを追加
+    if show_export_option:
+        choices = ["📊 JSD距離順上位の特徴量をCSV出力"] + choices
+
     selected_feature_text = questionary.select(
         "ヒストグラムを表示する特徴量を選択してください（矢印キーで移動、Enterで決定）:",
-        choices=feature_choices,
+        choices=choices,
         style=get_questionary_style(),
     ).ask()
 
     if not selected_feature_text:
         return None
+
+    # CSV出力が選択された場合は特別な値を返す
+    if selected_feature_text == "📊 JSD距離順上位の特徴量をCSV出力":
+        return "EXPORT_TOPN_FEATURES"
 
     # 選択された特徴量名を抽出
     return selected_feature_text.split(" (")[0]
@@ -315,3 +325,34 @@ def select_index_column(id_columns: List[str]) -> Optional[str]:
     ).ask()
 
     return selected_index_text.split(" (")[0] if selected_index_text else None
+
+
+def select_ranking_count() -> Optional[int]:
+    """出力する特徴量の順位数を選択します."""
+    ranking_choices = [
+        "🏠 メインメニューに戻る",
+        "5位まで",
+        "10位まで",
+        "15位まで",
+        "20位まで",
+        "25位まで",
+        "30位まで",
+        "すべて",
+    ]
+
+    selected_text = questionary.select(
+        "何位まで出力しますか？:",
+        choices=ranking_choices,
+        style=get_questionary_style(),
+    ).ask()
+
+    if not selected_text:
+        return None
+
+    if selected_text == "🏠 メインメニューに戻る":
+        return None
+    elif selected_text == "すべて":
+        return -1  # -1は全特徴量を意味する
+    else:
+        # "10位まで" -> 10
+        return int(selected_text.replace("位まで", ""))
