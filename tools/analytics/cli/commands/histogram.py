@@ -48,11 +48,20 @@ class HistogramManager:
         # ヒストグラム表示のヘッダーを表示
         show_histogram_header(self.display_mode or "simple", self.selected_class_column)
 
-        # 特徴量を選択
-        feature_choices = create_feature_choices(data_processor.data)
-        console.print(
-            f"\n[bold]特徴量選択（{len(numeric_columns)}個の数値列から選択）[/bold]"
+        # 特徴量を選択（クラス別表示の場合は分離度順でソート）
+        class_column = (
+            self.selected_class_column if self.display_mode == "class" else None
         )
+        feature_choices = create_feature_choices(data_processor.data, class_column)
+
+        if class_column:
+            console.print(
+                f"\n[bold]特徴量選択（{len(numeric_columns)}個の数値列を分離度順で表示）[/bold]"
+            )
+        else:
+            console.print(
+                f"\n[bold]特徴量選択（{len(numeric_columns)}個の数値列から選択）[/bold]"
+            )
 
         selected_feature = select_feature_for_histogram(feature_choices)
         if not selected_feature:

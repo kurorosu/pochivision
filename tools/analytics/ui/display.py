@@ -166,16 +166,37 @@ def show_histogram_header(
     console.print("=" * 40)
 
 
-def create_feature_choices(data: pd.DataFrame) -> List[str]:
+def create_feature_choices(
+    data: pd.DataFrame, class_column: Optional[str] = None
+) -> List[str]:
     """特徴量選択用の選択肢を作成します."""
     numeric_columns = data.select_dtypes(include=[np.number]).columns.tolist()
     feature_choices = []
 
-    for col in numeric_columns:
-        null_count = data[col].isnull().sum()
-        dtype_str = str(data[col].dtype)
-        choice_text = f"{col} ({dtype_str}, 欠損値: {null_count})"
-        feature_choices.append(choice_text)
+    # クラス別表示モードの場合、Jensen-Shannon Divergence順でソート
+    if class_column is not None:
+        from analytics.core.statistical_analyzer import (
+            rank_features_by_class_separation,
+        )
+
+        ranked_features = rank_features_by_class_separation(
+            data, numeric_columns, class_column
+        )
+
+        for feature, js_score in ranked_features:
+            null_count = data[feature].isnull().sum()
+            dtype_str = str(data[feature].dtype)
+            choice_text = (
+                f"{feature} ({dtype_str}, 欠損値: {null_count}, 分離度: {js_score:.3f})"
+            )
+            feature_choices.append(choice_text)
+    else:
+        # 単純表示モードの場合、元の順序
+        for col in numeric_columns:
+            null_count = data[col].isnull().sum()
+            dtype_str = str(data[col].dtype)
+            choice_text = f"{col} ({dtype_str}, 欠損値: {null_count})"
+            feature_choices.append(choice_text)
 
     return feature_choices
 
