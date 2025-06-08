@@ -9,6 +9,7 @@ import questionary
 from analytics.utils.file_utils import (
     find_csv_files_in_directory,
     format_file_size,
+    get_directories_in_path,
     get_extraction_results_path,
     get_subdirectories,
 )
@@ -62,7 +63,7 @@ def select_load_method() -> Optional[str]:
     """ファイル読み込み方法の選択を取得します."""
     load_choices = [
         "1. 既定フォルダ（extraction_results）から選択",
-        "2. 任意のパスを入力",
+        "2. フォルダを選択してCSVファイルを探す",
     ]
 
     return questionary.select(
@@ -70,6 +71,69 @@ def select_load_method() -> Optional[str]:
         choices=load_choices,
         style=get_questionary_style(),
     ).ask()
+
+
+def select_folder_interactively() -> Optional[str]:
+    """インタラクティブにフォルダを選択します."""
+    # プロジェクトルートから開始
+    project_root = Path(__file__).parent.parent.parent.parent
+    current_path = project_root
+
+    while True:
+        # 現在のパスのサブディレクトリを表示
+        directories = get_directories_in_path(current_path)
+        console.print(f"\n[bold]フォルダ選択: {current_path}[/bold]")
+        prompt_text = "フォルダを選択してください:"
+
+        # 選択肢を作成
+        choices = []
+
+        # メインメニューに戻るオプション
+        choices.append("🏠 メインメニューに戻る")
+
+        # 親ディレクトリに戻るオプション（プロジェクトルート以外）
+        if current_path != project_root:
+            choices.append(".. (親フォルダに戻る)")
+
+        # 現在のフォルダを選択するオプション（CSVファイルがある場合）
+        csv_files = find_csv_files_in_directory(current_path)
+        if csv_files:
+            choices.append(f"✓ このフォルダを選択 ({len(csv_files)}個のCSVファイル)")
+
+        # サブディレクトリ
+        for directory in directories:
+            try:
+                csv_count = len(find_csv_files_in_directory(directory))
+                csv_info = f" ({csv_count}個のCSV)" if csv_count > 0 else ""
+
+                display_name = directory.name
+
+                choices.append(f"📁 {display_name}{csv_info}")
+            except PermissionError:
+                display_name = directory.name if directory.name else str(directory)
+                choices.append(f"📁 {display_name} (アクセス不可)")
+
+        selected = questionary.select(
+            prompt_text,
+            choices=choices,
+            style=get_questionary_style(),
+        ).ask()
+
+        if not selected:
+            return None
+
+        if selected == "🏠 メインメニューに戻る":
+            return None
+        elif selected == ".. (親フォルダに戻る)":
+            # プロジェクトルート以上には戻らない
+            if current_path.parent != current_path and current_path != project_root:
+                current_path = current_path.parent
+        elif selected.startswith("✓ このフォルダを選択"):
+            return str(current_path)
+        else:
+            # フォルダ名を抽出
+            folder_name = selected.replace("📁 ", "").split(" (")[0]
+            current_path = current_path / folder_name
 
 
 def select_folder_from_extraction_results() -> Optional[str]:
@@ -134,6 +198,10 @@ def select_csv_file_from_folder(folder_path: str) -> Optional[str]:
     console.print(f"\n[bold]CSVファイル選択（{len(csv_files)}個のファイル）[/bold]")
 
     csv_choices = []
+
+    # メインメニューに戻るオプションを追加
+    csv_choices.append("🏠 メインメニューに戻る")
+
     for csv_file in sorted(csv_files):
         size_str = format_file_size(csv_file)
         choice_text = f"{csv_file.name} ({size_str})"
@@ -146,6 +214,10 @@ def select_csv_file_from_folder(folder_path: str) -> Optional[str]:
     ).ask()
 
     if not selected_csv_text:
+        return None
+
+    # メインメニューに戻る場合
+    if selected_csv_text == "🏠 メインメニューに戻る":
         return None
 
     # 選択されたCSVファイル名を抽出

@@ -4,9 +4,9 @@ from typing import Optional
 
 from analytics.core.data_processor import DataProcessor
 from analytics.ui.prompts import (
-    input_csv_path,
     select_csv_file_from_folder,
     select_folder_from_extraction_results,
+    select_folder_interactively,
     select_load_method,
 )
 from analytics.utils.file_utils import load_csv_file, validate_file_path
@@ -31,8 +31,8 @@ def load_csv_file_command(data_processor: DataProcessor) -> bool:
         # 既定フォルダから選択
         file_path = _select_csv_from_extraction_results()
     else:
-        # 任意のパスを入力
-        file_path = _input_csv_path()
+        # フォルダを選択してCSVファイルを探す
+        file_path = _select_csv_from_interactive_folder()
 
     if not file_path:
         return False
@@ -52,9 +52,15 @@ def _select_csv_from_extraction_results() -> Optional[str]:
     return select_csv_file_from_folder(folder_path)
 
 
-def _input_csv_path() -> Optional[str]:
-    """CSVファイルのパスを手動入力します."""
-    return input_csv_path()
+def _select_csv_from_interactive_folder() -> Optional[str]:
+    """インタラクティブにフォルダを選択してCSVファイルを選択します."""
+    # フォルダを選択
+    folder_path = select_folder_interactively()
+    if not folder_path:
+        return None
+
+    # CSVファイルを選択
+    return select_csv_file_from_folder(folder_path)
 
 
 def _load_csv_from_path(data_processor: DataProcessor, file_path: str) -> bool:
