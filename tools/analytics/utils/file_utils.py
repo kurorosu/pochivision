@@ -19,6 +19,34 @@ def get_extraction_results_path() -> Path:
     return project_root / "extraction_results"
 
 
+def get_root_directories() -> List[Path]:
+    """ルートディレクトリ（ドライブ）の一覧を取得します."""
+    if os.name == "nt":  # Windows
+        drives = []
+        for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+            drive_path = Path(f"{letter}:\\")
+            if drive_path.exists():
+                drives.append(drive_path)
+        return drives
+    else:  # Unix系
+        return [Path("/")]
+
+
+def get_directories_in_path(directory_path: Path) -> List[Path]:
+    """指定されたパス内のディレクトリを取得します（隠しフォルダを除く）."""
+    if not directory_path.exists() or not directory_path.is_dir():
+        return []
+
+    try:
+        directories = []
+        for item in directory_path.iterdir():
+            if item.is_dir() and not item.name.startswith("."):
+                directories.append(item)
+        return sorted(directories)
+    except PermissionError:
+        return []
+
+
 def find_csv_files_in_directory(directory_path: Path) -> List[Path]:
     """指定されたディレクトリ内のCSVファイルを検索します."""
     if not directory_path.exists() or not directory_path.is_dir():
