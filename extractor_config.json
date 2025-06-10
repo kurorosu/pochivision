@@ -48,7 +48,7 @@
       "R": 1,
       "method": "uniform",
       "resize_shape": [512, 512],
-      "include_histogram": false
+      "include_histogram": true
     },
     "hlac": {
       "order": 2,
@@ -56,6 +56,16 @@
       "normalize": true,
       "scales": [1.0, 0.75, 0.5],
       "resize_shape": [512, 512]
+    },
+    "circle_counter": {
+      "min_radius": 5,
+      "max_radius": 0,
+      "min_dist_ratio": 0.8,
+      "param1": 50,
+      "param2": 30,
+      "circularity_threshold": 0.7,
+      "blur_kernel_size": 5,
+      "enable_circularity_filter": true
     }
   },
   "file_filters": {
