@@ -156,3 +156,56 @@ class HLACTextureParams(BaseModel):
         default=None,
         description="リサイズ形状 [高さ, 幅]（Noneの場合はリサイズしない）",
     )
+
+
+class CircleCounterParams(BaseModel):
+    """円カウント特徴量抽出のパラメータスキーマ."""
+
+    min_radius: Optional[StrictInt] = Field(
+        default=5, ge=1, description="検出する円の最小半径（ピクセル）"
+    )
+    max_radius: Optional[StrictInt] = Field(
+        default=0,
+        ge=0,
+        description="検出する円の最大半径（0の場合は画像サイズの1/4を使用）",
+    )
+    min_dist_ratio: Optional[StrictFloat] = Field(
+        default=0.8,
+        ge=0.1,
+        le=2.0,
+        description="円の中心間の最小距離の係数（max_radius * ratio）",
+    )
+    param1: Optional[StrictInt] = Field(
+        default=50,
+        ge=10,
+        le=200,
+        description=(
+            "Canny検出器の高閾値（エッジ検出感度）。"
+            "高い値（70-100）:ノイズに強く、明確なエッジのみ検出（検出漏れあり）。"
+            "低い値（30-50）:細かいエッジも検出、ノイズの影響を受けやすい（偽検出あり）"
+        ),
+    )
+    param2: Optional[StrictInt] = Field(
+        default=30,
+        ge=10,
+        le=100,
+        description=(
+            "HoughCircles蓄積器の閾値（円検出感度）。"
+            "低い値（10-25）:多くの円を検出、偽陽性（誤検出）が増加。"
+            "高い値（40-60）:厳格な円のみ検出、検出漏れが増加"
+        ),
+    )
+    circularity_threshold: Optional[StrictFloat] = Field(
+        default=0.7,
+        ge=0.0,
+        le=1.0,
+        description="真円度の閾値（0.0-1.0、1.0が完全な円）",
+    )
+    blur_kernel_size: Optional[StrictInt] = Field(
+        default=5,
+        ge=0,
+        description="ガウシアンブラーのカーネルサイズ（0で無効化、奇数のみ有効）",
+    )
+    enable_circularity_filter: Optional[StrictBool] = Field(
+        default=True, description="真円度フィルタリングを有効にするかどうか"
+    )

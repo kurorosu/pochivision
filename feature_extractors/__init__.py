@@ -6,6 +6,7 @@
 
 from .base import BaseFeatureExtractor
 from .brightness_statistics import BrightnessStatisticsExtractor
+from .circle_counter import CircleCounterExtractor
 from .fft_frequency import FFTFrequencyExtractor
 from .glcm_texture import GLCMTextureExtractor
 from .hlac_texture import HLACTextureExtractor
@@ -19,6 +20,7 @@ from .registry import (
 from .rgb_statistics import RGBStatisticsExtractor
 from .schema import (
     BrightnessStatisticsParams,
+    CircleCounterParams,
     FFTFrequencyParams,
     GLCMTextureParams,
     HLACTextureParams,
@@ -32,6 +34,7 @@ from .swt_frequency import SWTFrequencyExtractor
 __all__ = [
     "BaseFeatureExtractor",
     "BrightnessStatisticsExtractor",
+    "CircleCounterExtractor",
     "FFTFrequencyExtractor",
     "GLCMTextureExtractor",
     "HLACTextureExtractor",
@@ -43,6 +46,7 @@ __all__ = [
     "get_feature_extractor",
     "register_feature_extractor",
     "BrightnessStatisticsParams",
+    "CircleCounterParams",
     "FFTFrequencyParams",
     "GLCMTextureParams",
     "HLACTextureParams",
