@@ -161,3 +161,72 @@ def export_topn_features_to_csv(
     except Exception as e:
         console.print(f"[red]CSV出力に失敗しました: {str(e)}[/red]")
         return None
+
+
+def export_correlation_features_to_csv(
+    feature_choices: List[str],
+    csv_file_path: str,
+    ranking_count: int,
+    y_axis_feature: str,
+) -> Optional[str]:
+    """相関係数順上位N位の特徴量をCSVファイルに出力します.
+
+    Args:
+        feature_choices (List[str]): 特徴量の選択肢リスト（相関係数順）
+        csv_file_path (str): 元のCSVファイルのパス
+        ranking_count (int): 出力する順位数（-1の場合は全特徴量）
+        y_axis_feature (str): Y軸特徴量名
+
+    Returns:
+        Optional[str]: 出力されたCSVファイルのパス、失敗時はNone
+    """
+    try:
+        # 特徴量名のみを抽出
+        feature_names = []
+        if ranking_count == -1:
+            # 全特徴量を出力
+            target_choices = feature_choices
+            rank_text = "all"
+        else:
+            # 指定された順位まで出力
+            target_choices = feature_choices[:ranking_count]
+            rank_text = f"top{ranking_count}"
+
+        for choice in target_choices:
+            feature_name = choice.split(" (")[0]
+            feature_names.append(feature_name)
+
+        # 出力先のパスを決定（元のCSVファイルと同じフォルダ）
+        csv_path = Path(csv_file_path)
+        output_dir = csv_path.parent
+        output_filename = (
+            f"{csv_path.stem}_{rank_text}_correlation_with_{y_axis_feature}.csv"
+        )
+        output_path = output_dir / output_filename
+
+        # CSVファイルに出力
+        df_features = pd.DataFrame(
+            {
+                "feature_name": feature_names,
+                "y_axis_reference": [y_axis_feature] * len(feature_names),
+            }
+        )
+        df_features.to_csv(output_path, index=False, encoding="utf-8")
+
+        if ranking_count == -1:
+            console.print(
+                f"[green]✓ {y_axis_feature}との相関係数順全特徴量をCSVファイルに出力しました[/green]"
+            )
+        else:
+            console.print(
+                f"[green]✓ {y_axis_feature}との相関係数順上位{ranking_count}位の"
+                f"特徴量をCSVファイルに出力しました[/green]"
+            )
+        console.print(f"  - 出力先: {output_path}")
+        console.print(f"  - 特徴量数: {len(feature_names)}")
+
+        return str(output_path)
+
+    except Exception as e:
+        console.print(f"[red]CSV出力に失敗しました: {str(e)}[/red]")
+        return None

@@ -357,3 +357,187 @@ def show_transformation_success(data: pd.DataFrame, transformation_type: str) ->
     numeric_columns = data.select_dtypes(include=[np.number]).columns
     console.print(f"  - 数値列: {len(numeric_columns):,}個")
     console.print(f"  - 数値列の割合: {len(numeric_columns) / len(data.columns):.1%}")
+
+
+# ========== 散布図関連の表示機能 ==========
+
+
+def show_scatter_plot_header(
+    display_mode: str, selected_class_column: Optional[str], y_axis_feature: str
+) -> None:
+    """散布図表示のヘッダーを表示します."""
+    console.print("\n[bold]散布図表示[/bold]")
+    console.print("\n" + "=" * 40)
+    console.print(f"[bold cyan]Y軸: {y_axis_feature}[/bold cyan]")
+    if display_mode == "simple":
+        console.print("[bold cyan]表示設定: 単純な散布図[/bold cyan]")
+    elif display_mode == "class":
+        console.print(
+            f"[bold cyan]表示設定: クラス別色分け（{selected_class_column}）[/bold cyan]"
+        )
+    console.print("=" * 40)
+
+
+def create_scatter_feature_choices(
+    data: pd.DataFrame, y_axis_feature: str, class_column: Optional[str] = None
+) -> List[str]:
+    """散布図用のX軸特徴量選択肢を相関係数順で作成します."""
+    numeric_columns = data.select_dtypes(include=[np.number]).columns.tolist()
+
+    # Y軸特徴量を除外
+    if y_axis_feature in numeric_columns:
+        numeric_columns.remove(y_axis_feature)
+
+    if not numeric_columns:
+        return []
+
+    # Y軸特徴量との相関係数を計算
+    y_data = data[y_axis_feature].dropna()
+    correlations = []
+
+    for col in numeric_columns:
+        col_data = data[col].dropna()
+        # 両方のデータが存在する行のみを使用
+        common_indices = y_data.index.intersection(col_data.index)
+        if len(common_indices) > 1:  # 最低2点は必要
+            y_common = y_data.loc[common_indices]
+            col_common = col_data.loc[common_indices]
+            correlation = y_common.corr(col_common)
+            if not pd.isna(correlation):
+                correlations.append((col, abs(correlation)))
+
+    # 相関係数の絶対値で降順ソート
+    correlations.sort(key=lambda x: x[1], reverse=True)
+
+    feature_choices = []
+    for feature, correlation in correlations:
+        null_count = data[feature].isnull().sum()
+        dtype_str = str(data[feature].dtype)
+        choice_text = (
+            f"{feature} ({dtype_str}, 欠損値: {null_count}, 相関: {correlation:.3f})"
+        )
+        feature_choices.append(choice_text)
+
+    return feature_choices
+
+
+def show_simple_scatter_plot(data: pd.DataFrame, x_column: str, y_column: str) -> None:
+    """単純な散布図を表示します."""
+    # 両方の列にデータがある行のみを使用
+    clean_data = data[[x_column, y_column]].dropna()
+
+    if len(clean_data) == 0:
+        console.print(f"[red]{x_column} と {y_column} に共通データがありません。[/red]")
+        return
+
+    console.print(f"\n[bold]{x_column} vs {y_column} の散布図[/bold]")
+
+    # plotextで散布図を表示
+    plt.clear_data()
+    plt.scatter(clean_data[x_column].values, clean_data[y_column].values)
+    plt.title(f"{x_column} vs {y_column}")
+    plt.xlabel(x_column)
+    plt.ylabel(y_column)
+    plt.show()
+
+    # 相関情報を表示
+    correlation = clean_data[x_column].corr(clean_data[y_column])
+    console.print("\n[bold]相関情報[/bold]")
+    corr_table = Table(show_header=True, header_style="bold magenta")
+    corr_table.add_column("統計量", style="cyan", width=20)
+    corr_table.add_column("値", style="white", width=20)
+
+    corr_table.add_row("データ点数", f"{len(clean_data):,}")
+    corr_table.add_row("相関係数", f"{correlation:.6f}")
+
+    if abs(correlation) >= 0.7:
+        strength = "強い"
+    elif abs(correlation) >= 0.3:
+        strength = "中程度"
+    else:
+        strength = "弱い"
+
+    direction = "正の" if correlation > 0 else "負の"
+    corr_table.add_row("相関の強さ", f"{direction}{strength}相関")
+
+    console.print(corr_table)
+
+
+def show_class_scatter_plot(
+    data: pd.DataFrame, x_column: str, y_column: str, class_column: str
+) -> None:
+    """クラス別に色分けした散布図を表示します."""
+    console.print(
+        f"\n[bold]{x_column} vs {y_column} のクラス別散布図（{class_column}で色分け）[/bold]"
+    )
+
+    # クラスごとのデータを取得
+    classes = data[class_column].unique()
+    classes = [c for c in classes if pd.notna(c)]  # NaNを除外
+
+    if len(classes) == 0:
+        console.print("[red]有効なクラスデータがありません。[/red]")
+        return
+
+    if len(classes) > 10:
+        console.print(
+            f"[yellow]警告: クラス数が多すぎます（{len(classes)}個）。最初の10個のみ表示します。[/yellow]"
+        )
+        classes = classes[:10]
+
+    # plotextでクラス別散布図を表示
+    plt.clear_data()
+
+    total_points = 0
+    for class_name in classes:
+        class_mask = data[class_column] == class_name
+        class_data = data[class_mask][[x_column, y_column]].dropna()
+
+        if len(class_data) > 0:
+            plt.scatter(
+                class_data[x_column].values,
+                class_data[y_column].values,
+                label=str(class_name),
+            )
+            total_points += len(class_data)
+
+    plt.title(f"{x_column} vs {y_column} のクラス別散布図")
+    plt.xlabel(x_column)
+    plt.ylabel(y_column)
+    plt.show()
+
+    # クラス別統計を表示
+    console.print("\n[bold]クラス別統計[/bold]")
+    class_stats_table = Table(show_header=True, header_style="bold magenta")
+    class_stats_table.add_column("クラス", style="cyan", width=15)
+    class_stats_table.add_column("データ点数", style="white", width=12)
+    class_stats_table.add_column("X軸平均", style="white", width=12)
+    class_stats_table.add_column("Y軸平均", style="white", width=12)
+    class_stats_table.add_column("相関係数", style="white", width=12)
+
+    for class_name in classes:
+        class_mask = data[class_column] == class_name
+        class_data = data[class_mask][[x_column, y_column]].dropna()
+
+        if len(class_data) > 1:  # 相関計算には最低2点必要
+            correlation = class_data[x_column].corr(class_data[y_column])
+            x_mean = class_data[x_column].mean()
+            y_mean = class_data[y_column].mean()
+
+            class_stats_table.add_row(
+                str(class_name),
+                f"{len(class_data):,}",
+                f"{x_mean:.4f}",
+                f"{y_mean:.4f}",
+                f"{correlation:.4f}" if not pd.isna(correlation) else "N/A",
+            )
+
+    console.print(class_stats_table)
+    console.print(f"\n[dim]全体データ点数: {total_points:,}[/dim]")
+
+
+def show_post_scatter_plot_menu() -> None:
+    """散布図表示後のメニューヘッダーを表示します."""
+    console.print("\n" + "=" * 40)
+    console.print("[bold cyan]次のアクション[/bold cyan]")
+    console.print("=" * 40)

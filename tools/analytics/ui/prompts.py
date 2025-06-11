@@ -25,6 +25,42 @@ sys.path.insert(0, str(tools_path))
 console = Console()
 
 
+def extract_feature_name_from_choice(choice_text: str) -> str:
+    """
+    選択肢テキストから特徴量名を抽出します.
+
+    例: "sepal length (cm) (float64, 欠損値: 0, 相関: 0.123)" -> "sepal length (cm)"
+    例: "feature_name (int64, 欠損値: 5)" -> "feature_name"
+    """
+    if not choice_text:
+        return ""
+
+    # 最後の括弧群（データ型情報など）を特定
+    parts = choice_text.split(" (")
+    if len(parts) < 2:
+        return choice_text
+
+    # データ型や統計情報の括弧を探す
+    # "float64", "int64", "object" などが含まれる括弧以降を除去
+    data_type_found_index = -1
+    for i in range(len(parts)):
+        part = parts[i]
+        # データ型情報を示すキーワードをチェック
+        if any(
+            keyword in part
+            for keyword in ["float64", "int64", "object", "欠損値", "相関", "分離度"]
+        ):
+            data_type_found_index = i
+            break
+
+    if data_type_found_index > 0:
+        # データ型情報より前の部分を特徴量名として結合
+        return " (".join(parts[:data_type_found_index])
+    else:
+        # データ型情報が見つからない場合は最初の部分を返す
+        return parts[0]
+
+
 def get_questionary_style() -> questionary.Style:
     """questionary用の共通スタイルを取得します."""
     return questionary.Style(
@@ -48,7 +84,8 @@ def select_main_menu_option() -> Optional[str]:
         "1. CSVファイルを読み込む",
         "2. データの概要を表示",
         "3. ヒストグラムを表示",
-        "4. 終了",
+        "4. 散布図を表示",
+        "5. 終了",
     ]
 
     return questionary.select(
@@ -253,7 +290,7 @@ def select_feature_for_histogram(
         return "EXPORT_TOPN_FEATURES"
 
     # 選択された特徴量名を抽出
-    return selected_feature_text.split(" (")[0]
+    return extract_feature_name_from_choice(selected_feature_text)
 
 
 def confirm_data_transformation(message: str, default: bool = True) -> bool:
@@ -356,3 +393,90 @@ def select_ranking_count() -> Optional[int]:
     else:
         # "10位まで" -> 10
         return int(selected_text.replace("位まで", ""))
+
+
+# ========== 散布図関連のプロンプト機能 ==========
+
+
+def select_y_axis_feature(numeric_columns: List[str]) -> Optional[str]:
+    """Y軸の特徴量を選択します."""
+    if not numeric_columns:
+        return None
+
+    console.print(
+        f"\n[bold]Y軸特徴量選択（{len(numeric_columns)}個の数値列から選択）[/bold]"
+    )
+
+    y_axis_choices = []
+    for col in numeric_columns:
+        choice_text = f"{col}"
+        y_axis_choices.append(choice_text)
+
+    selected_y_axis = questionary.select(
+        "Y軸に使用する特徴量を選択してください（矢印キーで移動、Enterで決定）:",
+        choices=y_axis_choices,
+        style=get_questionary_style(),
+    ).ask()
+
+    return selected_y_axis
+
+
+def select_x_axis_feature(
+    feature_choices: List[str], show_export_option: bool = False
+) -> Optional[str]:
+    """散布図のX軸特徴量を選択します.
+
+    Args:
+        feature_choices (List[str]): 特徴量の選択肢リスト（相関係数順）
+        show_export_option (bool): CSV出力オプションを表示するかどうか
+    """
+    choices = feature_choices.copy()
+
+    # クラス分け散布図時のみCSV出力オプションを追加
+    if show_export_option:
+        choices = ["📊 相関係数順上位の特徴量をCSV出力"] + choices
+
+    selected_feature_text = questionary.select(
+        "X軸の特徴量を選択してください（矢印キーで移動、Enterで決定）:",
+        choices=choices,
+        style=get_questionary_style(),
+    ).ask()
+
+    if not selected_feature_text:
+        return None
+
+    # CSV出力が選択された場合は特別な値を返す
+    if selected_feature_text == "📊 相関係数順上位の特徴量をCSV出力":
+        return "EXPORT_CORRELATION_FEATURES"
+
+    # 選択された特徴量名を抽出
+    return extract_feature_name_from_choice(selected_feature_text)
+
+
+def select_post_scatter_plot_action() -> Optional[str]:
+    """散布図表示後のアクションを選択します."""
+    action_choices = [
+        "1. 別のX軸特徴量で散布図を表示",
+        "2. Y軸特徴量を変更",
+        "3. メインメニューに戻る",
+    ]
+
+    return questionary.select(
+        "次のアクションを選択してください:",
+        choices=action_choices,
+        style=get_questionary_style(),
+    ).ask()
+
+
+def select_scatter_display_mode() -> Optional[str]:
+    """散布図の表示モードを選択します."""
+    display_choices = [
+        "1. 単純な散布図",
+        "2. クラス別色分け散布図",
+    ]
+
+    return questionary.select(
+        "散布図の表示モードを選択してください:",
+        choices=display_choices,
+        style=get_questionary_style(),
+    ).ask()

@@ -20,6 +20,7 @@ from analytics.cli.commands.data_overview import (  # noqa: E402
 )
 from analytics.cli.commands.file_loader import load_csv_file_command  # noqa: E402
 from analytics.cli.commands.histogram import HistogramManager  # noqa: E402
+from analytics.cli.commands.scatter_plot import ScatterPlotManager  # noqa: E402
 from analytics.core.data_processor import DataProcessor  # noqa: E402
 from analytics.ui.display import (  # noqa: E402
     show_main_menu_header,
@@ -38,6 +39,7 @@ class CSVAnalyticsCLI:
         """初期化処理."""
         self.data_processor = DataProcessor()
         self.histogram_manager = HistogramManager()
+        self.scatter_plot_manager = ScatterPlotManager()
 
     def run(self) -> None:
         """メインアプリケーションを実行します."""
@@ -62,6 +64,7 @@ class CSVAnalyticsCLI:
                 if success:
                     # 新しいファイルを読み込んだ場合は表示設定をリセット
                     self.histogram_manager.reset_settings()
+                    self.scatter_plot_manager.reset_settings()
 
             elif choice == "2. データの概要を表示":
                 show_data_overview_command(self.data_processor)
@@ -69,7 +72,10 @@ class CSVAnalyticsCLI:
             elif choice == "3. ヒストグラムを表示":
                 self.histogram_manager.show_histogram_command(self.data_processor)
 
-            elif choice == "4. 終了":
+            elif choice == "4. 散布図を表示":
+                self.scatter_plot_manager.show_scatter_plot_command(self.data_processor)
+
+            elif choice == "5. 終了":
                 console.print("\n[green]ありがとうございました！[/green]")
                 break
 
