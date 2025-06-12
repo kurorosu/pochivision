@@ -395,6 +395,15 @@ def select_ranking_count() -> Optional[int]:
         return int(selected_text.replace("位まで", ""))
 
 
+def confirm_classification_modeling() -> bool:
+    """分類モデリングを実行するかの確認を取得します."""
+    return questionary.confirm(
+        "選択した特徴量を使用して分類モデリングを実行しますか？",
+        default=True,
+        style=get_questionary_style(),
+    ).ask()
+
+
 # ========== 散布図関連のプロンプト機能 ==========
 
 
