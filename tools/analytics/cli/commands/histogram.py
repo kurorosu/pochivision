@@ -1,7 +1,8 @@
 """Histogram display commands for CSV Analytics."""
 
-from typing import List, Optional
+from typing import Dict, List, Optional, Union
 
+from analytics.core.classification_modeler import ClassificationModeler
 from analytics.core.data_processor import DataProcessor
 from analytics.ui.display import (
     create_feature_choices,
@@ -11,6 +12,8 @@ from analytics.ui.display import (
     show_simple_histogram,
 )
 from analytics.ui.prompts import (
+    confirm_classification_modeling,
+    extract_feature_name_from_choice,
     select_class_column,
     select_display_mode,
     select_feature_for_histogram,
@@ -201,5 +204,91 @@ class HistogramManager:
             console.print(f"[dim]df = pd.read_csv('{output_path}')[/dim]")
             console.print("[dim]features = df['feature_name'].tolist()[/dim]")
             console.print("[dim]print(features)[/dim]")
+
+            # モデリング確認プロンプトを表示（色分けヒストグラム時のみ）
+            if self.display_mode == "class" and self.selected_class_column is not None:
+                console.print("\n[bold cyan]分類モデリング機能[/bold cyan]")
+
+                # モデリング実行の確認
+                if confirm_classification_modeling():
+                    self._execute_classification_modeling(
+                        data_processor, feature_choices, ranking_count
+                    )
         else:
             console.print("[red]CSV出力に失敗しました。[/red]")
+
+    def _execute_classification_modeling(
+        self,
+        data_processor: DataProcessor,
+        feature_choices: List[str],
+        ranking_count: int,
+    ) -> None:
+        """分類モデリングを実行します."""
+        if data_processor.data is None or data_processor.file_path is None:
+            console.print("[red]データまたはファイルパスが取得できません。[/red]")
+            return
+
+        try:
+            console.print("\n[bold]分類モデリングを実行中...[/bold]")
+
+            # 上位N位の特徴量名を抽出
+            selected_features = []
+            max_features = (
+                len(feature_choices) if ranking_count == -1 else ranking_count
+            )
+
+            for i, choice in enumerate(feature_choices[:max_features]):
+                feature_name = extract_feature_name_from_choice(choice)
+                selected_features.append(feature_name)
+
+            # モデリングを実行
+            modeler = ClassificationModeler()
+            accuracy_scores: Dict[str, Union[float, int]] = modeler.train_model(
+                data_processor.data,
+                selected_features,
+                self.selected_class_column,
+            )
+
+            # 特徴量重要度を取得
+            feature_importance = modeler.get_feature_importance()
+
+            # 結果をCSVに保存
+            result_path = modeler.save_model_results(
+                data_processor.file_path,
+                accuracy_scores,
+                feature_importance,
+            )
+
+            # 結果を表示
+            console.print("\n[green]✓ モデリングが完了しました！[/green]")
+            console.print(f"[bold]結果ファイル:[/bold] {result_path}")
+            console.print(f"[bold]目的変数:[/bold] {self.selected_class_column}")
+            console.print(f"[bold]特徴量数:[/bold] {len(selected_features)}")
+
+            train_acc = accuracy_scores["train_accuracy"]
+            train_pct = train_acc * 100
+            console.print(f"[bold]訓練精度:[/bold] {train_acc:.4f} ({train_pct:.2f}%)")
+
+            test_acc = accuracy_scores["test_accuracy"]
+            test_pct = test_acc * 100
+            console.print(f"[bold]テスト精度:[/bold] {test_acc:.4f} ({test_pct:.2f}%)")
+
+            n_samples = accuracy_scores["n_samples"]
+            n_train = accuracy_scores["n_train"]
+            n_test = accuracy_scores["n_test"]
+            console.print(
+                f"[bold]データ数:[/bold] {n_samples} "
+                f"(訓練: {n_train}, テスト: {n_test})"
+            )
+
+            # 特徴量重要度上位3位を表示
+            if feature_importance:
+                console.print("\n[bold]特徴量重要度 Top 3:[/bold]")
+                sorted_importance = sorted(
+                    feature_importance.items(), key=lambda x: x[1], reverse=True
+                )
+                for i, (feature, importance) in enumerate(sorted_importance[:3], 1):
+                    console.print(f"  {i}位: {feature} ({importance:.4f})")
+
+        except Exception as e:
+            console.print(f"[red]モデリングでエラーが発生しました: {str(e)}[/red]")
