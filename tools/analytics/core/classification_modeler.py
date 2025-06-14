@@ -67,6 +67,21 @@ class ClassificationModeler:
         self.label_encoder = LabelEncoder()
         y_encoded = self.label_encoder.fit_transform(y)
 
+        # クラス数を確認してobjectiveを決定
+        n_classes = len(self.label_encoder.classes_)
+        if n_classes < 2:
+            raise ValueError(
+                f"分類には最低2つのクラスが必要です。現在のクラス数: {n_classes}"
+            )
+
+        # クラス数に応じてobjectiveとeval_metricを設定
+        if n_classes == 2:
+            objective = "binary:logistic"
+            eval_metric = "logloss"
+        else:
+            objective = "multi:softprob"
+            eval_metric = "mlogloss"
+
         # 訓練・テストデータに分割
         X_train, X_test, y_train, y_test = train_test_split(
             X,
@@ -78,8 +93,8 @@ class ClassificationModeler:
 
         # XGBoostモデルを訓練
         self.model = xgb.XGBClassifier(
-            objective="multi:softprob",
-            eval_metric="mlogloss",
+            objective=objective,
+            eval_metric=eval_metric,
             random_state=random_state,
             n_estimators=100,
             max_depth=6,
