@@ -1,5 +1,6 @@
 """Histogram display commands for CSV Analytics."""
 
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from analytics.core.classification_modeler import ClassificationModeler
@@ -280,6 +281,30 @@ class HistogramManager:
                 f"[bold]データ数:[/bold] {n_samples} "
                 f"(訓練: {n_train}, テスト: {n_test})"
             )
+
+            # PCA散布図の生成結果を表示
+            if len(selected_features) >= 3:
+                models_dir = Path(result_path).parent
+                pca_plot_path = models_dir / "pca_scatter_plot.png"
+                if pca_plot_path.exists():
+                    console.print(
+                        f"\n[bold cyan]PCA散布図:[/bold cyan] {pca_plot_path}"
+                    )
+                    if modeler.pca is not None:
+                        total_variance = sum(modeler.pca.explained_variance_ratio_)
+                        pc1_var = modeler.pca.explained_variance_ratio_[0]
+                        pc2_var = modeler.pca.explained_variance_ratio_[1]
+                        console.print(
+                            f"[dim]寄与率 - 全体: {total_variance:.1%}, "
+                            f"PC1: {pc1_var:.1%}, PC2: {pc2_var:.1%}[/dim]"
+                        )
+                else:
+                    console.print("[yellow]PCA散布図の生成に失敗しました[/yellow]")
+            else:
+                console.print(
+                    f"[dim]PCA散布図: 特徴量数が{len(selected_features)}"
+                    "のため生成されませんでした（3以上必要）[/dim]"
+                )
 
             # 特徴量重要度上位3位を表示
             if feature_importance:

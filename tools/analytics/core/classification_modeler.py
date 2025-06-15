@@ -3,11 +3,15 @@
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import seaborn as sns
 import xgboost as xgb
+from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 
 class ClassificationModeler:
@@ -19,6 +23,9 @@ class ClassificationModeler:
         self.label_encoder: Optional[LabelEncoder] = None
         self.feature_names: List[str] = []
         self.target_name: str = ""
+        self.pca: Optional[PCA] = None
+        self.scaler: Optional[StandardScaler] = None
+        self.clean_data: Optional[pd.DataFrame] = None
 
     def train_model(
         self,
@@ -58,6 +65,9 @@ class ClassificationModeler:
         clean_data = data[feature_names + [target_column]].dropna()
         if len(clean_data) == 0:
             raise ValueError("欠損値を除去した結果、データが空になりました")
+
+        # クリーンデータを保存（PCA用）
+        self.clean_data = clean_data.copy()
 
         # 特徴量と目的変数を分離
         X = clean_data[feature_names]
@@ -157,6 +167,11 @@ class ClassificationModeler:
         data_dir = Path(data_file_path).parent
         models_dir = self._create_models_directory(data_dir)
 
+        # PCA散布図を生成（特徴量が3つ以上の場合のみ）
+        pca_plot_path = None
+        if len(self.feature_names) >= 3:
+            pca_plot_path = self.generate_pca_scatter_plot(models_dir)
+
         # 結果をDataFrameに整理
         results_data: List[Dict[str, Union[str, int, float]]] = []
 
@@ -211,6 +226,36 @@ class ClassificationModeler:
             }
         )
 
+        # PCA情報を追加
+        if pca_plot_path:
+            results_data.append(
+                {
+                    "項目": "PCA散布図",
+                    "値": "生成済み",
+                    "詳細": f"ファイル: {Path(pca_plot_path).name}",
+                }
+            )
+
+            if self.pca is not None:
+                total_variance = np.sum(self.pca.explained_variance_ratio_)
+                results_data.append(
+                    {
+                        "項目": "PCA寄与率",
+                        "値": f"{total_variance:.3f}",
+                        "詳細": f"PC1: {self.pca.explained_variance_ratio_[0]:.3f}, "
+                        f"PC2: {self.pca.explained_variance_ratio_[1]:.3f}",
+                    }
+                )
+        else:
+            if len(self.feature_names) < 3:
+                results_data.append(
+                    {
+                        "項目": "PCA散布図",
+                        "値": "未生成",
+                        "詳細": "特徴量数が3未満のため実行されませんでした",
+                    }
+                )
+
         # 特徴量重要度を追加（上位5位まで）
         if feature_importance:
             sorted_importance = sorted(
@@ -263,3 +308,118 @@ class ClassificationModeler:
         if self.label_encoder is None:
             return []
         return self.label_encoder.classes_.tolist()
+
+    def generate_pca_scatter_plot(self, models_dir: Path) -> Optional[str]:
+        """
+        PCAを用いた2D散布図を生成し、models{index}フォルダに保存します.
+
+        Args:
+            models_dir (Path): 保存先のmodelsディレクトリ
+
+        Returns:
+            Optional[str]: 保存されたPNG画像ファイルのパス、失敗時はNone
+        """
+        if (
+            self.clean_data is None
+            or self.label_encoder is None
+            or len(self.feature_names) < 3
+        ):
+            return None
+
+        try:
+            # 特徴量データを取得
+            X = self.clean_data[self.feature_names]
+            y = self.clean_data[self.target_name]
+
+            # データの標準化
+            self.scaler = StandardScaler()
+            X_scaled = self.scaler.fit_transform(X)
+
+            # PCAを実行（2次元に削減）
+            self.pca = PCA(n_components=2, random_state=42)
+            X_pca = self.pca.fit_transform(X_scaled)
+
+            # クラスラベルをエンコード
+            y_encoded = self.label_encoder.transform(y)
+            class_names = self.label_encoder.classes_
+
+            # 散布図を作成
+            plt.figure(figsize=(12, 10))
+            plt.style.use("default")
+
+            # クラス数に応じたカラーパレットを取得
+            n_classes = len(class_names)
+            if n_classes <= 10:
+                colors = sns.color_palette("tab10", n_classes)
+            else:
+                colors = sns.color_palette("hsl", n_classes)
+
+            # 各クラスの散布図を描画
+            for i, class_name in enumerate(class_names):
+                mask = y_encoded == i
+                class_data = X_pca[mask]
+                plt.scatter(
+                    class_data[:, 0],
+                    class_data[:, 1],
+                    alpha=0.7,
+                    label=f"{class_name} (n={np.sum(mask)})",
+                    color=colors[i],
+                    s=50,
+                    edgecolors="black",
+                    linewidth=0.5,
+                )
+
+            # グラフの装飾
+            plt.title(
+                f"PCA Scatter Plot: {self.target_name} Classification",
+                fontsize=16,
+                fontweight="bold",
+            )
+            plt.xlabel(
+                f"PC1 ({self.pca.explained_variance_ratio_[0]:.1%} variance)",
+                fontsize=12,
+            )
+            plt.ylabel(
+                f"PC2 ({self.pca.explained_variance_ratio_[1]:.1%} variance)",
+                fontsize=12,
+            )
+            plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+            plt.grid(True, alpha=0.3)
+
+            # 統計情報をテキストで追加
+            total_variance = np.sum(self.pca.explained_variance_ratio_)
+            stats_text = f"Features used: {len(self.feature_names)}\n"
+            stats_text += f"Total samples: {len(X_pca)}\n"
+            stats_text += f"Total variance explained: {total_variance:.1%}\n"
+            stats_text += f"PC1 variance: {self.pca.explained_variance_ratio_[0]:.1%}\n"
+            stats_text += f"PC2 variance: {self.pca.explained_variance_ratio_[1]:.1%}"
+
+            plt.figtext(
+                0.98,
+                0.02,
+                stats_text,
+                fontsize=10,
+                bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.8),
+                horizontalalignment="right",
+                verticalalignment="bottom",
+            )
+
+            # レイアウトを調整
+            plt.tight_layout()
+
+            # ファイルを保存
+            output_file = models_dir / "pca_scatter_plot.png"
+            plt.savefig(
+                output_file,
+                dpi=300,
+                bbox_inches="tight",
+                facecolor="white",
+                edgecolor="none",
+            )
+            plt.close()
+
+            return str(output_file)
+
+        except Exception as e:
+            print(f"PCA散布図の生成中にエラーが発生しました: {e}")
+            return None
