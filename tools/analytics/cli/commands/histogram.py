@@ -14,11 +14,15 @@ from analytics.ui.display import (
 )
 from analytics.ui.prompts import (
     confirm_classification_modeling,
+    display_parameter_info,
     extract_feature_name_from_choice,
     select_class_column,
     select_display_mode,
     select_feature_for_histogram,
+    select_hyperparameter_tuning_option,
+    select_optuna_trials,
     select_post_histogram_action,
+    show_parameter_configuration,
 )
 from analytics.utils.file_utils import export_topn_features_to_csv
 from rich.console import Console
@@ -217,7 +221,8 @@ class HistogramManager:
 
             if output_path:
                 console.print(
-                    "\n[dim]このCSVファイルをPythonで読み込むには以下のコードを使用してください:[/dim]"
+                    "\n[dim]このCSVファイルをPythonで読み込むには"
+                    "以下のコードを使用してください:[/dim]"
                 )
                 console.print("[dim]import pandas as pd[/dim]")
                 console.print(f"[dim]df = pd.read_csv('{output_path}')[/dim]")
@@ -250,12 +255,41 @@ class HistogramManager:
                 feature_name = extract_feature_name_from_choice(choice)
                 selected_features.append(feature_name)
 
+            # ハイパーパラメータチューニングオプションを選択
+            console.print("\n[bold cyan]ハイパーパラメータ設定[/bold cyan]")
+            tuning_option = select_hyperparameter_tuning_option()
+            if not tuning_option:
+                console.print("[yellow]モデリングをキャンセルしました。[/yellow]")
+                return
+
+            use_optuna = tuning_option.startswith("2.")
+            n_trials = 100  # デフォルト値
+
+            if use_optuna:
+                # Optuna試行回数を選択
+                n_trials = select_optuna_trials()
+                if n_trials is None:
+                    console.print("[yellow]モデリングをキャンセルしました。[/yellow]")
+                    return
+                console.print(
+                    f"[dim]Optunaを使用してハイパーパラメータを最適化します"
+                    f"（試行回数: {n_trials}）[/dim]"
+                )
+            else:
+                console.print("[dim]デフォルトパラメータを使用します[/dim]")
+
+            # パラメータ設定の表示確認
+            if show_parameter_configuration():
+                display_parameter_info(use_optuna)
+
             # モデリングを実行
             modeler = ClassificationModeler()
             accuracy_scores: Dict[str, Union[float, int]] = modeler.train_model(
                 data_processor.data,
                 selected_features,
                 self.selected_class_column,
+                use_optuna=use_optuna,
+                n_trials=n_trials,
             )
 
             # 特徴量重要度を取得
@@ -282,11 +316,29 @@ class HistogramManager:
 
             train_acc = accuracy_scores["train_accuracy"]
             train_pct = train_acc * 100
-            console.print(f"[bold]訓練精度:[/bold] {train_acc:.4f} ({train_pct:.2f}%)")
+            console.print(
+                f"[bold]ホールドアウト訓練精度:[/bold] {train_acc:.4f} ({train_pct:.2f}%)"
+            )
 
             test_acc = accuracy_scores["test_accuracy"]
             test_pct = test_acc * 100
-            console.print(f"[bold]テスト精度:[/bold] {test_acc:.4f} ({test_pct:.2f}%)")
+            console.print(
+                f"[bold]ホールドアウトテスト精度:[/bold] {test_acc:.4f} ({test_pct:.2f}%)"
+            )
+
+            # Optuna結果を表示
+            if use_optuna and "optuna_trials" in accuracy_scores:
+                console.print(
+                    "[bold cyan]Optuna試行回数:[/bold cyan] "
+                    f"{accuracy_scores['optuna_trials']}"
+                )
+                if "best_cv_score" in accuracy_scores:
+                    best_cv = accuracy_scores["best_cv_score"]
+                    best_cv_pct = best_cv * 100
+                    console.print(
+                        f"[bold cyan]CV法最適平均精度:[/bold cyan] "
+                        f"{best_cv:.4f} ({best_cv_pct:.2f}%)"
+                    )
 
             n_samples = accuracy_scores["n_samples"]
             n_train = accuracy_scores["n_train"]
@@ -326,12 +378,35 @@ class HistogramManager:
 
             # 特徴量重要度上位3位を表示
             if feature_importance:
-                console.print("\n[bold]特徴量重要度 Top 3:[/bold]")
-                sorted_importance = sorted(
-                    feature_importance.items(), key=lambda x: x[1], reverse=True
-                )
-                for i, (feature, importance) in enumerate(sorted_importance[:3], 1):
-                    console.print(f"  {i}位: {feature} ({importance:.4f})")
+                # ホールドアウトモデルの重要度
+                if "holdout" in feature_importance:
+                    console.print(
+                        "\n[bold]ホールドアウトモデル 特徴量重要度 Top 3:[/bold]"
+                    )
+                    holdout_importance = feature_importance["holdout"]
+                    sorted_importance = sorted(
+                        holdout_importance.items(), key=lambda x: x[1], reverse=True
+                    )
+                    for i, (feature, importance) in enumerate(sorted_importance[:3], 1):
+                        console.print(f"  {i}位: {feature} ({importance:.4f})")
+
+                # CVモデルの重要度
+                if "cv" in feature_importance:
+                    console.print("\n[bold]CVモデル 特徴量重要度 Top 3:[/bold]")
+                    cv_importance = feature_importance["cv"]
+                    sorted_importance = sorted(
+                        cv_importance.items(), key=lambda x: x[1], reverse=True
+                    )
+                    for i, (feature, importance) in enumerate(sorted_importance[:3], 1):
+                        console.print(f"  {i}位: {feature} ({importance:.4f})")
+
+            # Optuna最適化履歴の保存結果を表示
+            if use_optuna:
+                history_file = models_dir / "optuna_optimization_history.csv"
+                if history_file.exists():
+                    console.print(
+                        f"\n[bold cyan]Optuna最適化履歴:[/bold cyan] {history_file}"
+                    )
 
         except Exception as e:
             console.print(f"[red]モデリングでエラーが発生しました: {str(e)}[/red]")
