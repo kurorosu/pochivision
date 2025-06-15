@@ -404,6 +404,68 @@ def confirm_classification_modeling() -> bool:
     ).ask()
 
 
+def select_hyperparameter_tuning_option() -> Optional[str]:
+    """ハイパーパラメータチューニングのオプションを選択します."""
+    tuning_choices = [
+        "1. デフォルトパラメータを使用（高速）",
+        "2. Optunaでハイパーパラメータチューニング（時間がかかります）",
+    ]
+
+    console.print("\n[dim]※ パラメータ設定はmodel_param.jsonから読み込まれます[/dim]")
+
+    return questionary.select(
+        "ハイパーパラメータの設定方法を選択してください:",
+        choices=tuning_choices,
+        style=get_questionary_style(),
+    ).ask()
+
+
+def select_optuna_trials() -> Optional[int]:
+    """Optunaの試行回数を選択します."""
+    # ParameterManagerからデフォルト値を取得
+    try:
+        from analytics.utils.param_manager import ParameterManager
+
+        param_manager = ParameterManager()
+        default_trials = param_manager.get_default_trials()
+    except Exception:
+        default_trials = 100  # フォールバック値
+
+    trial_choices = [
+        "50回（高速）",
+        f"{default_trials}回（推奨）",
+        "200回（高精度）",
+        "500回（最高精度、時間がかかります）",
+        "カスタム（手動入力）",
+    ]
+
+    console.print(
+        "\n[dim]※ すべての選択肢で設定ファイル（model_param.json）の探索範囲を使用します[/dim]"
+    )
+
+    selected_text = questionary.select(
+        "Optunaの試行回数を選択してください:",
+        choices=trial_choices,
+        style=get_questionary_style(),
+    ).ask()
+
+    if not selected_text:
+        return None
+
+    if selected_text == "カスタム（手動入力）":
+        custom_trials = questionary.text(
+            "試行回数を入力してください（10-1000の範囲）:",
+            validate=lambda text: text.isdigit() and 10 <= int(text) <= 1000,
+            style=get_questionary_style(),
+        ).ask()
+        return int(custom_trials) if custom_trials else None
+    elif selected_text.startswith(f"{default_trials}回"):
+        return default_trials
+    else:
+        # "100回（推奨）" -> 100
+        return int(selected_text.split("回")[0])
+
+
 # ========== 散布図関連のプロンプト機能 ==========
 
 
@@ -489,3 +551,79 @@ def select_scatter_display_mode() -> Optional[str]:
         choices=display_choices,
         style=get_questionary_style(),
     ).ask()
+
+
+def show_parameter_configuration() -> bool:
+    """パラメータ設定を表示するかどうかを確認します."""
+    return questionary.confirm(
+        "使用するパラメータ設定を表示しますか？",
+        default=False,
+        style=get_questionary_style(),
+    ).ask()
+
+
+def display_parameter_info(use_optuna: bool, param_manager=None) -> None:
+    """パラメータ情報を表示します."""
+    if param_manager is None:
+        try:
+            from analytics.utils.param_manager import ParameterManager
+
+            param_manager = ParameterManager()
+        except Exception:
+            console.print("[red]パラメータ設定の読み込みに失敗しました[/red]")
+            return
+
+    try:
+        if use_optuna:
+            console.print("\n[bold cyan]Optuna最適化設定[/bold cyan]")
+            console.print("[dim]以下の設定がmodel_param.jsonから読み込まれます[/dim]")
+
+            # Optuna設定を表示
+            optuna_config = param_manager.get_optuna_config()
+            console.print(
+                f"[dim]デフォルト試行回数: {optuna_config.get('default_trials', 100)}[/dim]"
+            )
+            console.print(
+                f"[dim]CVフォールド数: {optuna_config.get('cv_folds', 5)}[/dim]"
+            )
+            console.print(
+                f"[dim]サンプラー: {optuna_config.get('sampler', 'TPESampler')}[/dim]"
+            )
+
+            # 探索範囲を表示
+            console.print(
+                "\n[bold]パラメータ探索範囲（すべての試行回数で共通）:[/bold]"
+            )
+            search_space = param_manager.get_optuna_search_space()
+            descriptions = param_manager.get_parameter_descriptions()
+
+            for param_name, param_config in search_space.items():
+                param_type = param_config["type"]
+                low = param_config["low"]
+                high = param_config["high"]
+                desc = descriptions.get(param_name, "説明なし")
+
+                console.print(
+                    f"  • {param_name}: {low} ～ {high} ({param_type}) - {desc}"
+                )
+        else:
+            console.print("\n[bold cyan]デフォルトパラメータ[/bold cyan]")
+            console.print("[dim]以下の設定がmodel_param.jsonから読み込まれます[/dim]")
+
+            # デフォルトパラメータを表示
+            default_params = param_manager.get_default_params()
+            descriptions = param_manager.get_parameter_descriptions()
+
+            for param_name, param_value in default_params.items():
+                desc = descriptions.get(param_name, "説明なし")
+                console.print(f"  • {param_name}: {param_value} - {desc}")
+
+        # メタデータを表示
+        metadata = param_manager.get_metadata()
+        if metadata:
+            console.print(
+                f"\n[dim]設定ファイル情報: v{metadata.get('version', 'unknown')}[/dim]"
+            )
+
+    except Exception as e:
+        console.print(f"[red]パラメータ情報の表示中にエラーが発生しました: {e}[/red]")
