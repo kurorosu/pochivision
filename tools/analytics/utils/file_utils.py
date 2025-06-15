@@ -107,7 +107,10 @@ def validate_file_path(file_path: str) -> bool:
 
 
 def export_topn_features_to_csv(
-    feature_choices: List[str], csv_file_path: str, ranking_count: int
+    feature_choices: List[str],
+    csv_file_path: str,
+    ranking_count: int,
+    models_dir: Optional[Path] = None,
 ) -> Optional[str]:
     """JSD距離順上位N位の特徴量をCSVファイルに出力します.
 
@@ -115,6 +118,7 @@ def export_topn_features_to_csv(
         feature_choices (List[str]): 特徴量の選択肢リスト（JSD距離順）
         csv_file_path (str): 元のCSVファイルのパス
         ranking_count (int): 出力する順位数（-1の場合は全特徴量）
+        models_dir (Optional[Path]): 出力先ディレクトリ（Noneの場合は元のCSVファイルと同じフォルダ）
 
     Returns:
         Optional[str]: 出力されたCSVファイルのパス、失敗時はNone
@@ -135,9 +139,15 @@ def export_topn_features_to_csv(
             feature_name = choice.split(" (")[0]
             feature_names.append(feature_name)
 
-        # 出力先のパスを決定（元のCSVファイルと同じフォルダ）
+        # 出力先のパスを決定
         csv_path = Path(csv_file_path)
-        output_dir = csv_path.parent
+        if models_dir is not None:
+            # models_dirが指定された場合はそこに出力
+            output_dir = models_dir
+        else:
+            # 従来通り元のCSVファイルと同じフォルダに出力
+            output_dir = csv_path.parent
+
         output_filename = f"{csv_path.stem}_{rank_text}_features.csv"
         output_path = output_dir / output_filename
 
@@ -168,6 +178,7 @@ def export_correlation_features_to_csv(
     csv_file_path: str,
     ranking_count: int,
     y_axis_feature: str,
+    models_dir: Optional[Path] = None,
 ) -> Optional[str]:
     """相関係数順上位N位の特徴量をCSVファイルに出力します.
 
@@ -176,6 +187,7 @@ def export_correlation_features_to_csv(
         csv_file_path (str): 元のCSVファイルのパス
         ranking_count (int): 出力する順位数（-1の場合は全特徴量）
         y_axis_feature (str): Y軸特徴量名
+        models_dir (Optional[Path]): 出力先ディレクトリ（Noneの場合は元のCSVファイルと同じフォルダ）
 
     Returns:
         Optional[str]: 出力されたCSVファイルのパス、失敗時はNone
@@ -196,9 +208,15 @@ def export_correlation_features_to_csv(
             feature_name = choice.split(" (")[0]
             feature_names.append(feature_name)
 
-        # 出力先のパスを決定（元のCSVファイルと同じフォルダ）
+        # 出力先のパスを決定
         csv_path = Path(csv_file_path)
-        output_dir = csv_path.parent
+        if models_dir is not None:
+            # models_dirが指定された場合はそこに出力
+            output_dir = models_dir
+        else:
+            # 従来通り元のCSVファイルと同じフォルダに出力
+            output_dir = csv_path.parent
+
         output_filename = (
             f"{csv_path.stem}_{rank_text}_correlation_with_{y_axis_feature}.csv"
         )
