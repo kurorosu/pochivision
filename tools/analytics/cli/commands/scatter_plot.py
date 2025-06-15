@@ -213,6 +213,7 @@ class ScatterPlotManager:
             data_processor.file_path,
             ranking_count,
             self.selected_y_axis,
+            models_dir=None,
         )
 
         if output_path:
