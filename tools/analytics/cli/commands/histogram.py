@@ -192,31 +192,39 @@ class HistogramManager:
         if ranking_count is None:
             return
 
-        # CSV出力を実行
-        output_path = export_topn_features_to_csv(
-            feature_choices, data_processor.file_path, ranking_count
-        )
+        # モデリング確認プロンプトを表示（色分けヒストグラム時のみ）
+        will_execute_modeling = False
+        if self.display_mode == "class" and self.selected_class_column is not None:
+            console.print("\n[bold cyan]分類モデリング機能[/bold cyan]")
+            will_execute_modeling = confirm_classification_modeling()
 
-        if output_path:
+        if will_execute_modeling:
+            # モデリングを実行する場合は、models{index}フォルダのみに出力
             console.print(
-                "\n[dim]このCSVファイルをPythonで読み込むには以下のコードを使用してください:[/dim]"
+                "[dim]特徴量CSVはモデリング結果と共にmodels{index}フォルダに出力されます[/dim]"
             )
-            console.print("[dim]import pandas as pd[/dim]")
-            console.print(f"[dim]df = pd.read_csv('{output_path}')[/dim]")
-            console.print("[dim]features = df['feature_name'].tolist()[/dim]")
-            console.print("[dim]print(features)[/dim]")
-
-            # モデリング確認プロンプトを表示（色分けヒストグラム時のみ）
-            if self.display_mode == "class" and self.selected_class_column is not None:
-                console.print("\n[bold cyan]分類モデリング機能[/bold cyan]")
-
-                # モデリング実行の確認
-                if confirm_classification_modeling():
-                    self._execute_classification_modeling(
-                        data_processor, feature_choices, ranking_count
-                    )
+            self._execute_classification_modeling(
+                data_processor, feature_choices, ranking_count
+            )
         else:
-            console.print("[red]CSV出力に失敗しました。[/red]")
+            # モデリングを実行しない場合は、従来通りの場所に出力
+            output_path = export_topn_features_to_csv(
+                feature_choices,
+                data_processor.file_path,
+                ranking_count,
+                models_dir=None,
+            )
+
+            if output_path:
+                console.print(
+                    "\n[dim]このCSVファイルをPythonで読み込むには以下のコードを使用してください:[/dim]"
+                )
+                console.print("[dim]import pandas as pd[/dim]")
+                console.print(f"[dim]df = pd.read_csv('{output_path}')[/dim]")
+                console.print("[dim]features = df['feature_name'].tolist()[/dim]")
+                console.print("[dim]print(features)[/dim]")
+            else:
+                console.print("[red]CSV出力に失敗しました。[/red]")
 
     def _execute_classification_modeling(
         self,
@@ -260,6 +268,12 @@ class HistogramManager:
                 feature_importance,
             )
 
+            # models{index}フォルダにJSD特徴量CSVを出力
+            models_dir = Path(result_path).parent
+            jsd_csv_path = export_topn_features_to_csv(
+                feature_choices, data_processor.file_path, ranking_count, models_dir
+            )
+
             # 結果を表示
             console.print("\n[green]✓ モデリングが完了しました！[/green]")
             console.print(f"[bold]結果ファイル:[/bold] {result_path}")
@@ -282,6 +296,10 @@ class HistogramManager:
                 f"(訓練: {n_train}, テスト: {n_test})"
             )
 
+            # JSD特徴量CSVの出力結果を表示
+            if jsd_csv_path:
+                console.print(f"\n[bold cyan]JSD特徴量CSV:[/bold cyan] {jsd_csv_path}")
+
             # PCA散布図の生成結果を表示
             if len(selected_features) >= 3:
                 models_dir = Path(result_path).parent
@@ -303,7 +321,7 @@ class HistogramManager:
             else:
                 console.print(
                     f"[dim]PCA散布図: 特徴量数が{len(selected_features)}"
-                    "のため生成されませんでした（3以上必要）[/dim]"
+                    f"のため生成されませんでした（3以上必要）[/dim]"
                 )
 
             # 特徴量重要度上位3位を表示
