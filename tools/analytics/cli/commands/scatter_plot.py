@@ -160,6 +160,10 @@ class ScatterPlotManager:
                     self.show_scatter_plot_command(data_processor)
                 break
             elif action_choice.startswith("3."):
+                # 表示設定を変更
+                self._change_display_settings(data_processor)
+                break
+            elif action_choice.startswith("4."):
                 # メインメニューに戻る
                 break
 
