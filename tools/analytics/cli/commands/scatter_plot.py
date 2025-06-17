@@ -207,16 +207,29 @@ class ScatterPlotManager:
         if ranking_count is None:
             return
 
-        # CSV出力を実行
+        # models{index}フォルダに出力
+        from pathlib import Path
+
+        from analytics.core.classification_modeler import ClassificationModeler
+
+        # models{index}フォルダを作成
+        data_dir = Path(data_processor.file_path).parent
+        modeler = ClassificationModeler()
+        models_dir = modeler._create_models_directory(data_dir)
+
+        # 相関特徴量CSVを出力
         output_path = export_correlation_features_to_csv(
             feature_choices,
             data_processor.file_path,
             ranking_count,
             self.selected_y_axis,
-            models_dir=None,
+            models_dir=models_dir,
         )
 
         if output_path:
+            console.print(
+                f"\n[green]✓ models{models_dir.name}フォルダに保存しました[/green]"
+            )
             console.print(
                 "\n[dim]このCSVファイルをPythonで読み込むには以下のコードを使用してください:[/dim]"
             )
