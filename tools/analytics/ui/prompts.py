@@ -529,7 +529,8 @@ def select_post_scatter_plot_action() -> Optional[str]:
     action_choices = [
         "1. 別のX軸特徴量で散布図を表示",
         "2. Y軸特徴量を変更",
-        "3. メインメニューに戻る",
+        "3. 表示設定を変更",
+        "4. メインメニューに戻る",
     ]
 
     return questionary.select(
