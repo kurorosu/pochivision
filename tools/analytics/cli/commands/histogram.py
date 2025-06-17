@@ -211,15 +211,64 @@ class HistogramManager:
                 data_processor, feature_choices, ranking_count
             )
         else:
-            # モデリングを実行しない場合は、従来通りの場所に出力
+            # モデリングを実行しない場合でも、models{index}フォルダに出力
+            from analytics.core.classification_modeler import ClassificationModeler
+
+            # models{index}フォルダを作成
+            data_dir = Path(data_processor.file_path).parent
+            modeler = ClassificationModeler()
+            models_dir = modeler._create_models_directory(data_dir)
+
+            # 特徴量CSVを出力
             output_path = export_topn_features_to_csv(
                 feature_choices,
                 data_processor.file_path,
                 ranking_count,
-                models_dir=None,
+                models_dir=models_dir,
             )
 
+            # PCA散布図を生成（特徴量が3つ以上の場合）
+            if ranking_count == -1:
+                selected_features_count = len(feature_choices)
+            else:
+                selected_features_count = min(ranking_count, len(feature_choices))
+
+            if selected_features_count >= 3:
+                # 上位N位の特徴量名を抽出
+                selected_features = []
+                max_features = (
+                    len(feature_choices) if ranking_count == -1 else ranking_count
+                )
+                for choice in feature_choices[:max_features]:
+                    feature_name = extract_feature_name_from_choice(choice)
+                    selected_features.append(feature_name)
+
+                # PCA用のデータ準備
+                modeler.clean_data = data_processor.data[
+                    selected_features + [self.selected_class_column]
+                ].dropna()
+                modeler.feature_names = selected_features
+                modeler.target_name = self.selected_class_column
+
+                # ラベルエンコーディング
+                from sklearn.preprocessing import LabelEncoder
+
+                modeler.label_encoder = LabelEncoder()
+                modeler.label_encoder.fit(
+                    modeler.clean_data[self.selected_class_column]
+                )
+
+                # PCA散布図を生成
+                pca_plot_path = modeler.generate_pca_scatter_plot(models_dir)
+                if pca_plot_path:
+                    console.print(
+                        f"\n[bold cyan]PCA散布図を生成しました:[/bold cyan] {pca_plot_path}"
+                    )
+
             if output_path:
+                console.print(
+                    f"\n[green]✓ models{models_dir.name}フォルダに保存しました[/green]"
+                )
                 console.print(
                     "\n[dim]このCSVファイルをPythonで読み込むには"
                     "以下のコードを使用してください:[/dim]"
