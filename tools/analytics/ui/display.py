@@ -6,22 +6,101 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 import plotext as plt
+from rich.align import Align
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 
 console = Console()
 
 
 def show_welcome_message() -> None:
-    """ウェルカムメッセージを表示します."""
-    welcome_text = """
-[bold blue]データ概要表示CLI アプリケーション[/bold blue]
+    """Claudcode風のモダンなウェルカムメッセージを表示します."""
+    try:
+        # ターミナルをクリアして美しい表示を確保（履歴も含めて完全クリア）
+        import os
 
-CSVファイルの基本情報を素早く確認できるシンプルなツールです。
-ヒストグラム表示機能も搭載しています。
-    """
-    console.print(Panel(welcome_text, title="ようこそ", border_style="blue"))
+        os.system("cls" if os.name == "nt" else "clear")
+
+        # ASCII Artロゴ（枠なし）
+        logo = """
+    ██████╗ ███████╗██╗   ██╗     █████╗ ███╗   ██╗ █████╗
+   ██╔════╝██╔════╝██║   ██║    ██╔══██╗████╗  ██║██╔══██╗
+   ██║     ███████╗██║   ██║    ███████║██╔██╗ ██║███████║
+   ██║     ╚════██║╚██╗ ██╔╝    ██╔══██║██║╚██╗██║██╔══██║
+   ╚██████╗███████║ ╚████╔╝     ██║  ██║██║ ╚████║██║  ██║
+    ╚═════╝╚══════╝  ╚═══╝      ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝
+
+                      Analytics CLI
+        """
+
+        # ロゴを中央寄せで表示
+        console.print(Align.center(Text(logo, style="bold blue")))
+
+        # ウェルカムメッセージ
+        welcome_content = Text()
+        welcome_content.append("🚀 ", style="bold yellow")
+        welcome_content.append(
+            "CSVファイルの高度なデータ分析ツール", style="bold white"
+        )
+        welcome_content.append("\n\n")
+        welcome_content.append("✨ 主な機能:\n", style="bold cyan")
+        welcome_content.append("  • 📊 インタラクティブなデータ探索\n", style="white")
+        welcome_content.append("  • 📈 美しいヒストグラム & 散布図\n", style="white")
+        welcome_content.append("  • 🔄 自動データ変換 (Long ↔ Wide)\n", style="white")
+        welcome_content.append("  • 🎯 クラス別分析 & 統計解析\n", style="white")
+        welcome_content.append("  • 🤖 機械学習モデリング\n", style="white")
+
+        # パネルを画面幅いっぱいに広げて中央寄せ
+        panel = Panel(
+            Align.center(welcome_content),
+            title="[bold magenta]🎉 Welcome to CSV Analytics[/bold magenta]",
+            border_style="blue",
+            padding=(1, 2),
+            expand=True,
+        )
+
+        console.print(panel)
+        console.print()
+
+    except Exception as e:
+        # エラーが発生した場合はシンプルなフォールバック表示
+        console.print(f"[red]ウェルカムメッセージ表示エラー: {str(e)}[/red]")
+        console.print("[bold blue]CSV Analytics CLI へようこそ！[/bold blue]")
+        console.print("CSVファイルの基本情報を素早く確認できるシンプルなツールです。")
+
+
+def show_goodbye_message() -> None:
+    """Claudcode風のモダンな終了メッセージを表示します."""
+    try:
+        console.print()
+
+        goodbye_text = Text()
+        goodbye_text.append("👋 ", style="bold yellow")
+        goodbye_text.append("ご利用ありがとうございました！", style="bold white")
+        goodbye_text.append("\n🎉 CSV Analytics CLI を終了します", style="cyan")
+        goodbye_text.append("\n\n")
+        goodbye_text.append("📧 フィードバック: ", style="dim white")
+        goodbye_text.append("kurorosu@example.com", style="blue underline")
+        goodbye_text.append("\n🔗 GitHub: ", style="dim white")
+        goodbye_text.append(
+            "https://github.com/kurorosu/vision-capture-core", style="blue underline"
+        )
+
+        goodbye_panel = Panel(
+            Align.center(goodbye_text),
+            title="[bold green]✨ Goodbye[/bold green]",
+            border_style="green",
+            padding=(1, 2),
+            expand=True,
+        )
+        console.print(goodbye_panel)
+
+    except Exception as e:
+        # エラーが発生した場合はシンプルなフォールバック表示
+        console.print(f"[red]終了メッセージ表示エラー: {str(e)}[/red]")
+        console.print("[green]ありがとうございました！[/green]")
 
 
 def show_main_menu_header(
