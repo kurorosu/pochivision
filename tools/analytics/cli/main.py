@@ -23,6 +23,7 @@ from analytics.cli.commands.histogram import HistogramManager  # noqa: E402
 from analytics.cli.commands.scatter_plot import ScatterPlotManager  # noqa: E402
 from analytics.core.data_processor import DataProcessor  # noqa: E402
 from analytics.ui.display import (  # noqa: E402
+    show_goodbye_message,
     show_main_menu_header,
     show_welcome_message,
 )
@@ -43,6 +44,8 @@ class CSVAnalyticsCLI:
 
     def run(self) -> None:
         """メインアプリケーションを実行します."""
+        # コンソールをクリアして美しい表示を確保
+        console.clear()
         show_welcome_message()
 
         while True:
@@ -76,7 +79,7 @@ class CSVAnalyticsCLI:
                 self.scatter_plot_manager.show_scatter_plot_command(self.data_processor)
 
             elif choice == "5. 終了":
-                console.print("\n[green]ありがとうございました！[/green]")
+                show_goodbye_message()
                 break
 
 
