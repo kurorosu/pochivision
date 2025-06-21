@@ -25,6 +25,7 @@ from analytics.core.data_processor import DataProcessor  # noqa: E402
 from analytics.ui.display import (  # noqa: E402
     show_goodbye_message,
     show_main_menu_header,
+    show_startup_loading,
     show_welcome_message,
 )
 from analytics.ui.prompts import select_main_menu_option  # noqa: E402
@@ -44,10 +45,13 @@ class CSVAnalyticsCLI:
 
     def run(self) -> None:
         """メインアプリケーションを実行します."""
-        # コンソールをクリアして美しい表示を確保
-        console.clear()
+        # 起動時の読み込みアニメーションを最初に表示（ターミナルクリア含む）
+        show_startup_loading()
+
+        # ウェルカムメッセージを表示
         show_welcome_message()
 
+        # メインメニューループ
         while True:
             # メインメニューのヘッダーを表示
             show_main_menu_header(
