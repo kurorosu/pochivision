@@ -1,6 +1,7 @@
 """Data display components for CSV Analytics."""
 
 import os
+import time
 from typing import List, Optional
 
 import numpy as np
@@ -9,20 +10,95 @@ import plotext as plt
 from rich.align import Align
 from rich.console import Console
 from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from rich.text import Text
 
 console = Console()
 
 
+def show_startup_loading() -> None:
+    """起動時の読み込みアニメーションを表示します."""
+    try:
+        # ターミナルをクリアして美しい表示を確保
+        os.system("cls" if os.name == "nt" else "clear")
+
+        # 読み込みタスクのリスト（メッセージのみ）
+        loading_messages = [
+            "🔧 システム初期化中...",
+            "📊 分析エンジン起動中...",
+            "🎨 UI コンポーネント読み込み中...",
+            "⚡ パフォーマンス最適化中...",
+            "✨ 準備完了",
+        ]
+
+        # 起動メッセージを中央揃えで表示
+        console.print()
+        console.print(
+            Align.center(Text("🚀 システムを起動しています...", style="bold cyan"))
+        )
+        console.print()
+
+        # 各メッセージを順次処理
+        for i, message in enumerate(loading_messages):
+            # 進行中メッセージを表示
+            console.print(Align.center(Text(message, style="cyan")))
+
+            if i < len(loading_messages) - 1:
+                time.sleep(0.3)  # 最後以外は短時間
+            else:
+                time.sleep(0.2)  # 最後は少し短く
+
+            # 一つ上の行に戻って上書き
+            print("\033[A", end="")  # カーソルを一行上に移動
+            print("\033[K", end="")  # 行をクリア
+
+            # 完了メッセージで上書き
+            completed_message = message.replace("中...", "完了").replace(
+                "準備完了", "準備完了"
+            )
+            console.print(
+                Align.center(Text(f"✓ {completed_message}", style="dim green"))
+            )
+
+        # 最終メッセージを中央揃えで表示
+        console.print()
+        final_message = Text()
+        final_message.append("✅ ", style="bold green")
+        final_message.append("起動完了！", style="bold white")
+
+        console.print(Align.center(final_message))
+        console.print()  # ウェルカムメッセージとの間にスペース
+
+    except Exception as e:
+        # エラーが発生した場合はスキップ
+        console.print(f"[dim]読み込みアニメーション エラー: {str(e)}[/dim]")
+
+
+def show_loading_animation(message: str = "処理中", duration: float = 2.0) -> None:
+    """汎用的な読み込みアニメーションを表示します.
+
+    Args:
+        message (str): 表示するメッセージ
+        duration (float): アニメーション表示時間（秒）
+    """
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn(f"[cyan]{message}..."),
+            console=console,
+            transient=True,
+        ) as progress:
+            progress.add_task("loading", total=None)
+            time.sleep(duration)
+
+    except Exception as e:
+        console.print(f"[dim]読み込みアニメーション エラー: {str(e)}[/dim]")
+
+
 def show_welcome_message() -> None:
     """Claudcode風のモダンなウェルカムメッセージを表示します."""
     try:
-        # ターミナルをクリアして美しい表示を確保（履歴も含めて完全クリア）
-        import os
-
-        os.system("cls" if os.name == "nt" else "clear")
-
         # ASCII Artロゴ（枠なし）
         logo = """
     ██████╗ ███████╗██╗   ██╗     █████╗ ███╗   ██╗ █████╗
