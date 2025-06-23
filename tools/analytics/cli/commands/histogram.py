@@ -405,6 +405,8 @@ class HistogramManager:
             if len(selected_features) >= 3:
                 models_dir = Path(result_path).parent
                 pca_plot_path = models_dir / "pca_scatter_plot.png"
+                pca_components_path = models_dir / "pca_components.csv"
+
                 if pca_plot_path.exists():
                     console.print(
                         f"\n[bold cyan]PCA散布図:[/bold cyan] {pca_plot_path}"
@@ -419,10 +421,19 @@ class HistogramManager:
                         )
                 else:
                     console.print("[yellow]PCA散布図の生成に失敗しました[/yellow]")
+
+                # PCA主成分係数CSVの出力結果を表示
+                if pca_components_path.exists():
+                    console.print(
+                        f"[bold cyan]PCA主成分係数CSV:[/bold cyan] {pca_components_path}"
+                    )
+                    console.print(
+                        "[dim]各特徴量の主成分への寄与度が記録されています[/dim]"
+                    )
             else:
                 console.print(
                     f"[dim]PCA散布図: 特徴量数が{len(selected_features)}"
-                    f"のため生成されませんでした（3以上必要）[/dim]"
+                    "のため生成されませんでした（3以上必要）[/dim]"
                 )
 
             # 特徴量重要度上位3位を表示
