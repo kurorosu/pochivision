@@ -134,7 +134,27 @@ class ClassificationModeler:
                 X, y_encoded, objective, eval_metric, n_trials, optuna_random_state
             )
             self.best_params = best_params
-            print(f"最適なパラメータ: {best_params}")
+
+            # パラメータをユーザーフレンドリーに表示
+            print("\n" + "=" * 60)
+            print("🎯 最適化完了！ベストパラメータ & 精度")
+            print("=" * 60)
+
+            # CV精度を最初に表示
+            if self.study and self.study.best_value is not None:
+                print(
+                    f"  {'CV精度':<20}: {self.study.best_value:.4f} "
+                    f"({self.study.best_value*100:.2f}%)"
+                )
+                print("-" * 60)
+
+            # パラメータを表示
+            for key, value in best_params.items():
+                if isinstance(value, float):
+                    print(f"  {key:<20}: {value:.4f}")
+                else:
+                    print(f"  {key:<20}: {value}")
+            print("=" * 60)
         else:
             # 設定ファイルからデフォルトパラメータを取得
             best_params = self.param_manager.get_default_params()
@@ -251,6 +271,9 @@ class ClassificationModeler:
             )
 
             return cv_scores.mean()
+
+        # Optunaの詳細ログを抑制（WARNING以上のみ表示）
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
 
         # Optunaスタディを作成して最適化を実行
         self.study = optuna.create_study(
