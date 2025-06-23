@@ -595,6 +595,8 @@ class ClassificationModeler:
         """
         PCAを用いた2D散布図を生成し、models{index}フォルダに保存します.
 
+        また、主成分係数をCSVファイルに出力します.
+
         Args:
             models_dir (Path): 保存先のmodelsディレクトリ
 
@@ -620,6 +622,9 @@ class ClassificationModeler:
             # PCAを実行（2次元に削減）
             self.pca = PCA(n_components=2, random_state=42)
             X_pca = self.pca.fit_transform(X_scaled)
+
+            # 主成分係数をCSVファイルに出力
+            self._export_pca_components(models_dir)
 
             # クラスラベルをエンコード
             y_encoded = self.label_encoder.transform(y)
@@ -705,6 +710,52 @@ class ClassificationModeler:
         except Exception as e:
             print(f"PCA散布図の生成中にエラーが発生しました: {e}")
             return None
+
+    def _export_pca_components(self, models_dir: Path) -> None:
+        """
+        PCAの主成分係数をCSVファイルに出力します.
+
+        Args:
+            models_dir (Path): 保存先のディレクトリ
+        """
+        if self.pca is None or not hasattr(self, "feature_names"):
+            return
+
+        try:
+            # 主成分係数のDataFrameを作成
+            components_df = pd.DataFrame(
+                self.pca.components_.T,  # 転置して特徴量×主成分の形にする
+                index=self.feature_names,
+                columns=[f"PC{i+1}" for i in range(self.pca.n_components_)],
+            )
+
+            # 寄与率の情報を追加
+            variance_ratio_df = pd.DataFrame(
+                [self.pca.explained_variance_ratio_],
+                index=["寄与率"],
+                columns=[f"PC{i+1}" for i in range(self.pca.n_components_)],
+            )
+
+            # 累積寄与率の情報を追加
+            cumulative_ratio_df = pd.DataFrame(
+                [np.cumsum(self.pca.explained_variance_ratio_)],
+                index=["累積寄与率"],
+                columns=[f"PC{i+1}" for i in range(self.pca.n_components_)],
+            )
+
+            # 全ての情報を結合
+            result_df = pd.concat(
+                [variance_ratio_df, cumulative_ratio_df, components_df]
+            )
+
+            # CSVファイルに保存
+            output_file = models_dir / "pca_components.csv"
+            result_df.to_csv(output_file, encoding="utf-8-sig", float_format="%.6f")
+
+            print(f"主成分係数をCSVファイルに出力しました: {output_file}")
+
+        except Exception as e:
+            print(f"主成分係数の出力中にエラーが発生しました: {e}")
 
     def _save_model_files(self, models_dir: Path) -> List[str]:
         """
