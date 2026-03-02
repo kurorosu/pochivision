@@ -23,6 +23,9 @@ dependencies = [
     "seaborn>=0.13.2",
 ]
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [dependency-groups]
 dev = [
     "black>=24.4.2",
@@ -45,6 +48,7 @@ line_length = 88
 
 [tool.mypy]
 python_version = "3.12"
+mypy_path = "src"
 warn_return_any = true
 warn_unused_configs = true
 
@@ -58,4 +62,5 @@ add_ignore = ["D212"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 addopts = "-v"
