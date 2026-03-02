@@ -189,4 +189,4 @@ python tools/create_test_images.py
 python tools/fft_visualizer.py tools/test_images/high_resolution.png
 ```
 
-QHD（2560x1440）の高解像度テスト画像も自動的にFHDにリサイズされて処理されます。 
+QHD（2560x1440）の高解像度テスト画像も自動的にFHDにリサイズされて処理されます。

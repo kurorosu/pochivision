@@ -92,10 +92,10 @@ class HistogramGenerator:
         """
         if n_classes <= 10:
             # 10色以下の場合はtab10パレットを使用
-            return sns.color_palette("tab10", n_classes)
+            return list(sns.color_palette("tab10", n_classes))
         else:
             # 10色を超える場合はhslパレットを使用
-            return sns.color_palette("hsl", n_classes)
+            return list(sns.color_palette("hsl", n_classes))
 
     def _calculate_bins(self, data: pd.Series) -> int:
         """

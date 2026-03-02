@@ -268,4 +268,4 @@ python -m tools.scatter_plot_generator extraction_results/20241201_0/features.cs
   - クラス別色分け機能
   - 回帰直線と相関係数表示
   - 相関行列ヒートマップ生成
-  - サマリーレポート生成機能 
+  - サマリーレポート生成機能

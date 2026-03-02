@@ -35,6 +35,7 @@ class StandardBinarizationProcessor(BaseProcessor):
                 "threshold": 128
             }
         }
+
     Attributes:
         threshold (int): 2値化の閾値（0-255, デフォルト128）
     """

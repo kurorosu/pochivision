@@ -31,7 +31,7 @@ python -m tools.image_aggregator -i ./capture/camera0 -m move
 
 - 画像は常に `image_aggregated/YYYYMMDD_INDEX` フォルダに集約されます。
 - 各処理タイプごとにサブフォルダが作成されます。
-- 例:  
+- 例:
   ```
   image_aggregated/
     └─ 20240524_0/
@@ -59,13 +59,13 @@ python -m tools.image_aggregator -i ./capture/camera0 -m move
 
 ## エラー例と対処
 
-- **入力ディレクトリが存在しない場合**  
+- **入力ディレクトリが存在しない場合**
   → ディレクトリパスを確認してください
 
-- **画像が見つからない場合**  
+- **画像が見つからない場合**
   → 日付フォルダや処理タイプサブフォルダの構成を確認してください
 
-- **PermissionError等**  
+- **PermissionError等**
   → ファイルのロックや権限を確認してください
 
 ---
@@ -79,4 +79,4 @@ python -m tools.image_aggregator -i ./capture/camera0 -m move
 
 ## ライセンス
 
-本ツールは「vision-capture-core」プロジェクトのライセンスに従います。 
+本ツールは「vision-capture-core」プロジェクトのライセンスに従います。
