@@ -8,20 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- なし.
-
-### Changed
-- なし.
-
-### Fixed
-- なし.
-
-### Removed
-- なし.
-
-## [0.1.0] - 2026-03-03
-
-### Added
+- `config.json` の `preview` セクションでライブプレビューウィンドウの表示サイズを設定可能に. デフォルト 1280x720. アスペクト比を維持してリサイズ. ([#N/A](https://github.com/kurorosu/vision-capture-core/pull/N/A))
+- `.github/ISSUE_TEMPLATE/` に 5 種類の Issue テンプレートと `config.yml` を追加. ([#82](https://github.com/kurorosu/vision-capture-core/pull/82))
+- `.github/pull_request_template.md` を追加. ([#82](https://github.com/kurorosu/vision-capture-core/pull/82))
 - カメラキャプチャ機能の初期実装 (`capture.py`). ([#2](https://github.com/kurorosu/vision-capture-core/pull/2))
 - レジストリパターンによるプロセッサ管理と画像処理パイプラインの初期実装. ([#3](https://github.com/kurorosu/vision-capture-core/pull/3))
 - カメラプレビュー用エンドポイント `app.py` の追加. ([#4](https://github.com/kurorosu/vision-capture-core/pull/4))
@@ -79,8 +68,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - rich UI コンポーネントと終了メッセージで分析 CLI を刷新. ([#73](https://github.com/kurorosu/vision-capture-core/pull/73))
 - 起動時ローディングアニメーションと CLI ウェルカム画面を刷新. ([#74](https://github.com/kurorosu/vision-capture-core/pull/74))
 - PCA コンポーネントの CSV エクスポート機能を追加. ([#76](https://github.com/kurorosu/vision-capture-core/pull/76))
-- `.github/ISSUE_TEMPLATE/` に 5 種類の Issue テンプレートと `config.yml` を追加. ([#82](https://github.com/kurorosu/vision-capture-core/pull/82))
-- `.github/pull_request_template.md` を追加. ([#82](https://github.com/kurorosu/vision-capture-core/pull/82))
 
 ### Changed
 - 画像処理ループのリファクタリングによる簡素化. ([#3](https://github.com/kurorosu/vision-capture-core/pull/3))
