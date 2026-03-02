@@ -165,9 +165,17 @@ class CameraProfile(BaseModel):
     contour: Optional[ContourParams] = None
 
 
+class PreviewConfig(BaseModel):
+    """ライブプレビューウィンドウの表示設定スキーマ."""
+
+    width: StrictInt = Field(default=1280, gt=0)
+    height: StrictInt = Field(default=720, gt=0)
+
+
 class ConfigModel(BaseModel):
     """全体設定（カメラ一覧・選択インデックス）のスキーマ."""
 
     cameras: Dict[str, CameraProfile]
     selected_camera_index: StrictInt
     id_interval: Optional[StrictInt] = Field(default=None)
+    preview: Optional[PreviewConfig] = Field(default=None)
