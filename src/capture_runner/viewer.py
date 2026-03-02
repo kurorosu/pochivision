@@ -5,6 +5,7 @@ import time
 from typing import Optional
 
 import cv2
+import numpy as np
 
 from capturelib.log_manager import LogManager
 from capturelib.recording_manager import RecordingManager
@@ -29,6 +30,7 @@ class LivePreviewRunner:
         cap: cv2.VideoCapture,
         pipeline: PipelineExecutor,
         recording_manager: Optional[RecordingManager] = None,
+        preview_size: tuple[int, int] = (1280, 720),
     ) -> None:
         """
         LivePreviewRunnerを初期化する.
@@ -37,12 +39,31 @@ class LivePreviewRunner:
             cap: 初期化済みの cv2.VideoCapture オブジェクト.
             pipeline: .run(image) を持つ画像処理パイプラインインスタンス.
             recording_manager: 録画機能を管理するマネージャー（オプション）.
+            preview_size: プレビューウィンドウの表示サイズ (width, height).
         """
         self.cap = cap
         self.pipeline = pipeline
         self.recording_manager = recording_manager
+        self.preview_size = preview_size
         self.os_name = platform.system()
         self.logger = LogManager().get_logger()
+
+    def _resize_for_preview(self, frame: np.ndarray) -> np.ndarray:
+        """
+        アスペクト比を維持しつつ, preview_size に収まるようリサイズする.
+
+        Args:
+            frame: 入力フレーム.
+
+        Returns:
+            np.ndarray: リサイズされたフレーム.
+        """
+        h, w = frame.shape[:2]
+        max_w, max_h = self.preview_size
+        scale = min(max_w / w, max_h / h)
+        new_w = int(w * scale)
+        new_h = int(h * scale)
+        return cv2.resize(frame, (new_w, new_h))
 
     def _measure_actual_fps(self, duration: float = 2.0) -> float:
         """
@@ -65,7 +86,7 @@ class LivePreviewRunner:
             if ret:
                 frame_count += 1
                 # プレビュー表示も含めて測定（実際の録画環境に近づける）
-                cv2.imshow("Live View", cv2.resize(frame, (640, 480)))
+                cv2.imshow("Live View", self._resize_for_preview(frame))
                 cv2.waitKey(1)
 
         actual_duration = time.time() - start_time
@@ -111,7 +132,7 @@ class LivePreviewRunner:
                     self.recording_manager.add_frame(frame)
 
                 # プレビュー表示
-                cv2.imshow("Live View", cv2.resize(frame, (640, 480)))
+                cv2.imshow("Live View", self._resize_for_preview(frame))
 
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord("c"):
