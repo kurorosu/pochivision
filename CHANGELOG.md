@@ -1,0 +1,125 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+### Added
+- なし.
+
+### Changed
+- なし.
+
+### Fixed
+- なし.
+
+### Removed
+- なし.
+
+## [0.1.0] - 2026-03-03
+
+### Added
+- カメラキャプチャ機能の初期実装 (`capture.py`). ([#2](https://github.com/kurorosu/vision-capture-core/pull/2))
+- レジストリパターンによるプロセッサ管理と画像処理パイプラインの初期実装. ([#3](https://github.com/kurorosu/vision-capture-core/pull/3))
+- カメラプレビュー用エンドポイント `app.py` の追加. ([#4](https://github.com/kurorosu/vision-capture-core/pull/4))
+- タイムスタンプ付きで `config.json` をコピー保存する機能の追加. ([#5](https://github.com/kurorosu/vision-capture-core/pull/5))
+- 設定スコープの拡張とロギング機能の強化. ([#6](https://github.com/kurorosu/vision-capture-core/pull/6))
+- カメラデバイスおよびプロファイルを指定する CLI オプションの追加. ([#8](https://github.com/kurorosu/vision-capture-core/pull/8))
+- BinarizationProcessor, 平均ブラー, メディアンブラー, バイラテラルフィルタ, モーションブラー各プロセッサの追加. ([#8](https://github.com/kurorosu/vision-capture-core/pull/8))
+- カスタム例外クラスの実装と全プロセッサへの例外ハンドリング適用. ([#8](https://github.com/kurorosu/vision-capture-core/pull/8))
+- 全ブラープロセッサの pytest ユニットテストの追加. ([#8](https://github.com/kurorosu/vision-capture-core/pull/8))
+- mypy 型チェック結果のファイル出力の開始. ([#13](https://github.com/kurorosu/vision-capture-core/pull/13))
+- Pydantic を使用した設定ファイルの厳格なスキーマバリデーションの実装. ([#15](https://github.com/kurorosu/vision-capture-core/pull/15))
+- colorlog によるカラーログ出力を導入し, ロガー名を `vcc` に変更. ([#17](https://github.com/kurorosu/vision-capture-core/pull/17))
+- pre-commit に mypy 型チェックを追加. ([#19](https://github.com/kurorosu/vision-capture-core/pull/19))
+- 依存関係管理ファイルを追加. ([#22](https://github.com/kurorosu/vision-capture-core/pull/22))
+- `config.json` でカメラプロファイルごとにカスタムファイル名ラベルを設定できる機能を追加. ([#24](https://github.com/kurorosu/vision-capture-core/pull/24))
+- OS別カメラ設定ダイアログのハンドリングを追加. ([#25](https://github.com/kurorosu/vision-capture-core/pull/25))
+- ImageAggregator とフォルダ検索機能の追加. ([#27](https://github.com/kurorosu/vision-capture-core/pull/27))
+- Otsu の二値化プロセッサをバリデーションおよびテストとともに追加. ([#28](https://github.com/kurorosu/vision-capture-core/pull/28))
+- ガウシアンおよび平均値適応的二値化プロセッサを追加. ([#29](https://github.com/kurorosu/vision-capture-core/pull/29))
+- アスペクト比を保持するリサイズプロセッサを追加. ([#30](https://github.com/kurorosu/vision-capture-core/pull/30))
+- ヒストグラム均一化および CLAHE プロセッサを追加. ([#30](https://github.com/kurorosu/vision-capture-core/pull/30))
+- Canny エッジ検出プロセッサをバリデーションおよびテストとともに追加. ([#31](https://github.com/kurorosu/vision-capture-core/pull/31))
+- 輪郭抽出プロセッサ (ContourProcessor) を追加. ([#35](https://github.com/kurorosu/vision-capture-core/pull/35))
+- 全プロセッサに `get_default_config` 静的メソッドを追加. ([#36](https://github.com/kurorosu/vision-capture-core/pull/36))
+- バイナリマスク画像合成のための MaskCompositionProcessor を追加. ([#37](https://github.com/kurorosu/vision-capture-core/pull/37))
+- 輝度統計量 feature extractor と特徴量抽出ツールを追加. ([#39](https://github.com/kurorosu/vision-capture-core/pull/39))
+- 特徴量抽出の出力ディレクトリにタイムスタンプを付与し, 設定ファイルのコピーを追加. ([#40](https://github.com/kurorosu/vision-capture-core/pull/40))
+- RGB 統計量 feature extractor を追加 (黒ピクセル除外オプション付き). ([#41](https://github.com/kurorosu/vision-capture-core/pull/41))
+- 輝度統計量 extractor に `exclude_zero_pixels` オプションを追加. ([#42](https://github.com/kurorosu/vision-capture-core/pull/42))
+- HSV 統計量 feature extractor を追加 (`exclude_black_pixels` オプション付き). ([#43](https://github.com/kurorosu/vision-capture-core/pull/43))
+- GLCM テクスチャ feature extractor を追加 (角度設定を簡略化). ([#44](https://github.com/kurorosu/vision-capture-core/pull/44))
+- FFT 周波数 feature extractor を追加. ([#45](https://github.com/kurorosu/vision-capture-core/pull/45))
+- LBP テクスチャ feature extractor を追加 (パラメータ設定対応). ([#46](https://github.com/kurorosu/vision-capture-core/pull/46))
+- HLAC テクスチャ feature extractor を追加 (マルチスケール対応). ([#47](https://github.com/kurorosu/vision-capture-core/pull/47))
+- RGB/HSV extractor にグレースケール画像のサポートを追加し, ユーティリティ関数を追加. ([#48](https://github.com/kurorosu/vision-capture-core/pull/48))
+- SWT 周波数 feature extractor を追加 (マルチスケール解析およびグレースケール互換). ([#49](https://github.com/kurorosu/vision-capture-core/pull/49))
+- FFT 周波数 extractor にスペクトルエントロピー特徴量を追加. ([#50](https://github.com/kurorosu/vision-capture-core/pull/50))
+- feature extractor に単位管理機能を追加. ([#51](https://github.com/kurorosu/vision-capture-core/pull/51))
+- CSV 出力形式 (wide/long) とファイル名によるクラス抽出機能を追加. ([#52](https://github.com/kurorosu/vision-capture-core/pull/52))
+- カメラプロファイルを既存画像に適用する画像プロセッサツールを追加. ([#53](https://github.com/kurorosu/vision-capture-core/pull/53))
+- リアルタイムキャプチャ・プレビューへの録画機能を統合. ([#54](https://github.com/kurorosu/vision-capture-core/pull/54))
+- マスク合成プロセッサにオプションのクロップ機能を追加. ([#55](https://github.com/kurorosu/vision-capture-core/pull/55))
+- CSV 特徴量可視化のためのヒストグラム生成ツールを追加. ([#57](https://github.com/kurorosu/vision-capture-core/pull/57))
+- CSV 特徴量の相関分析のための散布図生成ツールを追加. ([#58](https://github.com/kurorosu/vision-capture-core/pull/58))
+- CSV データ分析 CLI ツールを実装 (ヒストグラム表示, long/wide 変換, 統計概要). ([#59](https://github.com/kurorosu/vision-capture-core/pull/59))
+- JSD によるフィーチャー分離ランキング表示機能を実装. ([#61](https://github.com/kurorosu/vision-capture-core/pull/61))
+- フィーチャーランキングの CSV エクスポート機能を追加 (上位 N 件を設定可能). ([#63](https://github.com/kurorosu/vision-capture-core/pull/63))
+- リアルタイムフィルタリングと FHD 対応のインタラクティブ FFT ビジュアライザーを追加. ([#64](https://github.com/kurorosu/vision-capture-core/pull/64))
+- HoughCircles 検出と真円度フィルタリングによる円カウンター抽出器を追加. ([#65](https://github.com/kurorosu/vision-capture-core/pull/65))
+- 相関ベースの X 軸順序付けとロバストなフィーチャー名抽出による散布図可視化を追加. ([#66](https://github.com/kurorosu/vision-capture-core/pull/66))
+- ヒストグラムフィーチャー分析に XGBoost 分類モデリングを追加. ([#67](https://github.com/kurorosu/vision-capture-core/pull/67))
+- 分類モデリング後に PCA 2D 散布図を生成する機能を追加. ([#69](https://github.com/kurorosu/vision-capture-core/pull/69))
+- ホールドアウト/CV モデルを分離した独立 Optuna ハイパーパラメータチューニングを実装. ([#70](https://github.com/kurorosu/vision-capture-core/pull/70))
+- モデリングなしで分析結果を models フォルダーに保存する機能を追加. ([#71](https://github.com/kurorosu/vision-capture-core/pull/71))
+- rich UI コンポーネントと終了メッセージで分析 CLI を刷新. ([#73](https://github.com/kurorosu/vision-capture-core/pull/73))
+- 起動時ローディングアニメーションと CLI ウェルカム画面を刷新. ([#74](https://github.com/kurorosu/vision-capture-core/pull/74))
+- PCA コンポーネントの CSV エクスポート機能を追加. ([#76](https://github.com/kurorosu/vision-capture-core/pull/76))
+- `.github/ISSUE_TEMPLATE/` に 5 種類の Issue テンプレートと `config.yml` を追加. ([#82](https://github.com/kurorosu/vision-capture-core/pull/82))
+- `.github/pull_request_template.md` を追加. ([#82](https://github.com/kurorosu/vision-capture-core/pull/82))
+
+### Changed
+- 画像処理ループのリファクタリングによる簡素化. ([#3](https://github.com/kurorosu/vision-capture-core/pull/3))
+- 関数への型ヒントの追加. ([#4](https://github.com/kurorosu/vision-capture-core/pull/4))
+- リソースクリーンアップのリファクタリング. ([#6](https://github.com/kurorosu/vision-capture-core/pull/6))
+- マルチカメラ時のディレクトリ構造の修正と使用プロファイルのみを含む最小設定ファイルの保存に変更. ([#8](https://github.com/kurorosu/vision-capture-core/pull/8))
+- パイプラインモードの出力先をプロセッサ名ディレクトリから `pipeline` ディレクトリに変更. ([#8](https://github.com/kurorosu/vision-capture-core/pull/8))
+- 詳細な型ヒントの追加と `Any` 型の除去による型安全性の向上. ([#11](https://github.com/kurorosu/vision-capture-core/pull/11))
+- ロギングの粒度改善. ([#13](https://github.com/kurorosu/vision-capture-core/pull/13))
+- PEP8・docstring・自動フォーマットを pre-commit で強制. ([#18](https://github.com/kurorosu/vision-capture-core/pull/18))
+- README.md と README.ja.md を統合・統一. ([#19](https://github.com/kurorosu/vision-capture-core/pull/19))
+- 二値化・グレースケールプロセッサに共通の `to_grayscale` ユーティリティを導入しリファクタリング. ([#20](https://github.com/kurorosu/vision-capture-core/pull/20))
+- README (EN/JA) を最新の設定例に更新し, プラグインベースのプロセッサアーキテクチャを明記. ([#21](https://github.com/kurorosu/vision-capture-core/pull/21))
+- 画像ファイル名フォーマットを更新し, FileNamingManager のテストを追加. ([#23](https://github.com/kurorosu/vision-capture-core/pull/23))
+- プロセッサの設定バリデーションと画像バリデーションのタイミングを分離してリファクタリング. ([#32](https://github.com/kurorosu/vision-capture-core/pull/32))
+- 二値化・ブラー・全プロセッサにバリデータパターンを統一適用してリファクタリング. ([#33](https://github.com/kurorosu/vision-capture-core/pull/33))
+- インポート順序を改善し, クラス列の表示に型情報を追加. ([#60](https://github.com/kurorosu/vision-capture-core/pull/60))
+- フォルダーナビゲーションをプロジェクトルートから開始し, メインメニューへの戻る選択肢を追加. ([#62](https://github.com/kurorosu/vision-capture-core/pull/62))
+- JSD フィーチャー CSV の出力先を models ディレクトリに変更. ([#69](https://github.com/kurorosu/vision-capture-core/pull/69))
+- Optuna パラメーター表示のフォーマットを整形し, 冗長なログ出力を抑制. ([#75](https://github.com/kurorosu/vision-capture-core/pull/75))
+- パッケージマネージャーを Anaconda から uv へ移行し, 依存・ツール設定を `pyproject.toml` に集約. ([#78](https://github.com/kurorosu/vision-capture-core/pull/78))
+- `.pre-commit-config.yaml` を pochi_series リポジトリに合わせて更新. ([#78](https://github.com/kurorosu/vision-capture-core/pull/78))
+- ソースパッケージ 8 個を `src/` レイアウトへ移動し, `pyproject.toml` および `app.py` のパス設定を更新. ([#81](https://github.com/kurorosu/vision-capture-core/pull/81))
+
+### Fixed
+- マルチカメラ時のディレクトリ構造の不具合修正. ([#8](https://github.com/kurorosu/vision-capture-core/pull/8))
+- 画像の重複処理バグを修正. ([#27](https://github.com/kurorosu/vision-capture-core/pull/27))
+- ImageAggregator の初期化バグを修正. ([#27](https://github.com/kurorosu/vision-capture-core/pull/27))
+- GLCM の ASM プロパティの誤りを修正. ([#45](https://github.com/kurorosu/vision-capture-core/pull/45))
+- `get_feature_units` に extractor 設定を渡すよう修正. ([#51](https://github.com/kurorosu/vision-capture-core/pull/51))
+- SWT 特徴量抽出の画像サイズ調整とエラーハンドリングを改善し, 抽出エラーを修正. ([#56](https://github.com/kurorosu/vision-capture-core/pull/56))
+- 二値分類サポートのため XGBoost の objective パラメーターを修正. ([#68](https://github.com/kurorosu/vision-capture-core/pull/68))
+- 散布図メニューに表示設定変更オプションを追加 (後続メニューの欠落も修正). ([#72](https://github.com/kurorosu/vision-capture-core/pull/72))
+
+### Removed
+- バリデータインタフェースから `validate()` メソッドを削除してインタフェースを簡素化. ([#34](https://github.com/kurorosu/vision-capture-core/pull/34))
+- `requirements.txt`, `requirements-dev.txt`, `.flake8`, `mypy.ini` を削除. ([#78](https://github.com/kurorosu/vision-capture-core/pull/78))
+- `tools/analytics/`, `analytics.bat`, `capture.py` を削除 (別リポジトリへ分離済み). ([#78](https://github.com/kurorosu/vision-capture-core/pull/78))
+
+## Archived Changelogs
+
+Older version histories are archived in the [`changelogs/`](changelogs/) directory.
