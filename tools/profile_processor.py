@@ -51,7 +51,8 @@ class ProfileProcessor:
         """
         try:
             with open(config_path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                result: Dict[str, Any] = json.load(f)
+                return result
         except FileNotFoundError:
             print(f"エラー: 設定ファイルが見つかりません: {config_path}")
             sys.exit(1)
@@ -79,7 +80,8 @@ class ProfileProcessor:
             print(f"利用可能なプロファイル: {available_profiles}")
             sys.exit(1)
 
-        return cameras[profile_name]
+        result: Dict[str, Any] = cameras[profile_name]
+        return result
 
     def _initialize_processors(self) -> List[Any]:
         """

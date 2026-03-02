@@ -52,7 +52,8 @@ class FeatureExtractionRunner:
         """
         try:
             with open(config_path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                result: Dict[str, Any] = json.load(f)
+                return result
         except FileNotFoundError:
             print(f"エラー: 設定ファイルが見つかりません: {config_path}")
             sys.exit(1)
@@ -218,10 +219,10 @@ class FeatureExtractionRunner:
 
             # 指定された位置の文字列を取得
             if 0 <= position < len(parts):
-                return parts[position]
+                return str(parts[position])
             elif position < 0 and abs(position) <= len(parts):
                 # 負の値の場合は後ろから数える
-                return parts[position]
+                return str(parts[position])
             else:
                 print(
                     f"警告: ファイル名 '{filename}' の位置 {position} にクラス名が見つかりません"

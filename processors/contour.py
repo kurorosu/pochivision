@@ -76,7 +76,7 @@ class ContourProcessor(BaseProcessor):
             "tree": cv2.RETR_TREE,
             "floodfill": cv2.RETR_FLOODFILL,
         }
-        return mode_map.get(mode_str, cv2.RETR_LIST)
+        return int(mode_map.get(mode_str, cv2.RETR_LIST))
 
     @staticmethod
     def _get_approximation_method(method_str: str) -> int:
@@ -95,7 +95,7 @@ class ContourProcessor(BaseProcessor):
             "tc89_l1": cv2.CHAIN_APPROX_TC89_L1,
             "tc89_kcos": cv2.CHAIN_APPROX_TC89_KCOS,
         }
-        return method_map.get(method_str, cv2.CHAIN_APPROX_SIMPLE)
+        return int(method_map.get(method_str, cv2.CHAIN_APPROX_SIMPLE))
 
     def _select_contour_by_rank(
         self, contours: List[np.ndarray]

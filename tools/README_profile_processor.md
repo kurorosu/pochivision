@@ -230,7 +230,7 @@ python -m tools.profile_processor -p 0 -i image_aggregated/20250524_2/original
 #   → 保存完了: profile_results\profile_0_20250601_093810\processed\image1.bmp
 # 処理中: image2.bmp
 #   → 保存完了: profile_results\profile_0_20250601_093810\processed\image2.bmp
-# 
+#
 # 処理完了:
 #   成功: 2個
 #   失敗: 0個
@@ -241,4 +241,4 @@ python -m tools.profile_processor -p 0 -i image_aggregated/20250524_2/original
 
 - `config.json`: プロファイル設定ファイル
 - `processors/`: 各種プロセッサの実装
-- `processors/registry.py`: プロセッサの登録・取得機能 
+- `processors/registry.py`: プロセッサの登録・取得機能
