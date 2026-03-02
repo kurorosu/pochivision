@@ -8,6 +8,10 @@ Vision Capture Coreのメインアプリケーションモジュール.
 
 # cap_app.py
 import argparse
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 from capture_runner import LivePreviewRunner
 from capturelib.camera_setup import CameraSetup
