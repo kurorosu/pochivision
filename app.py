@@ -170,8 +170,15 @@ if __name__ == "__main__":
         else:
             logger.info("Recording functionality disabled")
 
+        # プレビューサイズの取得
+        preview_config = config.get("preview", {})
+        preview_size = (
+            preview_config.get("width", 1280),
+            preview_config.get("height", 720),
+        )
+
         # アプリケーションの作成と実行
-        app = LivePreviewRunner(cap, pipeline, recording_manager)
+        app = LivePreviewRunner(cap, pipeline, recording_manager, preview_size)
         logger.info("Starting application main loop")
         app.run()
 

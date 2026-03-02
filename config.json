@@ -175,5 +175,9 @@
     }
   },
   "selected_camera_index": 0,
-  "id_interval": 1
+  "id_interval": 1,
+  "preview": {
+    "width": 1280,
+    "height": 720
+  }
 }
