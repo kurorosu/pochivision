@@ -6,13 +6,36 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-import colorlog
 import cv2
+
+try:
+    import colorlog
+
+    COLORLOG_AVAILABLE = True
+except ImportError:
+    COLORLOG_AVAILABLE = False
+
+_FORMAT_STRING = (
+    "%(asctime)s|%(log_color)s%(levelname)-5.5s%(reset)s|"
+    "%(module)-18s|%(lineno)03d| %(message)s"
+)
+_PLAIN_FORMAT_STRING = (
+    "%(asctime)s|%(levelname)-5.5s|%(module)-18s|%(lineno)03d| %(message)s"
+)
+_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+_LOG_COLORS = {
+    "DEBUG": "cyan",
+    "INFO": "green",
+    "WARN": "yellow",
+    "WARNING": "yellow",
+    "ERROR": "red",
+    "CRITICAL": "red,bg_white",
+}
 
 
 class LogManager:
     """
-    ロギング管理クラス（粒度・出力先分離対応版).
+    ロギング管理クラス.
 
     シングルトンパターンを採用し、複数箇所から同じインスタンスにアクセスできるようにする.
     """
@@ -37,18 +60,20 @@ class LogManager:
         # コンソールハンドラ（INFO以上）
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.INFO)
-        color_formatter = colorlog.ColoredFormatter(
-            "[%(asctime)s][%(log_color)s%(levelname)s%(reset)s][%(name)s]"
-            "[%(log_color)s%(filename)s:%(lineno)d%(reset)s] %(message)s",
-            log_colors={
-                "DEBUG": "cyan",
-                "INFO": "green",
-                "WARNING": "yellow",
-                "ERROR": "red",
-                "CRITICAL": "bold_red",
-            },
-        )
-        console_handler.setFormatter(color_formatter)
+
+        if COLORLOG_AVAILABLE:
+            formatter = colorlog.ColoredFormatter(
+                _FORMAT_STRING,
+                datefmt=_DATE_FORMAT,
+                log_colors=_LOG_COLORS,
+            )
+        else:
+            formatter = logging.Formatter(
+                _PLAIN_FORMAT_STRING,
+                datefmt=_DATE_FORMAT,
+            )
+
+        console_handler.setFormatter(formatter)
         self._logger.addHandler(console_handler)
 
         self._file_handler = None
@@ -58,15 +83,15 @@ class LogManager:
         ファイルへのログ出力を設定する.
 
         Args:
-            log_file_path (Path): ログファイルのパス。
+            log_file_path (Path): ログファイルのパス.
         """
         if self._file_handler:
             self._logger.removeHandler(self._file_handler)
         self._file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
         self._file_handler.setLevel(logging.DEBUG)
         formatter = logging.Formatter(
-            "[%(asctime)s][%(levelname)s][%(name)s]"
-            "[%(filename)s:%(lineno)d] %(message)s"
+            _PLAIN_FORMAT_STRING,
+            datefmt=_DATE_FORMAT,
         )
         self._file_handler.setFormatter(formatter)
         self._logger.addHandler(self._file_handler)
