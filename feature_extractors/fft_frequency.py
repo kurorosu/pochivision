@@ -173,7 +173,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         low_energy = np.sum(magnitude[low_mask])
         high_energy = np.sum(magnitude[high_mask])
 
-        return high_energy / low_energy if low_energy > 0 else np.inf
+        return float(high_energy / low_energy) if low_energy > 0 else np.inf
 
     def _compute_spectral_std(self, image: np.ndarray) -> float:
         """
@@ -204,7 +204,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
 
         mean = np.sum(norm_freq * weights) / total_weight
         var = np.sum(((norm_freq - mean) ** 2) * weights) / total_weight
-        return np.sqrt(var)
+        return float(np.sqrt(var))
 
     def _compute_directional_energy(
         self, image: np.ndarray, angle_deg: float, tolerance_deg: float
@@ -286,7 +286,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         # エントロピー計算（0 log 0 = 0として処理）
         prob_safe = prob + 1e-12  # 数値安定性のための小さな値
         entropy = -np.sum(prob * np.log2(prob_safe))
-        return entropy
+        return float(entropy)
 
     def _compute_directional_entropy(
         self, image: np.ndarray, angle_deg: float, tolerance_deg: float

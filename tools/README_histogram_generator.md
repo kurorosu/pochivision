@@ -210,4 +210,4 @@ python -m tools.histogram_generator extraction_results/20241201_0/features.csv
 - v1.0.0: 初回リリース
   - 基本的なヒストグラム生成機能
   - クラス別色分け機能
-  - サマリーレポート生成機能 
+  - サマリーレポート生成機能

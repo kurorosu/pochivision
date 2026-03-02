@@ -109,7 +109,7 @@ class TextureExtractor(BaseFeatureExtractor):
     def extract(self, image):
         # テクスチャ特徴量の抽出処理
         return {"contrast": 0.5, "homogeneity": 0.8}
-    
+
     @staticmethod
     def get_default_config():
         return {"window_size": 7}
@@ -166,4 +166,4 @@ python -m tools.image_aggregator -i ./capture/camera1 -m copy
 
 ## ライセンス
 
-本ツールは「vision-capture-core」プロジェクトのライセンスに従います。 
+本ツールは「vision-capture-core」プロジェクトのライセンスに従います。

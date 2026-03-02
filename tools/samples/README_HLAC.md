@@ -85,4 +85,4 @@ features = extractor.extract(image)
 ## 参考文献
 
 - Otsu, N., & Kurita, T. (1988). "A new scheme for practical flexible and intelligent vision systems." IAPR Workshop on Computer Vision.
-- 高次局所自己相関特徴による画像認識に関する研究 
+- 高次局所自己相関特徴による画像認識に関する研究
