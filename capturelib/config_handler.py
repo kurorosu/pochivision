@@ -56,7 +56,7 @@ class ConfigHandler:
             logger = LogManager().get_logger()
             logger.debug(f"Loading configuration file: {path}")
             with open(path, "r", encoding="utf-8") as f:
-                config = json.load(f)
+                config: Dict[str, Any] = json.load(f)
             logger.info(f"Configuration file loaded successfully: {path}")
             # バリデーション追加
             try:
@@ -134,7 +134,8 @@ class CameraConfigHandler:
                 f"No configuration found for camera index: {camera_index}"
             )
 
-        return config["cameras"][camera_id_str]
+        result: Dict[str, Any] = config["cameras"][camera_id_str]
+        return result
 
     @staticmethod
     def get_camera_processors(config: Dict[str, Any], profile_name: str) -> Tuple:
@@ -221,7 +222,7 @@ class CameraConfigHandler:
             CameraConfigError: 選択されたカメラインデックスの指定がない場合。
         """
         if "selected_camera_index" in config:
-            return config["selected_camera_index"]
+            return int(config["selected_camera_index"])
 
         # カメラが定義されていれば、最初のカメラを選択
         if "cameras" in config and config["cameras"]:

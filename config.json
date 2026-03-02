@@ -167,7 +167,7 @@
     "select_format": "mjpg",
     "available_formats": {
       "mp4v": "MP4 - Standard compression",
-      "xvid": "XVID - Balanced compression", 
+      "xvid": "XVID - Balanced compression",
       "mjpg": "Motion JPEG - Low compression, high quality",
       "lags": "Lagarith Lossless - No compression (Windows only)",
       "ffv1": "FFmpeg Lossless - No compression",
