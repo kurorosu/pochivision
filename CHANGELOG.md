@@ -70,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - PCA コンポーネントの CSV エクスポート機能を追加. ([#76](https://github.com/kurorosu/vision-capture-core/pull/76))
 
 ### Changed
+- ログフォーマットを pochidetection と統一したパイプ区切り形式に変更. colorlog 未インストール時のフォールバックにも対応. ([#N/A](https://github.com/kurorosu/vision-capture-core/pull/N/A))
 - 画像処理ループのリファクタリングによる簡素化. ([#3](https://github.com/kurorosu/vision-capture-core/pull/3))
 - 関数への型ヒントの追加. ([#4](https://github.com/kurorosu/vision-capture-core/pull/4))
 - リソースクリーンアップのリファクタリング. ([#6](https://github.com/kurorosu/vision-capture-core/pull/6))
