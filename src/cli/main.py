@@ -1,17 +1,6 @@
-"""
-Vision Capture Coreのメインアプリケーションモジュール.
+"""Vision Capture Coreのメインエントリーポイント."""
 
-このモジュールは画像処理パイプラインを実行するためのエントリーポイントを提供する.
-コマンドライン引数を解析して、カメラの初期化、設定のロード、画像処理パイプラインの
-実行など、アプリケーションの主要な機能を制御する.
-"""
-
-# cap_app.py
 import argparse
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 from capture_runner import LivePreviewRunner
 from capturelib.camera_setup import CameraSetup
@@ -62,8 +51,8 @@ def parse_arguments():
     return parser.parse_args()
 
 
-# メイン処理
-if __name__ == "__main__":
+def main():
+    """アプリケーションのメインエントリーポイント."""
     # コマンドライン引数の解析
     args = parse_arguments()
 
