@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- CLI エントリーポイント `vcc` コマンドを追加. `uv run vcc -c 0 -p 0` でアプリケーションを起動可能に. ([#N/A](https://github.com/kurorosu/vision-capture-core/pull/N/A))
-- `config.json` の `preview` セクションでライブプレビューウィンドウの表示サイズを設定可能に. デフォルト 1280x720. アスペクト比を維持してリサイズ. ([#N/A](https://github.com/kurorosu/vision-capture-core/pull/N/A))
+- CLI エントリーポイント `vcc` コマンドを追加. `uv run vcc -c 0 -p 0` でアプリケーションを起動可能に. ([#93](https://github.com/kurorosu/vision-capture-core/pull/93))
+- `config.json` の `preview` セクションでライブプレビューウィンドウの表示サイズを設定可能に. デフォルト 1280x720. アスペクト比を維持してリサイズ. ([#85](https://github.com/kurorosu/vision-capture-core/pull/85))
 - `.github/ISSUE_TEMPLATE/` に 5 種類の Issue テンプレートと `config.yml` を追加. ([#82](https://github.com/kurorosu/vision-capture-core/pull/82))
 - `.github/pull_request_template.md` を追加. ([#82](https://github.com/kurorosu/vision-capture-core/pull/82))
 - カメラキャプチャ機能の初期実装 (`capture.py`). ([#2](https://github.com/kurorosu/vision-capture-core/pull/2))
@@ -71,8 +71,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - PCA コンポーネントの CSV エクスポート機能を追加. ([#76](https://github.com/kurorosu/vision-capture-core/pull/76))
 
 ### Changed
-- `app.py` を `src/cli/` パッケージに統合し, `sys.path` の手動操作を除去. ([#N/A](https://github.com/kurorosu/vision-capture-core/pull/N/A))
-- ログフォーマットを pochidetection と統一したパイプ区切り形式に変更. colorlog 未インストール時のフォールバックにも対応. ([#N/A](https://github.com/kurorosu/vision-capture-core/pull/N/A))
+- `README.md` を日本語, `README.en.md` を英語に入れ替え, `src/` レイアウト・`uv run vcc` ベースに更新. プロセッサ一覧 (16種) と Feature Extractor セクションを追加. ([#N/A](https://github.com/kurorosu/vision-capture-core/pull/N/A))
+- `app.py` を `src/cli/` パッケージに統合し, `sys.path` の手動操作を除去. ([#93](https://github.com/kurorosu/vision-capture-core/pull/93))
+- ログフォーマットを pochidetection と統一したパイプ区切り形式に変更. colorlog 未インストール時のフォールバックにも対応. ([#86](https://github.com/kurorosu/vision-capture-core/pull/86))
 - 画像処理ループのリファクタリングによる簡素化. ([#3](https://github.com/kurorosu/vision-capture-core/pull/3))
 - 関数への型ヒントの追加. ([#4](https://github.com/kurorosu/vision-capture-core/pull/4))
 - リソースクリーンアップのリファクタリング. ([#6](https://github.com/kurorosu/vision-capture-core/pull/6))
