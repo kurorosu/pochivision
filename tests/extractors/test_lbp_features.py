@@ -252,40 +252,15 @@ def test_lbp_edge_cases():
 
 def test_lbp_error_handling():
     """エラーハンドリングのテスト."""
-    print("\n=== エラーハンドリングテスト ===")
-
     extractor = LBPTextureExtractor()
 
-    # 1. 空の画像
-    print("\n--- 空の画像 ---")
-    try:
-        empty_image = np.array([])
-        features = extractor.extract(empty_image)
-        print("空画像でもエラーなく処理されました")
-        print("デフォルト特徴量:")
-        for name, value in features.items():
-            print(f"  {name}: {value}")
-    except Exception as e:
-        print(f"空画像でエラー: {e}")
+    # 空の画像で ValueError
+    with pytest.raises(ValueError, match="empty or None"):
+        extractor.extract(np.array([]))
 
-    # 2. None画像
-    print("\n--- None画像 ---")
-    try:
-        features = extractor.extract(None)
-        print("None画像でもエラーなく処理されました")
-    except Exception as e:
-        print(f"None画像でエラー: {e}")
-
-    # 3. 不正な次元の画像
-    print("\n--- 不正な次元の画像 ---")
-    try:
-        invalid_image = np.random.randint(0, 256, (64, 64, 3, 2), dtype=np.uint8)
-        features = extractor.extract(invalid_image)
-        print("4次元画像でもエラーなく処理されました")
-        for name, value in features.items():
-            print(f"  {name}: {value}")
-    except Exception as e:
-        print(f"4次元画像でエラー: {e}")
+    # None画像で ValueError
+    with pytest.raises(ValueError, match="empty or None"):
+        extractor.extract(None)
 
 
 def test_lbp_feature_names_and_config():

@@ -1,6 +1,7 @@
 import numpy as np
-import pytest  # noqa: F401
+import pytest
 
+from exceptions import ProcessorValidationError
 from processors.resize import ResizeProcessor
 
 # テスト用の画像データ
@@ -80,19 +81,19 @@ def test_resize_height_only():
 def test_resize_validation_error():
     """パラメータバリデーションのテスト."""
     # 幅も高さも指定しない場合はエラー
-    with pytest.raises(Exception):
+    with pytest.raises(ProcessorValidationError, match="width or height"):
         ResizeProcessor(name="resize", config={})
 
     # 幅が正の整数でない場合はエラー
-    with pytest.raises(Exception):
+    with pytest.raises(ProcessorValidationError, match="width must be a positive"):
         ResizeProcessor(name="resize", config={"width": -100})
 
     # 高さが正の整数でない場合はエラー
-    with pytest.raises(Exception):
+    with pytest.raises(ProcessorValidationError, match="height must be a positive"):
         ResizeProcessor(name="resize", config={"height": -100})
 
     # aspect_ratio_modeが不正な場合はエラー
-    with pytest.raises(Exception):
+    with pytest.raises(ProcessorValidationError, match="aspect_ratio_mode"):
         ResizeProcessor(
             name="resize", config={"width": 100, "aspect_ratio_mode": "invalid"}
         )

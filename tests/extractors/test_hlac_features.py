@@ -300,38 +300,15 @@ def test_hlac_edge_cases():
 
 def test_hlac_error_handling():
     """エラーハンドリングのテスト."""
-    print("\n=== エラーハンドリングテスト ===")
-
     extractor = HLACTextureExtractor()
 
-    # 1. 空の画像
-    print("\n--- 空の画像 ---")
-    try:
-        empty_image = np.array([])
-        features = extractor.extract(empty_image)
-        print("空の画像でもエラーが発生せず、デフォルト値が返されました")
-        assert len(features) == 45, "デフォルト特徴量数が正しくありません"
-    except ValueError as e:
-        print(f"期待通りValueErrorが発生: {e}")
+    # 空の画像で ValueError
+    with pytest.raises(ValueError, match="empty or None"):
+        extractor.extract(np.array([]))
 
-    # 2. None画像
-    print("\n--- None画像 ---")
-    try:
-        features = extractor.extract(None)
-        print("None画像でもエラーが発生せず、デフォルト値が返されました")
-        assert len(features) == 45, "デフォルト特徴量数が正しくありません"
-    except ValueError as e:
-        print(f"期待通りValueErrorが発生: {e}")
-
-    # 3. 不正な形状の画像
-    print("\n--- 不正な形状の画像 ---")
-    try:
-        invalid_image = np.random.randint(0, 256, (64, 64, 64, 3), dtype=np.uint8)
-        features = extractor.extract(invalid_image)
-        print("不正な形状でもエラーが発生せず、デフォルト値が返されました")
-        assert len(features) == 45, "デフォルト特徴量数が正しくありません"
-    except ValueError as e:
-        print(f"期待通りValueErrorが発生: {e}")
+    # None画像で ValueError
+    with pytest.raises(ValueError, match="empty or None"):
+        extractor.extract(None)
 
 
 def test_hlac_feature_names_and_config():
