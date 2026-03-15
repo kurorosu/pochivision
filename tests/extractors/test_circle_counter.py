@@ -289,42 +289,27 @@ def test_blur_effect():
 
 def test_edge_cases():
     """エッジケースのテスト."""
-    print("\n=== エッジケーステスト ===")
-
     extractor = CircleCounterExtractor()
 
-    # 1. 空の画像
-    try:
-        empty_image = np.array([])
-        extractor.extract(empty_image)
-    except ValueError as e:
-        print(f"空画像エラー: {e}")
+    # 空の画像で ValueError
+    with pytest.raises(ValueError, match="empty or None"):
+        extractor.extract(np.array([]))
 
-    # 2. Noneの画像
-    try:
+    # None画像で ValueError
+    with pytest.raises(ValueError, match="empty or None"):
         extractor.extract(None)
-    except ValueError as e:
-        print(f"None画像エラー: {e}")
 
-    # 3. 1次元画像
-    try:
-        one_dim_image = np.array([1, 2, 3])
-        features = extractor.extract(one_dim_image)
-        print(f"1次元画像: circle_count = {features['circle_count']}")
-    except Exception as e:
-        print(f"1次元画像エラー: {e}")
-
-    # 4. 非常に小さい画像
+    # 非常に小さい画像でも処理できる
     tiny_image = np.full((10, 10, 3), 255, dtype=np.uint8)
     cv2.circle(tiny_image, (5, 5), 3, (0, 0, 0), -1)
     features_tiny = extractor.extract(tiny_image)
-    print(f"極小画像 (10x10): circle_count = {features_tiny['circle_count']}")
+    assert "circle_count" in features_tiny
 
-    # 5. 非常に大きい画像（リソースを考慮して適度なサイズ）
+    # 大きめの画像でも処理できる
     large_image = np.full((500, 500, 3), 255, dtype=np.uint8)
     cv2.circle(large_image, (250, 250), 50, (0, 0, 0), -1)
     features_large = extractor.extract(large_image)
-    print(f"大画像 (500x500): circle_count = {features_large['circle_count']}")
+    assert "circle_count" in features_large
 
 
 def test_default_config_merging():

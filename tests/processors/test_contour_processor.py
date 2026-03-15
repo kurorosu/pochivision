@@ -351,21 +351,14 @@ class TestContourProcessor:
         assert validator.is_binary_image(binary_image) is True
 
         # 非二値画像のテスト
-        # gray_image = create_test_image(100, 100, is_binary=False)
-        # ランダムなグレースケール画像は通常二値画像とはみなされない
-        # ただし、偶然二値のみになる可能性もあるので確実なテストは難しい
-
-        # より多くの異なる値を持つ非二値画像を作成
-        # is_binary_imageメソッドの実装によっては最大3つの値まで二値画像と見なされる可能性があるので、
-        # 少なくとも4つ以上の異なる値を含むようにする
+        # 4つ以上の異なるピクセル値を持つ画像は二値画像と判定されない
+        # (is_binary_image はユニーク値が 3 以下なら True を返す)
         non_binary = np.zeros((100, 100), dtype=np.uint8)
         non_binary[10:30, 10:30] = 50
         non_binary[30:50, 30:50] = 100
         non_binary[50:70, 50:70] = 150
         non_binary[70:90, 70:90] = 200
-
-        # コメントアウトしておき、必要に応じて調整
-        # assert validator.is_binary_image(non_binary) is False
+        assert validator.is_binary_image(non_binary) is False
 
     def test_validate_image_for_contour(self):
         """validate_image_for_contour メソッドのテストを行います."""
