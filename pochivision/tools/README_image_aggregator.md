@@ -79,4 +79,4 @@ python -m tools.image_aggregator -i ./capture/camera0 -m move
 
 ## ライセンス
 
-本ツールは「vision-capture-core」プロジェクトのライセンスに従います。
+本ツールは「pochivision」プロジェクトのライセンスに従います。

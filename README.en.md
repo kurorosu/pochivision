@@ -1,4 +1,4 @@
-# Vision Capture Core
+# pochivision
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -23,8 +23,8 @@ Real-time image capture & preprocessing engine for AI vision applications, featu
 ## Directory Structure
 
 ```
-vision-capture-core/
-├── src/
+pochivision/
+├── pochivision/
 │   ├── cli/                  # CLI entrypoint (vcc command)
 │   ├── capture_runner/       # Camera capture and preview runner
 │   ├── capturelib/           # Camera setup, config, logging, recording
@@ -43,8 +43,8 @@ vision-capture-core/
 
 ```bash
 # Clone the repository
-git clone https://github.com/kurorosu/vision-capture-core.git
-cd vision-capture-core
+git clone https://github.com/kurorosu/pochivision.git
+cd pochivision
 
 # Install dependencies
 uv sync
@@ -68,7 +68,7 @@ uv run vcc
 
 ## Command-Line Interface
 
-Vision Capture Core provides a flexible command-line interface via the `vcc` command:
+pochivision provides a flexible command-line interface via the `vcc` command:
 
 ```bash
 # Use a specific camera device (by index)
@@ -170,7 +170,7 @@ The application uses a JSON configuration file to define camera profiles, proces
 
 ## Architecture
 
-Vision Capture Core follows SOLID principles with a modular architecture:
+pochivision follows SOLID principles with a modular architecture:
 
 - **CLI**: Command-line entrypoint (`vcc` command)
 - **Core**: Central pipeline execution (pipeline / parallel modes)

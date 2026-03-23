@@ -1,4 +1,4 @@
-# Vision Capture Core
+# pochivision
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -23,8 +23,8 @@
 ## ディレクトリ構成
 
 ```
-vision-capture-core/
-├── src/
+pochivision/
+├── pochivision/
 │   ├── cli/                  # CLI エントリーポイント (vcc コマンド)
 │   ├── capture_runner/       # カメラキャプチャとプレビュー実行
 │   ├── capturelib/           # カメラセットアップ, 設定, ログ, 録画
@@ -43,8 +43,8 @@ vision-capture-core/
 
 ```bash
 # リポジトリのクローン
-git clone https://github.com/kurorosu/vision-capture-core.git
-cd vision-capture-core
+git clone https://github.com/kurorosu/pochivision.git
+cd pochivision
 
 # 依存関係のインストール
 uv sync
@@ -68,7 +68,7 @@ uv run vcc
 
 ## コマンドラインインターフェース
 
-Vision Capture Core は `vcc` コマンドによる柔軟な CLI を提供しています:
+pochivision は `vcc` コマンドによる柔軟な CLI を提供しています:
 
 ```bash
 # 特定のカメラデバイスを使用 (インデックスで指定)
@@ -170,7 +170,7 @@ uv run vcc --no-recording
 
 ## アーキテクチャ
 
-Vision Capture Core は SOLID 原則に従ったモジュール式アーキテクチャを採用しています:
+pochivision は SOLID 原則に従ったモジュール式アーキテクチャを採用しています:
 
 - **CLI**: コマンドラインエントリーポイント (`vcc` コマンド)
 - **Core**: パイプライン実行 (pipeline / parallel モード)

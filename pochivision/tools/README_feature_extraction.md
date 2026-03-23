@@ -5,7 +5,7 @@
 ## ファイル構成
 
 ```
-vision-capture-core/
+pochivision/
 ├── feature_extractors/         # 特徴量抽出器パッケージ
 │   ├── base.py                 # 基底クラス
 │   ├── brightness_statistics.py # 輝度統計特徴量抽出器
@@ -166,4 +166,4 @@ python -m tools.image_aggregator -i ./capture/camera1 -m copy
 
 ## ライセンス
 
-本ツールは「vision-capture-core」プロジェクトのライセンスに従います。
+本ツールは「pochivision」プロジェクトのライセンスに従います。
