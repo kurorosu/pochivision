@@ -6,8 +6,8 @@ import cv2  # OpenCVエラーモック用
 import numpy as np
 import pytest
 
-from exceptions import ProcessorRuntimeError, ProcessorValidationError
-from processors.blur import (
+from pochivision.exceptions import ProcessorRuntimeError, ProcessorValidationError
+from pochivision.processors.blur import (
     AverageBlurProcessor,
     BilateralFilterProcessor,
     GaussianBlurProcessor,

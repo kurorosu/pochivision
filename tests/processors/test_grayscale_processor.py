@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from exceptions import ProcessorValidationError
-from processors.grayscale import GrayscaleProcessor
+from pochivision.exceptions import ProcessorValidationError
+from pochivision.processors.grayscale import GrayscaleProcessor
 
 # テスト用の画像データ
 DUMMY_COLOR = np.ones((10, 10, 3), dtype=np.uint8) * 100

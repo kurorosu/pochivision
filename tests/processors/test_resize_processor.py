@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from exceptions import ProcessorValidationError
-from processors.resize import ResizeProcessor
+from pochivision.exceptions import ProcessorValidationError
+from pochivision.processors.resize import ResizeProcessor
 
 # テスト用の画像データ
 DUMMY_IMAGE = np.ones((300, 400, 3), dtype=np.uint8) * 100

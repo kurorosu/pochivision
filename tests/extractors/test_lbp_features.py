@@ -3,7 +3,7 @@
 import numpy as np
 import pytest  # noqa: F401
 
-from feature_extractors import LBPTextureExtractor, get_feature_extractor
+from pochivision.feature_extractors import LBPTextureExtractor, get_feature_extractor
 
 
 def test_lbp_texture_basic():

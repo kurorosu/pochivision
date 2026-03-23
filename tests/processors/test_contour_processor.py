@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from exceptions import ProcessorValidationError
-from processors.contour import ContourProcessor
-from processors.validators.contour import ContourValidator
+from pochivision.exceptions import ProcessorValidationError
+from pochivision.processors.contour import ContourProcessor
+from pochivision.processors.validators.contour import ContourValidator
 
 
 # テスト用の画像データを作成する関数

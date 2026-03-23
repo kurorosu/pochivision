@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from feature_extractors.fft_frequency import FFTFrequencyExtractor
+from pochivision.feature_extractors.fft_frequency import FFTFrequencyExtractor
 
 
 class TestFFTFrequencyExtractor:

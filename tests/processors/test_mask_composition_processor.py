@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from exceptions import ProcessorRuntimeError, ProcessorValidationError
-from processors.mask_composition import MaskCompositionProcessor
+from pochivision.exceptions import ProcessorRuntimeError, ProcessorValidationError
+from pochivision.processors.mask_composition import MaskCompositionProcessor
 
 
 class TestMaskCompositionProcessorInit:

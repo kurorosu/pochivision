@@ -1,6 +1,6 @@
 import pytest  # noqa: F401
 
-from utils.file_naming import FileNamingManager
+from pochivision.utils.file_naming import FileNamingManager
 
 
 def test_default_id_interval():

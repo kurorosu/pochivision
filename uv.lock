@@ -849,6 +849,73 @@ wheels = [
 ]
 
 [[package]]
+name = "pochivision"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "click" },
+    { name = "colorlog" },
+    { name = "dearpygui" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "opencv-python" },
+    { name = "pandas" },
+    { name = "plotext" },
+    { name = "pydantic" },
+    { name = "pywavelets" },
+    { name = "pyyaml" },
+    { name = "questionary" },
+    { name = "rich" },
+    { name = "scikit-image" },
+    { name = "scipy" },
+    { name = "seaborn" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "black" },
+    { name = "flake8" },
+    { name = "isort" },
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pydocstyle" },
+    { name = "pylint" },
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "click", specifier = ">=8.1.7" },
+    { name = "colorlog", specifier = ">=6.8.2" },
+    { name = "dearpygui", specifier = ">=2.0.0" },
+    { name = "matplotlib", specifier = ">=3.8.4" },
+    { name = "numpy", specifier = ">=1.26.4" },
+    { name = "opencv-python", specifier = ">=4.10.0" },
+    { name = "pandas", specifier = ">=2.2.2" },
+    { name = "plotext", specifier = ">=5.2.8" },
+    { name = "pydantic", specifier = ">=2.7.1" },
+    { name = "pywavelets", specifier = ">=1.6.0" },
+    { name = "pyyaml", specifier = ">=6.0.1" },
+    { name = "questionary", specifier = ">=2.0.1" },
+    { name = "rich", specifier = ">=13.7.1" },
+    { name = "scikit-image", specifier = ">=0.24.0" },
+    { name = "scipy", specifier = ">=1.13.1" },
+    { name = "seaborn", specifier = ">=0.13.2" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=24.4.2" },
+    { name = "flake8", specifier = ">=7.0.0" },
+    { name = "isort", specifier = ">=5.13.2" },
+    { name = "mypy", specifier = ">=1.10.0" },
+    { name = "pre-commit", specifier = ">=4.0.0" },
+    { name = "pydocstyle", specifier = ">=6.3.0" },
+    { name = "pylint", specifier = ">=3.2.2" },
+    { name = "pytest", specifier = ">=8.2.0" },
+]
+
+[[package]]
 name = "pre-commit"
 version = "4.5.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1435,73 +1502,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2f/c9/18d4b36606d6091844daa3bd93cf7dc78e6f5da21d9f21d06c221104b684/virtualenv-21.1.0.tar.gz", hash = "sha256:1990a0188c8f16b6b9cf65c9183049007375b26aad415514d377ccacf1e4fb44", size = 5840471, upload-time = "2026-02-27T08:49:29.702Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/78/55/896b06bf93a49bec0f4ae2a6f1ed12bd05c8860744ac3a70eda041064e4d/virtualenv-21.1.0-py3-none-any.whl", hash = "sha256:164f5e14c5587d170cf98e60378eb91ea35bf037be313811905d3a24ea33cc07", size = 5825072, upload-time = "2026-02-27T08:49:27.516Z" },
-]
-
-[[package]]
-name = "vision-capture-core"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "click" },
-    { name = "colorlog" },
-    { name = "dearpygui" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "opencv-python" },
-    { name = "pandas" },
-    { name = "plotext" },
-    { name = "pydantic" },
-    { name = "pywavelets" },
-    { name = "pyyaml" },
-    { name = "questionary" },
-    { name = "rich" },
-    { name = "scikit-image" },
-    { name = "scipy" },
-    { name = "seaborn" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "black" },
-    { name = "flake8" },
-    { name = "isort" },
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pydocstyle" },
-    { name = "pylint" },
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=8.1.7" },
-    { name = "colorlog", specifier = ">=6.8.2" },
-    { name = "dearpygui", specifier = ">=2.0.0" },
-    { name = "matplotlib", specifier = ">=3.8.4" },
-    { name = "numpy", specifier = ">=1.26.4" },
-    { name = "opencv-python", specifier = ">=4.10.0" },
-    { name = "pandas", specifier = ">=2.2.2" },
-    { name = "plotext", specifier = ">=5.2.8" },
-    { name = "pydantic", specifier = ">=2.7.1" },
-    { name = "pywavelets", specifier = ">=1.6.0" },
-    { name = "pyyaml", specifier = ">=6.0.1" },
-    { name = "questionary", specifier = ">=2.0.1" },
-    { name = "rich", specifier = ">=13.7.1" },
-    { name = "scikit-image", specifier = ">=0.24.0" },
-    { name = "scipy", specifier = ">=1.13.1" },
-    { name = "seaborn", specifier = ">=0.13.2" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "black", specifier = ">=24.4.2" },
-    { name = "flake8", specifier = ">=7.0.0" },
-    { name = "isort", specifier = ">=5.13.2" },
-    { name = "mypy", specifier = ">=1.10.0" },
-    { name = "pre-commit", specifier = ">=4.0.0" },
-    { name = "pydocstyle", specifier = ">=6.3.0" },
-    { name = "pylint", specifier = ">=3.2.2" },
-    { name = "pytest", specifier = ">=8.2.0" },
 ]
 
 [[package]]

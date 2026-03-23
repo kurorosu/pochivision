@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from capturelib.log_manager import LogManager
+from pochivision.capturelib.log_manager import LogManager
 
 
 @pytest.fixture(autouse=True)
@@ -40,10 +40,10 @@ class TestLogManagerLogger:
         assert isinstance(logger, logging.Logger)
 
     def test_logger_name(self):
-        """ロガー名が 'vcc' である."""
+        """ロガー名が 'pochi' である."""
         lm = LogManager()
         logger = lm.get_logger()
-        assert logger.name == "vcc"
+        assert logger.name == "pochi"
 
     def test_logger_level_debug(self):
         """ロガーのレベルが DEBUG に設定されている."""
