@@ -1,4 +1,4 @@
-"""exceptionsパッケージ:Vision Capture Coreの例外クラス群を提供します."""
+"""exceptionsパッケージ:pochivisionの例外クラス群を提供します."""
 
 from .base import VisionCaptureError
 from .config import ConfigValidationError

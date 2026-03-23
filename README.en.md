@@ -63,31 +63,31 @@ uv sync --group dev
 Run the application with default settings:
 
 ```bash
-uv run vcc
+uv run pochi
 ```
 
 ## Command-Line Interface
 
-pochivision provides a flexible command-line interface via the `vcc` command:
+pochivision provides a flexible command-line interface via the `pochi` command:
 
 ```bash
 # Use a specific camera device (by index)
-uv run vcc --camera 1
+uv run pochi --camera 1
 
 # Use a specific camera profile from config
-uv run vcc --profile "high_res"
+uv run pochi --profile "high_res"
 
 # Use both a specific camera and profile
-uv run vcc --camera 2 --profile "high_fps"
+uv run pochi --camera 2 --profile "high_fps"
 
 # List all available camera profiles
-uv run vcc --list-profiles
+uv run pochi --list-profiles
 
 # Use an alternative config file
-uv run vcc --config "my_config.json"
+uv run pochi --config "my_config.json"
 
 # Disable recording
-uv run vcc --no-recording
+uv run pochi --no-recording
 ```
 
 ### CLI Arguments
@@ -172,7 +172,7 @@ The application uses a JSON configuration file to define camera profiles, proces
 
 pochivision follows SOLID principles with a modular architecture:
 
-- **CLI**: Command-line entrypoint (`vcc` command)
+- **CLI**: Command-line entrypoint (`pochi` command)
 - **Core**: Central pipeline execution (pipeline / parallel modes)
 - **CaptureLib**: Camera setup, config handling, logging, recording
 - **Processors**: Image processing modules (registry pattern)

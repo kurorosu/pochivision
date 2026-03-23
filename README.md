@@ -63,31 +63,31 @@ uv sync --group dev
 デフォルト設定でアプリケーションを実行:
 
 ```bash
-uv run vcc
+uv run pochi
 ```
 
 ## コマンドラインインターフェース
 
-pochivision は `vcc` コマンドによる柔軟な CLI を提供しています:
+pochivision は `pochi` コマンドによる柔軟な CLI を提供しています:
 
 ```bash
 # 特定のカメラデバイスを使用 (インデックスで指定)
-uv run vcc --camera 1
+uv run pochi --camera 1
 
 # 設定から特定のカメラプロファイルを使用
-uv run vcc --profile "high_res"
+uv run pochi --profile "high_res"
 
 # 特定のカメラとプロファイルの両方を使用
-uv run vcc --camera 2 --profile "high_fps"
+uv run pochi --camera 2 --profile "high_fps"
 
 # 利用可能な全てのカメラプロファイルを一覧表示
-uv run vcc --list-profiles
+uv run pochi --list-profiles
 
 # 代替設定ファイルを使用
-uv run vcc --config "my_config.json"
+uv run pochi --config "my_config.json"
 
 # 録画機能を無効にして起動
-uv run vcc --no-recording
+uv run pochi --no-recording
 ```
 
 ### CLI 引数
@@ -172,7 +172,7 @@ uv run vcc --no-recording
 
 pochivision は SOLID 原則に従ったモジュール式アーキテクチャを採用しています:
 
-- **CLI**: コマンドラインエントリーポイント (`vcc` コマンド)
+- **CLI**: コマンドラインエントリーポイント (`pochi` コマンド)
 - **Core**: パイプライン実行 (pipeline / parallel モード)
 - **CaptureLib**: カメラセットアップ, 設定管理, ログ, 録画
 - **Processors**: 画像処理モジュール (レジストリパターン)

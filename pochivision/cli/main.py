@@ -1,4 +1,4 @@
-"""Vision Capture Coreのメインエントリーポイント."""
+"""pochivisionのメインエントリーポイント."""
 
 import argparse
 
@@ -19,7 +19,7 @@ def parse_arguments():
     Returns:
         argparse.Namespace: パース済みの引数オブジェクト.
     """
-    parser = argparse.ArgumentParser(description="Vision Capture Core application")
+    parser = argparse.ArgumentParser(description="pochivision application")
     parser.add_argument(
         "--camera",
         "-c",
@@ -59,7 +59,7 @@ def main():
     # ロギングの初期化
     log_manager = LogManager()
     logger = log_manager.get_logger()
-    logger.info("Starting Vision Capture Core application")
+    logger.info("Starting pochivision application")
 
     # 設定ファイルの読み込み
     try:

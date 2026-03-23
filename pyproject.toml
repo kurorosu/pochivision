@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.scripts]
-vcc = "pochivision.cli:main"
+pochi = "pochivision.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -53,7 +53,7 @@ class LogManager:
         """LogManagerの初期化処理."""
         if self._initialized:
             return
-        self._logger: logging.Logger = logging.getLogger("vcc")
+        self._logger: logging.Logger = logging.getLogger("pochi")
         self._logger.setLevel(logging.DEBUG)
         self._initialized = True
 
