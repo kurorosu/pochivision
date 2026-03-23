@@ -1,8 +1,8 @@
 import numpy as np
 import pytest  # noqa: F401
 
-from exceptions import ProcessorValidationError
-from processors.binarization import (
+from pochivision.exceptions import ProcessorValidationError
+from pochivision.processors.binarization import (
     GaussianAdaptiveBinarizationProcessor,
     MeanAdaptiveBinarizationProcessor,
     OtsuBinarizationProcessor,

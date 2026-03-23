@@ -3,7 +3,7 @@
 import numpy as np
 import pytest  # noqa: F401
 
-from feature_extractors import RGBStatisticsExtractor, get_feature_extractor
+from pochivision.feature_extractors import RGBStatisticsExtractor, get_feature_extractor
 
 
 def test_rgb_statistics_basic():

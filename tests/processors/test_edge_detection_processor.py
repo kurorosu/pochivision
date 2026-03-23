@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from exceptions import ProcessorValidationError
-from processors.edge_detection import CannyEdgeProcessor
+from pochivision.exceptions import ProcessorValidationError
+from pochivision.processors.edge_detection import CannyEdgeProcessor
 
 
 # Helper function to create a simple image

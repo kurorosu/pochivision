@@ -1,5 +1,5 @@
 [project]
-name = "vision-capture-core"
+name = "pochivision"
 version = "0.1.0"
 description = "Real-time image capture and preprocessing engine for AI vision"
 readme = "README.md"
@@ -24,10 +24,10 @@ dependencies = [
 ]
 
 [project.scripts]
-vcc = "cli:main"
+vcc = "pochivision.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
 
 [dependency-groups]
 dev = [
@@ -48,10 +48,11 @@ target-version = ["py312"]
 [tool.isort]
 profile = "black"
 line_length = 88
+known_first_party = ["pochivision"]
 
 [tool.mypy]
 python_version = "3.12"
-mypy_path = "src"
+mypy_path = "."
 warn_return_any = true
 warn_unused_configs = true
 
@@ -69,5 +70,5 @@ build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["."]
 addopts = "-v"

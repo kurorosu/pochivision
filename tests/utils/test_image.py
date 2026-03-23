@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from utils.image import to_bgr, to_grayscale, to_rgb
+from pochivision.utils.image import to_bgr, to_grayscale, to_rgb
 
 
 def test_to_grayscale():

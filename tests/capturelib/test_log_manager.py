@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from capturelib.log_manager import LogManager
+from pochivision.capturelib.log_manager import LogManager
 
 
 @pytest.fixture(autouse=True)

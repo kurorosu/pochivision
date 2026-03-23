@@ -3,7 +3,7 @@
 import numpy as np
 import pytest  # noqa: F401
 
-from feature_extractors.swt_frequency import SWTFrequencyExtractor
+from pochivision.feature_extractors.swt_frequency import SWTFrequencyExtractor
 
 
 class TestSWTFrequencyExtractor:

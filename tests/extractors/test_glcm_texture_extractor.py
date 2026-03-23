@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from feature_extractors.glcm_texture import GLCMTextureExtractor
+from pochivision.feature_extractors.glcm_texture import GLCMTextureExtractor
 
 
 class TestGLCMTextureExtractor:

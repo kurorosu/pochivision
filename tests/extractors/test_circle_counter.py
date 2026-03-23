@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import pytest  # noqa: F401
 
-from feature_extractors import CircleCounterExtractor, get_feature_extractor
+from pochivision.feature_extractors import CircleCounterExtractor, get_feature_extractor
 
 
 def test_circle_counter_basic():

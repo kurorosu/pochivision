@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from exceptions import ProcessorValidationError
-from processors.clahe import CLAHEProcessor
+from pochivision.exceptions import ProcessorValidationError
+from pochivision.processors.clahe import CLAHEProcessor
 
 # テスト用の画像データ
 DUMMY_GRAY_IMAGE = np.ones((100, 100), dtype=np.uint8) * 128
