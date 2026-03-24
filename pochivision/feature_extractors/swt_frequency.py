@@ -276,13 +276,11 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             RuntimeError: SWT変換に失敗した場合
         """
         try:
-            # 画像をグレースケールに変換（既にグレースケールの場合はそのまま）
             gray_image = to_grayscale(image)
 
             # SWT変換のために画像サイズを調整（奇数サイズを偶数サイズに）
             gray_image = self._adjust_image_size_for_swt(gray_image)
 
-            # 画像を0-1の範囲に正規化
             if gray_image.max() > 1.0:
                 gray_image = gray_image.astype(np.float32) / 255.0
             else:

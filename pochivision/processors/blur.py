@@ -43,11 +43,8 @@ class GaussianBlurProcessor(BaseProcessor):
             config (Dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
-        # パラメータのバリデーション
         self.validator = GaussianBlurValidator(config)
         self.validator.validate_config()
-
-        # バリデータから検証済みの値を取得
         self.kernel_size = (self.validator.kernel_width, self.validator.kernel_height)
         self.sigma_x = self.validator.sigma_x
         self.sigma_y = self.validator.sigma_y
@@ -66,10 +63,8 @@ class GaussianBlurProcessor(BaseProcessor):
             ProcessorValidationError: 入力画像が不正な場合.
             ProcessorRuntimeError: OpenCV処理中にエラーが発生した場合.
         """
-        # 入力画像のバリデーション
         self.validator.validate_image(image)
 
-        # ガウシアンブラー処理
         try:
             return cv2.GaussianBlur(
                 image, self.kernel_size, self.sigma_x, sigmaY=self.sigma_y
@@ -120,11 +115,8 @@ class AverageBlurProcessor(BaseProcessor):
             config (Dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
-        # パラメータのバリデーション
         self.validator = AverageBlurValidator(config)
         self.validator.validate_config()
-
-        # バリデータから検証済みの値を取得
         self.kernel_size = (self.validator.kernel_width, self.validator.kernel_height)
 
     def process(self, image: np.ndarray) -> np.ndarray:
@@ -141,10 +133,8 @@ class AverageBlurProcessor(BaseProcessor):
             ProcessorValidationError: 入力画像が不正な場合.
             ProcessorRuntimeError: OpenCV処理中にエラーが発生した場合.
         """
-        # 入力画像のバリデーション
         self.validator.validate_image(image)
 
-        # 平均値ブラー処理
         try:
             return cv2.blur(image, self.kernel_size)
         except cv2.error as e:
@@ -194,11 +184,8 @@ class MedianBlurProcessor(BaseProcessor):
             config (Dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
-        # パラメータのバリデーション
         self.validator = MedianBlurValidator(config)
         self.validator.validate_config()
-
-        # バリデータから検証済みの値を取得
         self.kernel_size = self.validator.kernel_size
 
     def process(self, image: np.ndarray) -> np.ndarray:
@@ -215,10 +202,8 @@ class MedianBlurProcessor(BaseProcessor):
             ProcessorValidationError: 入力画像が不正な場合.
             ProcessorRuntimeError: OpenCV処理中にエラーが発生した場合.
         """
-        # 入力画像のバリデーション
         self.validator.validate_image(image)
 
-        # メディアンブラー処理
         try:
             return cv2.medianBlur(image, self.kernel_size)
         except cv2.error as e:
@@ -269,11 +254,8 @@ class BilateralFilterProcessor(BaseProcessor):
             config (Dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
-        # パラメータのバリデーション
         self.validator = BilateralFilterValidator(config)
         self.validator.validate_config()
-
-        # バリデータから検証済みの値を取得
         self.d = self.validator.d
         self.sigma_color = self.validator.sigma_color
         self.sigma_space = self.validator.sigma_space
@@ -292,10 +274,8 @@ class BilateralFilterProcessor(BaseProcessor):
             ProcessorValidationError: 入力画像が不正な場合.
             ProcessorRuntimeError: OpenCV処理中にエラーが発生した場合.
         """
-        # 入力画像のバリデーション
         self.validator.validate_image(image)
 
-        # バイラテラルフィルタ処理
         try:
             # パラメータを確実に利用可能にする（バリデーションが成功していれば通常はNoneではない）
             d = self.d
@@ -356,11 +336,8 @@ class MotionBlurProcessor(BaseProcessor):
             config (Dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
-        # パラメータのバリデーション
         self.validator = MotionBlurValidator(config)
         self.validator.validate_config()
-
-        # バリデータから検証済みの値を取得
         self.kernel_size = self.validator.kernel_size
         self.angle = self.validator.angle
 
@@ -378,7 +355,6 @@ class MotionBlurProcessor(BaseProcessor):
             ProcessorValidationError: 入力画像が不正な場合.
             ProcessorRuntimeError: OpenCV処理中にエラーが発生した場合.
         """
-        # 入力画像のバリデーション
         self.validator.validate_image(image)
 
         try:
@@ -393,7 +369,6 @@ class MotionBlurProcessor(BaseProcessor):
                 )
                 raise ProcessorRuntimeError(error_msg)
 
-            # カーネル生成
             kernel = np.zeros((kernel_size, kernel_size), dtype=np.float32)
             center = kernel_size // 2
             rad = np.deg2rad(angle)

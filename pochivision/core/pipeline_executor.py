@@ -54,26 +54,20 @@ class PipelineExecutor:
         self.config_fps = config_fps
         self.logger = LogManager().get_logger()
 
-        # モード制限のあるプロセッサに対して実行モードを設定
         for processor in processors:
             if hasattr(processor, "set_pipeline_mode"):
                 processor.set_pipeline_mode(mode)
 
-        # ID間隔を設定
         file_naming_manager = get_file_naming_manager()
-        # original用の間隔設定
         file_naming_manager.set_id_interval("original", camera_index, id_interval)
-        # pipeline用の間隔設定（パイプラインモードの場合）
         if mode == "pipeline":
             file_naming_manager.set_id_interval("pipeline", camera_index, id_interval)
-        # 各プロセッサ用の間隔設定（parallelモードの場合）
         if mode == "parallel":
             for processor in processors:
                 file_naming_manager.set_id_interval(
                     processor.name, camera_index, id_interval
                 )
 
-        # プロセッサ情報をログに記録
         self.logger.info(f"Pipeline mode: {mode}")
         self.logger.info(f"Processors: {', '.join([p.name for p in processors])}")
         self.logger.info(f"ID interval: {id_interval}")
@@ -104,12 +98,10 @@ class PipelineExecutor:
             Exception: カメラプロファイルのプロセッサ設定が取得できない場合.
         """
         try:
-            # カメラプロファイルからプロセッサ設定を取得
             processor_names, processor_configs, mode = (
                 CameraConfigHandler.get_camera_processors(config, profile_name)
             )
 
-            # カメラごとのid_intervalを参照
             camera_config = config.get("cameras", {}).get(profile_name, {})
             id_interval = camera_config.get("id_interval", config.get("id_interval", 1))
             config_fps = camera_config.get("fps", 30.0)
@@ -118,7 +110,6 @@ class PipelineExecutor:
             file_naming_manager = get_file_naming_manager()
             file_naming_manager.set_label(camera_index, label)
 
-            # プロセッサインスタンスの生成
             processors: List[BaseProcessor] = []
             for name in processor_names:
                 if name not in PROCESSOR_REGISTRY:
@@ -130,7 +121,6 @@ class PipelineExecutor:
                 )
                 processors.append(processor)
 
-            # インスタンス生成
             return cls(
                 processors=processors,
                 capture_manager=capture_manager,
@@ -153,7 +143,6 @@ class PipelineExecutor:
         """
         start_time = time.time()
 
-        # オリジナル画像を保存
         original_dir = self.capture_manager.get_processing_dir(
             "original", self.camera_index
         )
@@ -171,7 +160,6 @@ class PipelineExecutor:
         except Exception as e:
             self.logger.error(f"Failed to save original image: {e}")
 
-        # 処理された画像を保存する辞書
         processed_images = {"original": image.copy()}
         if self.mode == "parallel":
             for processor in self.processors:
@@ -229,13 +217,11 @@ class PipelineExecutor:
             image (np.ndarray): 処理済み画像.
             processor_name (str): 処理に使われたプロセッサの名前.
         """
-        # パイプラインモード時は"pipeline"ディレクトリに保存
         save_dir_name = processor_name
         save_dir = self.capture_manager.get_processing_dir(
             save_dir_name, self.camera_index
         )
 
-        # 新しいファイル命名規則を使用
         filename, id_index, image_index = get_file_naming_manager().get_filename(
             save_dir_name, self.camera_index
         )

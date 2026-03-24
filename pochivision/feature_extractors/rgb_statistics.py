@@ -92,7 +92,6 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
         # チャンネル名の定義
         channel_names = ["red", "green", "blue"]
 
-        # 各チャンネルについて統計値を計算
         for i, channel_name in enumerate(channel_names):
             channel_data = rgb_image[:, :, i]
 

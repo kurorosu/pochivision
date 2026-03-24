@@ -210,13 +210,9 @@ class MaskCompositionProcessor(BaseProcessor):
                 # 黒ピクセル部分（0）をマスクとして使用
                 mask = cv2.bitwise_not(mask_gray)
 
-            # マスク部分にターゲット画像を適用
             result = cv2.bitwise_and(target_image, target_image, mask=mask)
-
-            # マスク以外の部分をマスク画像で埋める
             inv_mask = cv2.bitwise_not(mask)
 
-            # マスク画像がグレースケールの場合、3チャンネルに変換
             if len(mask_image.shape) == 2:
                 mask_to_use = cv2.cvtColor(mask_image, cv2.COLOR_GRAY2BGR)
             else:
@@ -225,12 +221,9 @@ class MaskCompositionProcessor(BaseProcessor):
             mask_part = cv2.bitwise_and(mask_to_use, mask_to_use, mask=inv_mask)
             result = cv2.add(result, mask_part)
 
-            # トリミング処理（オプション）
             if self.enable_cropping:
-                # トリミング範囲を計算（白ピクセル領域に基づく）
                 crop_bounds = self._find_crop_bounds(mask_gray)
                 if crop_bounds is not None:
-                    # 結果画像をトリミング
                     result = self._crop_image(result, crop_bounds)
 
             return result

@@ -31,21 +31,18 @@ class ContourProcessor(BaseProcessor):
 
         default_vals = self.get_default_config()
 
-        # retrieval_modeの設定と変換
         retrieval_mode_str = self.config.get(
             "retrieval_mode", default_vals["retrieval_mode"]
         )
         self._retrieval_mode = self._get_retrieval_mode(retrieval_mode_str)
         self._retrieval_mode_str = retrieval_mode_str
 
-        # approximation_methodの設定と変換
         approx_method_str = self.config.get(
             "approximation_method", default_vals["approximation_method"]
         )
         self._approximation_method = self._get_approximation_method(approx_method_str)
         self._approx_method_str = approx_method_str
 
-        # その他のパラメータ設定
         self._min_area = self.config.get("min_area", default_vals["min_area"])
         self._select_mode = self.config.get("select_mode", default_vals["select_mode"])
         self._contour_rank = self.config.get(
@@ -112,7 +109,6 @@ class ContourProcessor(BaseProcessor):
         if not contours:
             return None
 
-        # 最小面積でフィルタリング
         if self._min_area > 0:
             filtered_contours = [
                 c for c in contours if cv2.contourArea(c) >= self._min_area
@@ -123,7 +119,6 @@ class ContourProcessor(BaseProcessor):
         if not filtered_contours:
             return None
 
-        # 面積順にソート（降順）
         sorted_contours = sorted(filtered_contours, key=cv2.contourArea, reverse=True)
 
         # 指定されたランク（0から始まる）の輪郭を選択
@@ -147,10 +142,8 @@ class ContourProcessor(BaseProcessor):
         Raises:
             ProcessorRuntimeError: 画像処理中にエラーが発生した場合.
         """
-        # 入力画像の検証 - 二値化されているかのチェックを含む
         is_valid, _ = self.validator.validate_image_for_contour(image)
 
-        # 二値化されていない場合は元の画像を返す
         if not is_valid:
             # 色空間の変換（グレースケール→BGR）が必要な場合は対応
             if image.ndim == 2:
@@ -158,7 +151,6 @@ class ContourProcessor(BaseProcessor):
             return image.copy()
 
         try:
-            # 画像をグレースケールに変換（入力がカラー画像の場合）
             gray_image = to_grayscale(image)
 
             # 画像がfloat32の場合はuint8に変換
@@ -168,12 +160,10 @@ class ContourProcessor(BaseProcessor):
                 else:
                     gray_image = gray_image.astype(np.uint8)
 
-            # 輪郭検出（前段で処理された二値画像を直接使用）
             contours, _ = cv2.findContours(
                 gray_image, self._retrieval_mode, self._approximation_method
             )
 
-            # 選択モードに応じて輪郭を選択
             if self._select_mode == "rank":
                 # ランクによる選択
                 selected_contour = self._select_contour_by_rank(contours)
@@ -188,22 +178,15 @@ class ContourProcessor(BaseProcessor):
                         c for c in contours if cv2.contourArea(c) >= self._min_area
                     ]
 
-            # 出力画像を準備（初期状態は外側色）
             output_image = np.full(
                 (image.shape[0], image.shape[1], 3),
                 self._outside_color,
                 dtype=np.uint8,
             )
 
-            # 輪郭が見つかった場合は、内側を内側色で塗る
             if contours:
-                # マスク画像を作成
                 mask = np.zeros(image.shape[:2], dtype=np.uint8)
-
-                # 輪郭内部を塗りつぶす
                 cv2.drawContours(mask, contours, -1, 255, cv2.FILLED)
-
-                # マスクを適用して内側色を設定
                 output_image[mask > 0] = self._inside_color
 
             return output_image

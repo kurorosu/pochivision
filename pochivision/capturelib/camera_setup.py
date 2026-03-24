@@ -39,19 +39,14 @@ class CameraSetup:
     def load_camera_config(self) -> None:
         """設定からカメラ設定を読み込む. CLIで指定されたカメラインデックスとプロファイル名を優先する."""
         try:
-            # カメラインデックスが指定されていない場合は設定ファイルから取得
             # argsでデフォルト0にしたから不要かも
             if self.camera_index is None:
                 self.camera_index = self.config.get("selected_camera_index", 0)
 
-            # カメラプロファイルが指定されていない場合は常にプロファイル "0" を使用
             if self.profile_name is None:
                 self.profile_name = "0"
 
-            # プロファイルキーを設定
             profile_key = self.profile_name
-
-            # カメラの設定をcameras辞書から取得
             camera_config = self.config.get("cameras", {}).get(profile_key, {})
 
             if not camera_config:
@@ -60,7 +55,6 @@ class CameraSetup:
                     f"not found in config, using default settings"
                 )
 
-            # カメラの解像度設定を取得
             self.width = camera_config.get("width", 640)
             self.height = camera_config.get("height", 480)
             self.fps = camera_config.get("fps", 30)
@@ -84,7 +78,6 @@ class CameraSetup:
         """
         self.logger.info(f"Initializing camera {self.camera_index}")
 
-        # バックエンドが指定されている場合は適用
         if self.backend:
             backend_constant = getattr(cv2, f"CAP_{self.backend}", None)
             if backend_constant is not None:
@@ -99,14 +92,10 @@ class CameraSetup:
             self.logger.error(f"Failed to open camera {self.camera_index}")
             return cap
 
-        # 解像度の設定
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-
-        # FPSの設定
         cap.set(cv2.CAP_PROP_FPS, self.fps)
 
-        # 実際に設定された解像度を取得
         actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
@@ -117,7 +106,6 @@ class CameraSetup:
                 f"Actual resolution: {actual_width}x{actual_height}"
             )
 
-            # 実際の解像度で更新
             self.width = actual_width
             self.height = actual_height
 

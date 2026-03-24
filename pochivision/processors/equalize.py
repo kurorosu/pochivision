@@ -64,34 +64,26 @@ class EqualizeProcessor(BaseProcessor):
             ProcessorValidationError: 入力画像が不正な場合.
             ProcessorRuntimeError: 処理中にエラーが発生した場合.
         """
-        # 入力画像のバリデーション
         self.validator.validate_image(image)
 
         try:
-            # 画像がグレースケールの場合は直接処理
             if len(image.shape) == 2 or image.shape[2] == 1:
                 return cv2.equalizeHist(image)
 
             # カラー画像の処理
             if self.color_mode == "gray":
-                # グレースケール変換してから処理
                 gray = to_grayscale(image)
                 equalized = cv2.equalizeHist(gray)
-                # 3チャンネルに戻す
                 return cv2.cvtColor(equalized, cv2.COLOR_GRAY2BGR)
 
             elif self.color_mode == "lab":
-                # LAB色空間に変換
                 lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-                # Lチャンネルのみ平坦化
                 l, a, b = cv2.split(lab)
                 equalized_l = cv2.equalizeHist(l)
-                # チャンネルを結合してBGRに戻す
                 equalized_lab = cv2.merge([equalized_l, a, b])
                 return cv2.cvtColor(equalized_lab, cv2.COLOR_LAB2BGR)
 
             elif self.color_mode == "bgr":
-                # 各チャンネルを個別に平坦化
                 b, g, r = cv2.split(image)
                 equalized_b = cv2.equalizeHist(b)
                 equalized_g = cv2.equalizeHist(g)

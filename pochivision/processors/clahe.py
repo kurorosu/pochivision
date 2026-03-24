@@ -53,12 +53,9 @@ class CLAHEProcessor(BaseProcessor):
         self.validator = CLAHEInputValidator(self.config)
         self.validator.validate_config()
 
-        # デフォルト値の設定
         self.color_mode = self.config.get("color_mode", "gray")
         self.clip_limit = float(self.config.get("clip_limit", 2.0))
         self.tile_grid_size = tuple(self.config.get("tile_grid_size", [8, 8]))
-
-        # CLAHEインスタンスの作成
         self.clahe = cv2.createCLAHE(
             clipLimit=self.clip_limit, tileGridSize=self.tile_grid_size
         )
@@ -77,34 +74,26 @@ class CLAHEProcessor(BaseProcessor):
             ProcessorValidationError: 入力画像が不正な場合.
             ProcessorRuntimeError: 処理中にエラーが発生した場合.
         """
-        # 入力画像のバリデーション
         self.validator.validate_image(image)
 
         try:
-            # 画像がグレースケールの場合は直接処理
             if len(image.shape) == 2 or image.shape[2] == 1:
                 return self.clahe.apply(image)
 
             # カラー画像の処理
             if self.color_mode == "gray":
-                # グレースケール変換してから処理
                 gray = to_grayscale(image)
                 clahe_img = self.clahe.apply(gray)
-                # 3チャンネルに戻す
                 return cv2.cvtColor(clahe_img, cv2.COLOR_GRAY2BGR)
 
             elif self.color_mode == "lab":
-                # LAB色空間に変換
                 lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-                # Lチャンネルのみ処理
                 l, a, b = cv2.split(lab)
                 clahe_l = self.clahe.apply(l)
-                # チャンネルを結合してBGRに戻す
                 clahe_lab = cv2.merge([clahe_l, a, b])
                 return cv2.cvtColor(clahe_lab, cv2.COLOR_LAB2BGR)
 
             elif self.color_mode == "bgr":
-                # 各チャンネルを個別に処理
                 b, g, r = cv2.split(image)
                 clahe_b = self.clahe.apply(b)
                 clahe_g = self.clahe.apply(g)
