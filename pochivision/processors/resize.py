@@ -31,11 +31,8 @@ class ResizeProcessor(BaseProcessor):
                 - aspect_ratio_mode (str, optional): アスペクト比保持モード ('width' or 'height')
         """
         super().__init__(name, config)
-        # パラメータのバリデーション
         self.validator = ResizeConfigValidator(config)
         self.validator.validate_config()
-
-        # デフォルト設定を取得してDRY原則に従う
         default_config = self.get_default_config()
         self.width = config.get("width", default_config["width"])
         self.height = config.get("height", default_config["height"])
@@ -56,16 +53,10 @@ class ResizeProcessor(BaseProcessor):
         Returns:
             np.ndarray: リサイズされた画像.
         """
-        # 入力画像のバリデーション
         self.validator.validate_image(image)
 
-        # 元の画像サイズを取得
         h, w = image.shape[:2]
-
-        # リサイズ後のサイズを計算
         target_w, target_h = self._calculate_target_size(w, h)
-
-        # リサイズ処理
         return cv2.resize(image, (target_w, target_h), interpolation=cv2.INTER_AREA)
 
     def _calculate_target_size(self, orig_width: int, orig_height: int) -> tuple:
@@ -88,7 +79,6 @@ class ResizeProcessor(BaseProcessor):
                 self.height if self.height is not None else orig_height,
             )
 
-        # アスペクト比を保持する場合
         aspect_ratio = orig_width / orig_height
 
         if self.aspect_ratio_mode == "width" and self.width is not None:

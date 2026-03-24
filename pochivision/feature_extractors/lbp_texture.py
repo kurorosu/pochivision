@@ -121,7 +121,6 @@ class LBPTextureExtractor(BaseFeatureExtractor):
                     else:
                         image = np.clip(image, 0, 255).astype(np.uint8)
 
-            # グレースケール変換
             if len(image.shape) == 3:
                 gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             elif len(image.shape) == 2:
@@ -136,16 +135,13 @@ class LBPTextureExtractor(BaseFeatureExtractor):
                 # リサイズプロセッサーを使用してリサイズ
                 gray_image = self.resize_processor.process(gray_image)
 
-            # LBP計算
             lbp = local_binary_pattern(gray_image, self.P, self.R, method=self.method)
 
-            # ヒストグラム計算
             n_bins = int(lbp.max() + 1)  # 実際のラベル数で固定次元化
             hist, _ = np.histogram(
                 lbp.ravel(), bins=n_bins, range=(0, n_bins), density=True
             )
 
-            # 統計量計算
             results = self._calculate_statistics(hist, lbp)
 
             # ヒストグラムの各ビンを特徴量として追加（オプション）

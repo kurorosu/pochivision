@@ -90,7 +90,6 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
         # 任意の形状の画像をBGR形式に変換（グレースケール対応）
         bgr_image = to_bgr(image)
 
-        # BGR to HSV変換
         hsv_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2HSV)
 
         results = {}
@@ -106,7 +105,6 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
         # チャンネル名の定義
         channel_names = ["hue", "saturation", "value"]
 
-        # 各チャンネルについて統計値を計算
         for i, channel_name in enumerate(channel_names):
             channel_data = hsv_image[:, :, i]
 

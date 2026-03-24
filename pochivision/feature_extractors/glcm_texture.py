@@ -121,7 +121,6 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
                 else:
                     image = np.clip(image, 0, 255).astype(np.uint8)
 
-        # グレースケール変換
         if len(image.shape) == 3:
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         elif len(image.shape) == 2:
@@ -144,7 +143,6 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
         results = {}
 
         try:
-            # GLCM行列の計算
             glcm = graycomatrix(
                 gray_image,
                 distances=self.distances,

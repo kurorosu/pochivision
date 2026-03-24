@@ -75,10 +75,7 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
         if image is None or image.size == 0:
             raise ValueError("Input image is empty or None")
 
-        # 輝度画像の取得
         brightness_image = self._get_brightness_image(image)
-
-        # 統計値の計算
         pixels = brightness_image.flatten().astype(np.float64)
 
         # ゼロピクセル除外の処理

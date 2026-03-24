@@ -37,7 +37,6 @@ class GrayscaleProcessor(BaseProcessor):
             config (Dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
-        # パラメータのバリデーション
         self.validator = GrayscaleValidator(config)
         self.validator.validate_config()
 
@@ -55,10 +54,8 @@ class GrayscaleProcessor(BaseProcessor):
             ProcessorValidationError: 入力画像が不正な場合.
             ProcessorRuntimeError: 画像変換に失敗した場合.
         """
-        # 入力画像のバリデーション
         self.validator.validate_image(image)
 
-        # グレースケール変換処理
         try:
             return to_grayscale(image)
         except Exception as e:

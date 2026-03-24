@@ -115,7 +115,6 @@ class HLACTextureExtractor(BaseFeatureExtractor):
                     else:
                         image = np.clip(image, 0, 255).astype(np.uint8)
 
-            # グレースケール変換
             if len(image.shape) == 3:
                 gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             elif len(image.shape) == 2:
@@ -130,7 +129,6 @@ class HLACTextureExtractor(BaseFeatureExtractor):
                 # リサイズプロセッサーを使用してリサイズ
                 gray_image = self.resize_processor.process(gray_image)
 
-            # HLAC特徴量抽出
             features = self._extract_hlac_features(gray_image)
 
             # 結果の辞書作成（ゼロパディングで正しい順序を保証）

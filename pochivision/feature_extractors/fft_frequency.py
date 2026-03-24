@@ -392,7 +392,6 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
                 else:
                     image = np.clip(image, 0, 255).astype(np.uint8)
 
-        # グレースケール変換
         if len(image.shape) == 3:
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         elif len(image.shape) == 2:
@@ -400,7 +399,6 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         else:
             raise ValueError(f"Input image must be 2D or 3D, got shape: {image.shape}")
 
-        # 画像を0-255の範囲に正規化
         gray_image = cv2.normalize(
             gray_image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
         )

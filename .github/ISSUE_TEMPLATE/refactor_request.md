@@ -1,7 +1,7 @@
 ---
 name: Refactor Request
 about: Propose a code refactoring
-labels: refactoring
+labels: refactor
 ---
 
 ## Summary

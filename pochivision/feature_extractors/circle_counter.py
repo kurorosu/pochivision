@@ -91,7 +91,6 @@ class CircleCounterExtractor(BaseFeatureExtractor):
         if image is None or image.size == 0:
             raise ValueError("Input image is empty or None")
 
-        # グレースケール変換
         gray = to_grayscale(image)
 
         # ガウシアンブラーでノイズ除去
@@ -100,7 +99,6 @@ class CircleCounterExtractor(BaseFeatureExtractor):
                 gray, (self.blur_kernel_size, self.blur_kernel_size), 0
             )
 
-        # 画像サイズから動的パラメータ計算
         height, width = gray.shape
         image_area = height * width
 
@@ -118,10 +116,7 @@ class CircleCounterExtractor(BaseFeatureExtractor):
             # 自動計算: 画像短辺の1/4（一般的に適切なデフォルト値）
             max_radius = min(height, width) // 4
 
-        # 最小距離の計算
         min_dist = max(1, int(max_radius * self.min_dist_ratio))
-
-        # HoughCircles検出
         circles = cv2.HoughCircles(
             gray,
             cv2.HOUGH_GRADIENT,
@@ -133,7 +128,6 @@ class CircleCounterExtractor(BaseFeatureExtractor):
             maxRadius=max_radius,
         )
 
-        # 検出結果の処理
         if circles is not None:
             circles = np.round(circles[0, :]).astype("int")
 
@@ -143,7 +137,6 @@ class CircleCounterExtractor(BaseFeatureExtractor):
         else:
             circles = np.array([])
 
-        # 特徴量計算
         return self._calculate_features(circles, image_area, max_radius)
 
     def _filter_by_circularity(

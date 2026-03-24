@@ -95,7 +95,6 @@ class ProfileProcessor:
 
         for processor_name in processor_names:
             try:
-                # プロセッサ固有の設定を取得
                 processor_config = self.profile_config.get(processor_name, {})
                 processor = get_processor(processor_name, processor_config)
                 processors.append(processor)
