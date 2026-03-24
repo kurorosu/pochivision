@@ -1,11 +1,23 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/),
-and this project adheres to [Semantic Versioning](https://semver.org/).
+このファイルは最新の changelog を保持します.
+最新でなくなった履歴は `changelogs/` 配下へ移動して管理します.
 
 ## [Unreleased]
+
+### Added
+- 無し
+
+### Changed
+- 無し
+
+### Fixed
+- 無し
+
+### Removed
+- 無し
+
+## [0.1.0] - 2026-03-24
 
 ### Added
 - `MaskCompositionProcessor`, `ConfigHandler`, `LogManager` のテストを新規作成. `tests/conftest.py` で共通 fixture を集約. ([#95](https://github.com/kurorosu/pochivision/pull/95))
@@ -115,4 +127,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## Archived Changelogs
 
-Older version histories are archived in the [`changelogs/`](changelogs/) directory.
+過去のバージョン履歴は [`changelogs/`](changelogs/) ディレクトリに保管しています.
