@@ -1,8 +1,8 @@
 # Archived Changelogs
 
-This directory contains archived changelog entries for older versions.
+このディレクトリには, 過去バージョンの changelog エントリをアーカイブしています.
 
-When the main `CHANGELOG.md` grows too long, move completed version entries here grouped by minor version series.
+メインの `CHANGELOG.md` が長くなったら, 完了したバージョンのエントリをマイナーバージョン系列ごとにここへ移動します.
 
 ## Files
 
@@ -10,9 +10,9 @@ When the main `CHANGELOG.md` grows too long, move completed version entries here
 |---|---|
 | `0.1.x.md` | 0.1.0 - 0.1.x |
 
-## How to Archive
+## アーカイブ手順
 
-1. Cut the version entries from `CHANGELOG.md` (keep `[Unreleased]` and the latest release)
-2. Create a new file named `X.Y.x.md` (e.g. `1.3.x.md`)
-3. Paste the entries into the new file
-4. Update the table above
+1. `CHANGELOG.md` からバージョンエントリを切り取る (`[Unreleased]` と最新リリースは残す)
+2. `X.Y.x.md` という名前で新しいファイルを作成する (例: `1.3.x.md`)
+3. 切り取ったエントリを新しいファイルに貼り付ける
+4. 上記のテーブルを更新する
