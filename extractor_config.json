@@ -1,0 +1,89 @@
+{
+  "input_directory": "image_aggregated/20250603_0/pipeline",
+  "output_directory": "extraction_results",
+  "output_format": "csv",
+  "feature_extractors": {
+    "brightness": {
+      "color_mode": "gray",
+      "exclude_zero_pixels": true
+    },
+    "rgb": {
+      "exclude_black_pixels": true
+    },
+    "hsv": {
+      "exclude_black_pixels": true
+    },
+    "glcm": {
+      "distances": [1],
+      "angles": [0, 45, 90, 135],
+      "levels": 256,
+      "symmetric": true,
+      "normed": true,
+      "properties": [
+        "contrast",
+        "dissimilarity",
+        "homogeneity",
+        "energy",
+        "correlation",
+        "ASM"]
+    },
+    "fft": {
+      "frequency_bands": [
+        [0.0, 0.1],
+        [0.1, 0.3],
+        [0.3, 0.5]
+      ],
+      "high_low_threshold": 0.2,
+      "directional_tolerance": 10.0,
+      "peak_threshold_ratio": 0.1,
+      "mm_per_pixel": 0.05
+    },
+    "swt": {
+      "wavelet": "db4",
+      "max_level": 1,
+      "multiscale": true
+    },
+    "lbp": {
+      "P": 8,
+      "R": 1,
+      "method": "uniform",
+      "resize_shape": [512, 512],
+      "include_histogram": true
+    },
+    "hlac": {
+      "order": 2,
+      "rotate_invariant": true,
+      "normalize": true,
+      "scales": [1.0, 0.75, 0.5],
+      "resize_shape": [512, 512]
+    },
+    "circle_counter": {
+      "min_radius": 5,
+      "max_radius": 0,
+      "min_dist_ratio": 0.8,
+      "param1": 50,
+      "param2": 30,
+      "circularity_threshold": 0.7,
+      "blur_kernel_size": 5,
+      "enable_circularity_filter": true
+    }
+  },
+  "file_filters": {
+    "extensions": [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"],
+    "case_sensitive": false
+  },
+  "output_settings": {
+    "include_filename": true,
+    "include_timestamp": true,
+    "csv_separator": ",",
+    "output_filename": "features.csv",
+    "enable_long_format": true,
+    "long_format_filename": "features_long.csv",
+    "class_extraction": {
+      "enabled": true,
+      "delimiter": "_",
+      "position": 2,
+      "column_name": "class"
+    }
+  }
+}

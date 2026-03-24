@@ -1,2 +1,74 @@
+[project]
+name = "pochivision"
+version = "0.1.0"
+description = "Real-time image capture and preprocessing engine for AI vision"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.1.7",
+    "colorlog>=6.8.2",
+    "dearpygui>=2.0.0",
+    "matplotlib>=3.8.4",
+    "numpy>=1.26.4",
+    "opencv-python>=4.10.0",
+    "pandas>=2.2.2",
+    "plotext>=5.2.8",
+    "pydantic>=2.7.1",
+    "pywavelets>=1.6.0",
+    "pyyaml>=6.0.1",
+    "questionary>=2.0.1",
+    "rich>=13.7.1",
+    "scikit-image>=0.24.0",
+    "scipy>=1.13.1",
+    "seaborn>=0.13.2",
+]
+
+[project.scripts]
+pochi = "pochivision.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[dependency-groups]
+dev = [
+    "black>=24.4.2",
+    "flake8>=7.0.0",
+    "isort>=5.13.2",
+    "mypy>=1.10.0",
+    "pre-commit>=4.0.0",
+    "pydocstyle>=6.3.0",
+    "pylint>=3.2.2",
+    "pytest>=8.2.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
 [tool.isort]
-profile = "black" 
+profile = "black"
+line_length = 88
+known_first_party = ["pochivision"]
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "."
+warn_return_any = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = ["cv2", "dearpygui.*"]
+ignore_missing_imports = true
+
+[tool.pydocstyle]
+convention = "google"
+add_ignore = ["D212"]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-v"

@@ -21,7 +21,7 @@
       },
       "grayscale": {},
       "std_bin": {
-        "threshold": 30
+        "threshold": 20
       },
       "otsu_bin": {},
       "gauss_adapt_bin": {
@@ -72,7 +72,9 @@
       },
       "mask_composition": {
         "target_image": "original",
-        "use_white_pixels": true
+        "use_white_pixels": true,
+        "enable_cropping": true,
+        "crop_margin": 5
       }
     },
     "all_para": {
@@ -96,8 +98,7 @@
         "resize",
         "clahe",
         "canny_edge",
-        "contour",
-        "mask_composition"
+        "contour"
       ],
       "mode": "parallel",
       "id_interval": 10,
@@ -162,6 +163,21 @@
       }
     }
   },
+  "recording": {
+    "select_format": "mjpg",
+    "available_formats": {
+      "mp4v": "MP4 - Standard compression",
+      "xvid": "XVID - Balanced compression",
+      "mjpg": "Motion JPEG - Low compression, high quality",
+      "lags": "Lagarith Lossless - No compression (Windows only)",
+      "ffv1": "FFmpeg Lossless - No compression",
+      "hfyu": "HuffYUV - No compression, high quality"
+    }
+  },
   "selected_camera_index": 0,
-  "id_interval": 1
+  "id_interval": 1,
+  "preview": {
+    "width": 1280,
+    "height": 720
+  }
 }
