@@ -9,7 +9,7 @@
 - 無し
 
 ### Changed
-- 無し
+- `pochivision/tools/` をプロジェクトルートの `tools/` に移動し, パッケージから分離. 未使用の dev 依存 `flake8`, `pylint` を削除. (NA.)
 
 ### Fixed
 - 無し
