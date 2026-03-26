@@ -14,7 +14,8 @@
 
 ### Fixed
 - HSV 特徴量抽出の Hue チャンネルに循環統計 (`scipy.stats.circmean` / `circstd`) を適用し, 0/180 境界付近の統計値を修正. 単位ラベルを `hue_0_179` に変更. ([#119](https://github.com/kurorosu/pochivision/pull/119))
-- CircleCounter の真円度フィルタを合成円ではなく実画像のエッジ輪郭に基づく評価に修正. (NA.)
+- CircleCounter の真円度フィルタを合成円ではなく実画像のエッジ輪郭に基づく評価に修正. ([#120](https://github.com/kurorosu/pochivision/pull/120))
+- `(H,W,1)` 形状画像で CLAHE/Equalize がクラッシュする問題を修正. `to_grayscale` で BGRA 画像に `COLOR_BGRA2GRAY` を使用するよう修正. (NA.)
 
 ### Removed
 - 無し
