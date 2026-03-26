@@ -46,6 +46,12 @@ class PipelineExecutor:
             id_interval (int): ID値が増加する画像数の間隔 デフォルトは1.
             config_fps (float): 設定ファイルから取得したFPS値. デフォルトは30.0.
         """
+        valid_modes = ("parallel", "pipeline")
+        if mode not in valid_modes:
+            raise ValueError(
+                f"Invalid pipeline mode: '{mode}'. Must be one of {valid_modes}."
+            )
+
         self.processors = processors
         self.capture_manager = capture_manager
         self.mode = mode
@@ -163,46 +169,56 @@ class PipelineExecutor:
         processed_images = {"original": image.copy()}
         if self.mode == "parallel":
             for processor in self.processors:
-                proc_start = time.time()
-                result = processor.process(image)
-                proc_time = time.time() - proc_start
-                self.logger.info(
-                    f"Processing time ({processor.name}): {proc_time:.3f} sec"
-                )
-                processed_images[processor.name] = result
-                self._save(result, processor.name)
+                try:
+                    proc_start = time.time()
+                    result = processor.process(image)
+                    proc_time = time.time() - proc_start
+                    self.logger.info(
+                        f"Processing time ({processor.name}): {proc_time:.3f} sec"
+                    )
+                    processed_images[processor.name] = result
+                    self._save(result, processor.name)
+                except Exception as e:
+                    self.logger.error(
+                        f"Processor '{processor.name}' failed, skipping: {e}"
+                    )
 
         elif self.mode == "pipeline":
             result = image
 
             for processor in self.processors:
-                proc_start = time.time()
+                try:
+                    proc_start = time.time()
 
-                # マスク合成プロセッサの場合、ターゲット画像を設定
-                if hasattr(processor, "target_image_name") and hasattr(
-                    processor, "set_target_image"
-                ):
-                    target_name = processor.target_image_name  # type: ignore
-                    if target_name in processed_images:
-                        processor.set_target_image(
-                            processed_images[target_name]
-                        )  # type: ignore
-                    else:
-                        self.logger.warning(
-                            f"Target image '{target_name}' not found "
-                            f"for {processor.name}"
-                        )
-                        # fallback to original
-                        processor.set_target_image(
-                            processed_images["original"]
-                        )  # type: ignore
+                    # マスク合成プロセッサの場合、ターゲット画像を設定
+                    if hasattr(processor, "target_image_name") and hasattr(
+                        processor, "set_target_image"
+                    ):
+                        target_name = processor.target_image_name  # type: ignore
+                        if target_name in processed_images:
+                            processor.set_target_image(
+                                processed_images[target_name]
+                            )  # type: ignore
+                        else:
+                            self.logger.warning(
+                                f"Target image '{target_name}' not found "
+                                f"for {processor.name}"
+                            )
+                            # fallback to original
+                            processor.set_target_image(
+                                processed_images["original"]
+                            )  # type: ignore
 
-                result = processor.process(result)
-                proc_time = time.time() - proc_start
-                self.logger.info(
-                    f"Processing time ({processor.name}): {proc_time:.3f} sec"
-                )
-                processed_images[processor.name] = result
+                    result = processor.process(result)
+                    proc_time = time.time() - proc_start
+                    self.logger.info(
+                        f"Processing time ({processor.name}): {proc_time:.3f} sec"
+                    )
+                    processed_images[processor.name] = result
+                except Exception as e:
+                    self.logger.error(
+                        f"Processor '{processor.name}' failed, skipping: {e}"
+                    )
 
             self._save(result, "pipeline")
 
