@@ -10,10 +10,10 @@
 
 ### Changed
 - `pochivision/tools/` をプロジェクトルートの `tools/` に移動し, パッケージから分離. 未使用の dev 依存 `flake8`, `pylint` を削除. ([#117](https://github.com/kurorosu/pochivision/pull/117))
-- `test_blur_processors.py` のモックテスト 2 件を削除し, 全テストを古典派テストに統一. (NA.)
+- `test_blur_processors.py` のモックテスト 2 件を削除し, 全テストを古典派テストに統一. ([#118](https://github.com/kurorosu/pochivision/pull/118))
 
 ### Fixed
-- 無し
+- HSV 特徴量抽出の Hue チャンネルに循環統計 (`scipy.stats.circmean` / `circstd`) を適用し, 0/180 境界付近の統計値を修正. 単位ラベルを `hue_0_179` に変更. (NA.)
 
 ### Removed
 - 無し
