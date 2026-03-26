@@ -16,7 +16,8 @@
 - HSV 特徴量抽出の Hue チャンネルに循環統計 (`scipy.stats.circmean` / `circstd`) を適用し, 0/180 境界付近の統計値を修正. 単位ラベルを `hue_0_179` に変更. ([#119](https://github.com/kurorosu/pochivision/pull/119))
 - CircleCounter の真円度フィルタを合成円ではなく実画像のエッジ輪郭に基づく評価に修正. ([#120](https://github.com/kurorosu/pochivision/pull/120))
 - `(H,W,1)` 形状画像で CLAHE/Equalize がクラッシュする問題を修正. `to_grayscale` で BGRA 画像に `COLOR_BGRA2GRAY` を使用するよう修正. ([#121](https://github.com/kurorosu/pochivision/pull/121))
-- モーションブラーカーネル構築を `cv2.line` 方式に変更し, 斜め角度でのギャップを解消. (NA.)
+- モーションブラーカーネル構築を `cv2.line` 方式に変更し, 斜め角度でのギャップを解消. ([#122](https://github.com/kurorosu/pochivision/pull/122))
+- FFT 方向エネルギーの角度ラップアラウンド (0/180 境界) に対応. スペクトルエントロピーのゼロ要素バイアスを修正. (NA.)
 
 ### Removed
 - 無し
