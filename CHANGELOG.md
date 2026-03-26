@@ -11,6 +11,7 @@
 ### Changed
 - `pochivision/tools/` をプロジェクトルートの `tools/` に移動し, パッケージから分離. 未使用の dev 依存 `flake8`, `pylint` を削除. ([#117](https://github.com/kurorosu/pochivision/pull/117))
 - `test_blur_processors.py` のモックテスト 2 件を削除し, 全テストを古典派テストに統一. ([#118](https://github.com/kurorosu/pochivision/pull/118))
+- FFT を1回計算して全ヘルパーで共有するようリファクタリング. HLAC 2次パターンの自己ペアを除外し特徴次元を 45→37 に修正. (NA.)
 
 ### Fixed
 - HSV 特徴量抽出の Hue チャンネルに循環統計 (`scipy.stats.circmean` / `circstd`) を適用し, 0/180 境界付近の統計値を修正. 単位ラベルを `hue_0_179` に変更. ([#119](https://github.com/kurorosu/pochivision/pull/119))
@@ -19,7 +20,7 @@
 - モーションブラーカーネル構築を `cv2.line` 方式に変更し, 斜め角度でのギャップを解消. ([#122](https://github.com/kurorosu/pochivision/pull/122))
 - FFT 方向エネルギーの 0/180 度境界処理に対応. スペクトルエントロピーのゼロ要素バイアスを修正. ([#123](https://github.com/kurorosu/pochivision/pull/123))
 - `PipelineExecutor` に `mode` 値の検証を追加し, 個別プロセッサの例外でパイプライン全体が中断しないよう修正. ([#124](https://github.com/kurorosu/pochivision/pull/124))
-- resize の補間方法を拡大時に `INTER_LINEAR` に切替, edge_detection の float 判定を `np.floating` に修正, CLAHE バリデータで tuple を許容. (NA.)
+- resize の補間方法を拡大時に `INTER_LINEAR` に切替, edge_detection の float 判定を `np.floating` に修正, CLAHE バリデータで tuple を許容. ([#125](https://github.com/kurorosu/pochivision/pull/125))
 
 ### Removed
 - 無し
