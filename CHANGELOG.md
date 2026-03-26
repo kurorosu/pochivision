@@ -9,7 +9,8 @@
 - 無し
 
 ### Changed
-- `pochivision/tools/` をプロジェクトルートの `tools/` に移動し, パッケージから分離. 未使用の dev 依存 `flake8`, `pylint` を削除. (NA.)
+- `pochivision/tools/` をプロジェクトルートの `tools/` に移動し, パッケージから分離. 未使用の dev 依存 `flake8`, `pylint` を削除. ([#117](https://github.com/kurorosu/pochivision/pull/117))
+- `test_blur_processors.py` のモックテスト 2 件を削除し, 全テストを古典派テストに統一. (NA.)
 
 ### Fixed
 - 無し
