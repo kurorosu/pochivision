@@ -58,7 +58,9 @@ class CannyEdgeProcessor(BaseProcessor):
         gray_image = to_grayscale(image)
 
         if gray_image.dtype != np.uint8:
-            if np.max(gray_image) <= 1.0 and gray_image.dtype == np.float32:
+            if np.max(gray_image) <= 1.0 and np.issubdtype(
+                gray_image.dtype, np.floating
+            ):
                 gray_image = (gray_image * 255).astype(np.uint8)
             elif np.max(gray_image) <= 255:
                 gray_image = gray_image.astype(np.uint8)

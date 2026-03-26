@@ -57,7 +57,12 @@ class ResizeProcessor(BaseProcessor):
 
         h, w = image.shape[:2]
         target_w, target_h = self._calculate_target_size(w, h)
-        return cv2.resize(image, (target_w, target_h), interpolation=cv2.INTER_AREA)
+        # 縮小時は INTER_AREA, 拡大時は INTER_LINEAR が適切
+        if target_w * target_h < w * h:
+            interpolation = cv2.INTER_AREA
+        else:
+            interpolation = cv2.INTER_LINEAR
+        return cv2.resize(image, (target_w, target_h), interpolation=interpolation)
 
     def _calculate_target_size(self, orig_width: int, orig_height: int) -> tuple:
         """
