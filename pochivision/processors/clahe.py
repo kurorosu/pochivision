@@ -77,8 +77,10 @@ class CLAHEProcessor(BaseProcessor):
         self.validator.validate_image(image)
 
         try:
-            if len(image.shape) == 2 or image.shape[2] == 1:
+            if len(image.shape) == 2:
                 return self.clahe.apply(image)
+            if image.shape[2] == 1:
+                return self.clahe.apply(image.squeeze(axis=2))
 
             # カラー画像の処理
             if self.color_mode == "gray":
