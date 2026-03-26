@@ -18,7 +18,8 @@
 - `(H,W,1)` 形状画像で CLAHE/Equalize がクラッシュする問題を修正. `to_grayscale` で BGRA 画像に `COLOR_BGRA2GRAY` を使用するよう修正. ([#121](https://github.com/kurorosu/pochivision/pull/121))
 - モーションブラーカーネル構築を `cv2.line` 方式に変更し, 斜め角度でのギャップを解消. ([#122](https://github.com/kurorosu/pochivision/pull/122))
 - FFT 方向エネルギーの 0/180 度境界処理に対応. スペクトルエントロピーのゼロ要素バイアスを修正. ([#123](https://github.com/kurorosu/pochivision/pull/123))
-- `PipelineExecutor` に `mode` 値の検証を追加し, 個別プロセッサの例外でパイプライン全体が中断しないよう修正. (NA.)
+- `PipelineExecutor` に `mode` 値の検証を追加し, 個別プロセッサの例外でパイプライン全体が中断しないよう修正. ([#124](https://github.com/kurorosu/pochivision/pull/124))
+- resize の補間方法を拡大時に `INTER_LINEAR` に切替, edge_detection の float 判定を `np.floating` に修正, CLAHE バリデータで tuple を許容. (NA.)
 
 ### Removed
 - 無し

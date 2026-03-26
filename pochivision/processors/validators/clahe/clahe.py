@@ -48,7 +48,7 @@ class CLAHEInputValidator(BaseValidator):
 
         # tile_grid_sizeのチェック
         tile_grid_size = self.config.get("tile_grid_size", [8, 8])
-        if not isinstance(tile_grid_size, list) or len(tile_grid_size) != 2:
+        if not isinstance(tile_grid_size, (list, tuple)) or len(tile_grid_size) != 2:
             raise ProcessorValidationError(
                 f"Invalid tile_grid_size '{tile_grid_size}'. "
                 "Must be a list of 2 positive integers."
