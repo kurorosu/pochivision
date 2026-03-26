@@ -233,6 +233,9 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
 
         angle = (angle + 360) % 180  # 0〜180度に正規化
         diff = np.abs(angle - angle_deg)
+        diff = np.minimum(
+            diff, 180 - diff
+        )  # 0度と180度は同一方向のため短い方の角度差を採用
         mask = diff <= tolerance_deg
 
         directional_energy = np.sum(magnitude[mask])
@@ -283,9 +286,9 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
             return 0.0
 
         prob = magnitude / total
-        # エントロピー計算（0 log 0 = 0として処理）
-        prob_safe = prob + 1e-12  # 数値安定性のための小さな値
-        entropy = -np.sum(prob * np.log2(prob_safe))
+        # エントロピー計算（0 log 0 = 0 として処理: ゼロ要素を除外）
+        nonzero = prob > 0
+        entropy = -np.sum(prob[nonzero] * np.log2(prob[nonzero]))
         return float(entropy)
 
     def _compute_directional_entropy(
@@ -315,6 +318,9 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
 
         angle = (angle + 360) % 180  # 0〜180度に正規化
         diff = np.abs(angle - angle_deg)
+        diff = np.minimum(
+            diff, 180 - diff
+        )  # 0度と180度は同一方向のため短い方の角度差を採用
         mask = diff <= tolerance_deg
 
         # 指定方向のスペクトラムを抽出
