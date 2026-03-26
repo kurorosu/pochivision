@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import cv2
 import numpy as np
+from scipy.stats import circmean, circstd
 
 from pochivision.utils.image import to_bgr
 
@@ -29,12 +30,15 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
     設定により、RGB値がすべて0のピクセルを計算から除外することができます。
     """
 
+    # OpenCV の HSV Hue 範囲 (0-179)
+    _HUE_HIGH = 180
+
     # 特徴量の単位定義
     _FEATURE_UNITS = {
-        "hue_mean": "degree",
-        "hue_median": "degree",
-        "hue_variance": "squared_degree",
-        "hue_std_dev": "degree",
+        "hue_mean": "hue_0_179",
+        "hue_median": "hue_0_179",
+        "hue_variance": "hue_0_179_squared",
+        "hue_std_dev": "hue_0_179",
         "hue_cv": "ratio",
         "saturation_mean": "intensity",
         "saturation_median": "intensity",
@@ -122,6 +126,11 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
                 variance_val = 0.0
                 std_dev_val = 0.0
                 cv_val = float("inf")
+            elif channel_name == "hue":
+                # Hue は循環データのため循環統計を使用
+                mean_val, median_val, variance_val, std_dev_val, cv_val = (
+                    self._compute_circular_stats(pixels)
+                )
             else:
                 mean_val = float(np.mean(pixels))
                 median_val = float(np.median(pixels))
@@ -141,6 +150,44 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
             results[f"{channel_name}_cv"] = cv_val
 
         return results
+
+    def _compute_circular_stats(
+        self, pixels: np.ndarray
+    ) -> tuple[float, float, float, float, float]:
+        """
+        Hue チャンネル用の循環統計を計算する.
+
+        OpenCV の Hue は [0, 180) の循環量であり, 線形統計では
+        境界付近 (赤付近: H~0 と H~179) で不正確になるため,
+        循環統計 (circular statistics) を使用する.
+
+        Args:
+            pixels: Hue ピクセル値の配列 (float64, 範囲 [0, 180)).
+
+        Returns:
+            (mean, median, variance, std_dev, cv) のタプル.
+        """
+        high = self._HUE_HIGH
+
+        # ラジアンに変換して循環統計を計算
+        radians = pixels * (2 * np.pi / high)
+        mean_rad = circmean(radians, high=2 * np.pi, low=0)
+        std_rad = circstd(radians, high=2 * np.pi, low=0)
+
+        # Hue スケール [0, 180) に戻す
+        mean_val = float(mean_rad * high / (2 * np.pi))
+        std_dev_val = float(std_rad * high / (2 * np.pi))
+        variance_val = std_dev_val**2
+
+        # 循環中央値: 循環平均を中心にシフトして線形中央値を取り, 戻す
+        shift = high / 2 - mean_val
+        shifted = (pixels + shift) % high
+        median_shifted = float(np.median(shifted))
+        median_val = (median_shifted - shift) % high
+
+        cv_val = float(std_dev_val / mean_val) if mean_val != 0 else float("inf")
+
+        return mean_val, median_val, variance_val, std_dev_val, cv_val
 
     @staticmethod
     def get_default_config() -> Dict[str, Any]:
