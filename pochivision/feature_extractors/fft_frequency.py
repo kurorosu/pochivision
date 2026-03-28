@@ -257,7 +257,9 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         peaks = (magnitude == max_local) & (
             magnitude > magnitude.max() * threshold_ratio
         )
-        return int(np.sum(peaks)), float(magnitude.max())
+        num_peaks = int(np.sum(peaks))
+        max_peak_amp = float(magnitude[peaks].max()) if num_peaks > 0 else 0.0
+        return num_peaks, max_peak_amp
 
     def _compute_spectral_entropy(self, magnitude: np.ndarray) -> float:
         """
