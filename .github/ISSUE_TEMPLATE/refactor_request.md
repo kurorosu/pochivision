@@ -24,6 +24,10 @@ labels: refactor
 
 - [ ]
 
----
+## Branch
 
-> **Branch prefix**: `refactor/`
+`refactor/`
+
+## Label
+
+`refactor`

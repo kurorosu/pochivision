@@ -28,6 +28,10 @@ labels: enhancement
 
 <!-- Any other context, references, or screenshots. -->
 
----
+## Branch
 
-> **Branch prefix**: `feature/`
+`feat/`
+
+## Label
+
+`enhancement`
