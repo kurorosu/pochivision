@@ -17,7 +17,8 @@
 - FFT 前の uint8 正規化を削除し, float64 のまま処理するよう変更. コントラスト情報が保持される. ([#137](https://github.com/kurorosu/pochivision/pull/137))
 - FFT のエネルギー・エントロピー計算から DC 成分を除外し, AC 成分のみで特徴量を計算するよう修正. ([#138](https://github.com/kurorosu/pochivision/pull/138))
 - FFT 帯域エネルギーの最終帯域を上限なしに変更し, 非正方形画像でも合計が ~1.0 になるよう修正. ([#145](https://github.com/kurorosu/pochivision/pull/145))
-- FFT 抽出で最小画像サイズ (4x4) のバリデーションを追加. 極小画像で全特徴量がサイレントにゼロになる問題を解消. (NA.)
+- FFT 抽出で最小画像サイズ (4x4) のバリデーションを追加. 極小画像で全特徴量がサイレントにゼロになる問題を解消. ([#146](https://github.com/kurorosu/pochivision/pull/146))
+- FFT `max_peak_amp` を検出ピーク内の最大振幅に修正 (グローバル最大値ではなく). (NA.)
 
 ### Removed
 - 無し
