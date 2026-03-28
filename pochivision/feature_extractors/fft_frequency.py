@@ -6,6 +6,8 @@ import cv2
 import numpy as np
 from scipy.ndimage import maximum_filter
 
+from pochivision.capturelib.log_manager import LogManager
+
 from .base import BaseFeatureExtractor
 from .registry import register_feature_extractor
 
@@ -75,6 +77,10 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         self.directional_tolerance = self.config["directional_tolerance"]
         self.peak_threshold_ratio = self.config["peak_threshold_ratio"]
         self.mm_per_pixel = self.config.get("mm_per_pixel")
+        if self.mm_per_pixel is not None and self.mm_per_pixel <= 0:
+            raise ValueError(
+                f"mm_per_pixel must be a positive number, got {self.mm_per_pixel}"
+            )
 
     def _compute_fft_data(
         self, image: np.ndarray
@@ -458,10 +464,8 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
                     results[key] = 0.0
 
         except Exception:
-            # エラーが発生した場合、すべて0で埋める
-            feature_names = self.get_feature_names()
-            results = {name: 0.0 for name in feature_names}
-            return results
+            LogManager().get_logger().exception("FFT feature extraction failed")
+            raise
 
         return results
 
