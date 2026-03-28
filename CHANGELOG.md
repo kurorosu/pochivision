@@ -13,7 +13,8 @@
 
 ### Fixed
 - FFT 周波数正規化を対角線距離基準から軸方向最大距離基準に修正し, 帯域カバレッジを改善. ([#135](https://github.com/kurorosu/pochivision/pull/135))
-- FFT 計算前に Hanning 窓関数を適用し, 画像境界のスペクトルリークを抑制. (NA.)
+- FFT 計算前に Hanning 窓関数を適用し, 画像境界のスペクトルリークを抑制. ([#136](https://github.com/kurorosu/pochivision/pull/136))
+- FFT 前の uint8 正規化を削除し, float64 のまま処理するよう変更. コントラスト情報が保持される. (NA.)
 
 ### Removed
 - 無し
