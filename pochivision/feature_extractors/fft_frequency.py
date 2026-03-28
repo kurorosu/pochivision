@@ -17,8 +17,13 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
     """
     画像のFFT（高速フーリエ変換）周波数領域特徴量を抽出するクラス.
 
-    FFTは画像の周波数成分を解析し、テクスチャや周期性の特徴を抽出します。
-    空間領域の画像を周波数領域に変換することで、画像の周波数特性を定量化できます。
+    FFTは画像の周波数成分を解析し, テクスチャや周期性の特徴を抽出する.
+    空間領域の画像を周波数領域に変換することで, 画像の周波数特性を定量化できる.
+
+    前処理:
+    - グレースケール変換後, float64 のまま処理 (コントラスト情報を保持)
+    - Hanning 窓関数を適用 (画像境界のスペクトルリークを抑制)
+    - DC 成分 (平均輝度) を除外し, AC 成分のみで特徴量を計算
 
     抽出する特徴量:
     - high_low_ratio: 高周波/低周波エネルギー比 [ratio]
@@ -29,12 +34,20 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
     - max_peak_amp: 最大ピーク振幅 [amplitude]
     - band_energy: 周波数帯域別エネルギー [ratio]
     - spectral_centroid: スペクトル重心 [cycle/mm or cycle/pixel]
-    - spectral_entropy: スペクトラム全体のエントロピー [bits]
-    - horizontal_entropy: 水平方向スペクトラムエントロピー [bits]
-    - vertical_entropy: 垂直方向スペクトラムエントロピー [bits]
-    - band_entropy: 周波数帯域別エントロピー [bits]
+    - spectral_entropy: スペクトラム全体の正規化エントロピー [normalized, 0-1]
+    - horizontal_entropy: 水平方向の正規化エントロピー [normalized, 0-1]
+    - vertical_entropy: 垂直方向の正規化エントロピー [normalized, 0-1]
+    - band_entropy: 周波数帯域別の正規化エントロピー [normalized, 0-1]
 
-    設定により、周波数帯域、閾値、ピクセル解像度などを調整できます。
+    設計上の制約:
+    - 最小画像サイズ: 4x4. それ未満は ValueError を送出.
+    - Hanning 窓により画像端のピクセルがゼロに減衰するため,
+      max_peak_amp 等の絶対値はピクセル位置に依存する.
+    - 非正方形画像では freq_norm を max(cx, cy) で正規化するため,
+      短辺方向の Nyquist 周波数は 0.5 に達しない.
+      最終帯域は上限なしで対角線分を含め, 帯域合計 ~1.0 を保証する.
+
+    詳細は docs/fft_features.md を参照.
     """
 
     # 特徴量の単位定義
