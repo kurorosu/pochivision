@@ -18,7 +18,8 @@
 - FFT のエネルギー・エントロピー計算から DC 成分を除外し, AC 成分のみで特徴量を計算するよう修正. ([#138](https://github.com/kurorosu/pochivision/pull/138))
 - FFT 帯域エネルギーの最終帯域を上限なしに変更し, 非正方形画像でも合計が ~1.0 になるよう修正. ([#145](https://github.com/kurorosu/pochivision/pull/145))
 - FFT 抽出で最小画像サイズ (4x4) のバリデーションを追加. 極小画像で全特徴量がサイレントにゼロになる問題を解消. ([#146](https://github.com/kurorosu/pochivision/pull/146))
-- FFT `max_peak_amp` を検出ピーク内の最大振幅に修正 (グローバル最大値ではなく). (NA.)
+- FFT `max_peak_amp` を検出ピーク内の最大振幅に修正 (グローバル最大値ではなく). ([#147](https://github.com/kurorosu/pochivision/pull/147))
+- FFT エントロピーを正規化エントロピー (`entropy / log2(N)`, [0, 1] 範囲) に変更し, 帯域間で比較可能に. (NA.)
 
 ### Removed
 - 無し
