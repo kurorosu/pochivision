@@ -97,9 +97,13 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         f = np.fft.fft2(image * window)
         fshift = np.fft.fftshift(f)
         magnitude = np.abs(fshift)
-        power_spectrum = magnitude**2
 
         cy, cx = h // 2, w // 2
+
+        # DC 成分 (平均輝度) を除外し, AC 成分のみで特徴量を計算する
+        magnitude[cy, cx] = 0
+
+        power_spectrum = magnitude**2
         max_dim = max(cx, cy)
 
         y, x = np.ogrid[:h, :w]
