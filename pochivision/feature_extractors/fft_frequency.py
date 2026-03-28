@@ -44,15 +44,15 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         "num_peaks": "count",
         "max_peak_amp": "amplitude",
         "spectral_centroid": "cycle/mm_or_cycle/pixel",
-        "spectral_entropy": "bits",
-        "horizontal_entropy": "bits",
-        "vertical_entropy": "bits",
+        "spectral_entropy": "normalized",
+        "horizontal_entropy": "normalized",
+        "vertical_entropy": "normalized",
         "band_1_0.00_0.10": "ratio",
         "band_2_0.10_0.30": "ratio",
         "band_3_0.30_0.50": "ratio",
-        "band_1_0.00_0.10_entropy": "bits",
-        "band_2_0.10_0.30_entropy": "bits",
-        "band_3_0.30_0.50_entropy": "bits",
+        "band_1_0.00_0.10_entropy": "normalized",
+        "band_2_0.10_0.30_entropy": "normalized",
+        "band_3_0.30_0.50_entropy": "normalized",
     }
 
     def __init__(
@@ -263,23 +263,27 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
 
     def _compute_spectral_entropy(self, magnitude: np.ndarray) -> float:
         """
-        スペクトラムのエントロピーを計算する.
+        正規化スペクトラムエントロピーを計算する.
+
+        Shannon エントロピーを log2(N) で正規化し, [0, 1] の範囲に変換する.
+        これにより異なるピクセル数の領域間でエントロピーを直接比較できる.
 
         Args:
             magnitude (np.ndarray): スペクトラムの振幅
 
         Returns:
-            float: スペクトラルエントロピー
+            float: 正規化スペクトラルエントロピー (0.0〜1.0)
         """
         total = np.sum(magnitude)
-        if total == 0:
+        n = magnitude.size
+        if total == 0 or n <= 1:
             return 0.0
 
         prob = magnitude / total
-        # エントロピー計算（0 log 0 = 0 として処理: ゼロ要素を除外）
         nonzero = prob > 0
         entropy = -np.sum(prob[nonzero] * np.log2(prob[nonzero]))
-        return float(entropy)
+        max_entropy = np.log2(n)
+        return float(entropy / max_entropy)
 
     def _compute_directional_entropy(
         self,

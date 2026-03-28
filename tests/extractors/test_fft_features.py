@@ -331,15 +331,15 @@ class TestFFTFrequencyExtractor:
             "num_peaks[count]",
             "max_peak_amp[amplitude]",
             "spectral_centroid[cycle/mm_or_cycle/pixel]",
-            "spectral_entropy[bits]",
-            "horizontal_entropy[bits]",
-            "vertical_entropy[bits]",
+            "spectral_entropy[normalized]",
+            "horizontal_entropy[normalized]",
+            "vertical_entropy[normalized]",
             "band_1_0.00_0.10[ratio]",
             "band_2_0.10_0.30[ratio]",
             "band_3_0.30_0.50[ratio]",
-            "band_1_0.00_0.10_entropy[bits]",
-            "band_2_0.10_0.30_entropy[bits]",
-            "band_3_0.30_0.50_entropy[bits]",
+            "band_1_0.00_0.10_entropy[normalized]",
+            "band_2_0.10_0.30_entropy[normalized]",
+            "band_3_0.30_0.50_entropy[normalized]",
         ]
 
         assert len(feature_names) == len(expected_features)
@@ -385,15 +385,15 @@ class TestFFTFrequencyExtractor:
             "num_peaks[count]",
             "max_peak_amp[amplitude]",
             "spectral_centroid[cycle/mm_or_cycle/pixel]",
-            "spectral_entropy[bits]",
-            "horizontal_entropy[bits]",
-            "vertical_entropy[bits]",
+            "spectral_entropy[normalized]",
+            "horizontal_entropy[normalized]",
+            "vertical_entropy[normalized]",
             "band_1_0.00_0.10[ratio]",
             "band_2_0.10_0.30[ratio]",
             "band_3_0.30_0.50[ratio]",
-            "band_1_0.00_0.10_entropy[bits]",
-            "band_2_0.10_0.30_entropy[bits]",
-            "band_3_0.30_0.50_entropy[bits]",
+            "band_1_0.00_0.10_entropy[normalized]",
+            "band_2_0.10_0.30_entropy[normalized]",
+            "band_3_0.30_0.50_entropy[normalized]",
         ]
         print(f"単位付き特徴量名: {unit_names}")
         assert (
@@ -410,15 +410,15 @@ class TestFFTFrequencyExtractor:
             "num_peaks": "count",
             "max_peak_amp": "amplitude",
             "spectral_centroid": "cycle/mm_or_cycle/pixel",
-            "spectral_entropy": "bits",
-            "horizontal_entropy": "bits",
-            "vertical_entropy": "bits",
+            "spectral_entropy": "normalized",
+            "horizontal_entropy": "normalized",
+            "vertical_entropy": "normalized",
             "band_1_0.00_0.10": "ratio",
             "band_2_0.10_0.30": "ratio",
             "band_3_0.30_0.50": "ratio",
-            "band_1_0.00_0.10_entropy": "bits",
-            "band_2_0.10_0.30_entropy": "bits",
-            "band_3_0.30_0.50_entropy": "bits",
+            "band_1_0.00_0.10_entropy": "normalized",
+            "band_2_0.10_0.30_entropy": "normalized",
+            "band_3_0.30_0.50_entropy": "normalized",
         }
         print(f"特徴量単位辞書: {units}")
         assert units == expected_units, f"Expected {expected_units}, got {units}"
@@ -614,13 +614,13 @@ class TestFFTFrequencyExtractor:
 
     # --- spectral_entropy ---
 
-    def test_spectral_entropy_random_above_10(self):
-        """ランダム画像のスペクトルエントロピーは > 10 bits (高エントロピー)."""
+    def test_spectral_entropy_random_above_08(self):
+        """ランダム画像の正規化エントロピーは > 0.8 (高エントロピー)."""
         np.random.seed(42)
         features = self.extractor.extract(
             np.random.randint(0, 256, (64, 64), dtype=np.uint8)
         )
-        assert features["spectral_entropy"] > 10.0
+        assert features["spectral_entropy"] > 0.8
 
     def test_spectral_entropy_stripe_below_random(self):
         """ストライプ画像のエントロピーはランダムより低い."""
