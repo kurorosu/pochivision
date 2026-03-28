@@ -6,10 +6,10 @@
 ## [Unreleased]
 
 ### Added
-- 無し
+- GLCM の振る舞いテスト 17 件を追加. 均一画像, チェッカーボード, グラデーション, ランダム画像で特徴量値を検証. (NA.)
 
 ### Changed
-- GLCM に `resize_shape` オプションを追加. (NA.)
+- GLCM に `resize_shape` オプションを追加. ([#163](https://github.com/kurorosu/pochivision/pull/163))
 
 ### Fixed
 - GLCM の `cv2.normalize(NORM_MINMAX)` を削除し, uint8 変換と整数除算量子化に変更. コントラスト情報が保持される. ([#160](https://github.com/kurorosu/pochivision/pull/160))

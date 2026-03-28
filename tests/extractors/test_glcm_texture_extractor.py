@@ -519,3 +519,157 @@ class TestGLCMTextureExtractor:
         ), "抽出された特徴量のキーと基本特徴量名が一致しません"
 
         print("GLCM特徴量名・単位テスト: 成功")
+
+
+class TestGLCMBehavior:
+    """GLCM 特徴量の振る舞いテスト."""
+
+    _CONFIG = {
+        "distances": [1],
+        "angles": [0, 45, 90, 135],
+        "levels": 256,
+        "symmetric": True,
+        "normed": True,
+        "properties": [
+            "contrast",
+            "dissimilarity",
+            "homogeneity",
+            "energy",
+            "correlation",
+            "ASM",
+        ],
+        "resize_shape": None,
+    }
+
+    @staticmethod
+    def _make_uniform(size: int = 64, value: int = 128) -> np.ndarray:
+        return np.full((size, size), value, dtype=np.uint8)
+
+    @staticmethod
+    def _make_checker(size: int = 64) -> np.ndarray:
+        img = np.zeros((size, size), dtype=np.uint8)
+        img[0::2, 0::2] = 255
+        img[1::2, 1::2] = 255
+        return img
+
+    @staticmethod
+    def _make_gradient(size: int = 64) -> np.ndarray:
+        img = np.zeros((size, size), dtype=np.uint8)
+        for i in range(size):
+            img[i, :] = int(i * 255 / (size - 1))
+        return img
+
+    @staticmethod
+    def _make_random(size: int = 64) -> np.ndarray:
+        np.random.seed(42)
+        return np.random.randint(0, 256, (size, size), dtype=np.uint8)
+
+    def setup_method(self):
+        """テストメソッドごとに extractor を初期化."""
+        self.ext = GLCMTextureExtractor(config=self._CONFIG)
+
+    # --- 均一画像 ---
+
+    def test_uniform_contrast_is_zero(self):
+        """均一画像の contrast は全方向で 0."""
+        f = self.ext.extract(self._make_uniform())
+        for angle in [0, 45, 90, 135]:
+            assert f[f"contrast_1_{angle}"] == 0.0
+
+    def test_uniform_homogeneity_is_one(self):
+        """均一画像の homogeneity は全方向で 1.0."""
+        f = self.ext.extract(self._make_uniform())
+        for angle in [0, 45, 90, 135]:
+            assert f[f"homogeneity_1_{angle}"] == 1.0
+
+    def test_uniform_energy_is_one(self):
+        """均一画像の energy は全方向で 1.0."""
+        f = self.ext.extract(self._make_uniform())
+        for angle in [0, 45, 90, 135]:
+            assert f[f"energy_1_{angle}"] == 1.0
+
+    def test_uniform_asm_is_one(self):
+        """均一画像の ASM は全方向で 1.0."""
+        f = self.ext.extract(self._make_uniform())
+        for angle in [0, 45, 90, 135]:
+            assert f[f"ASM_1_{angle}"] == 1.0
+
+    def test_uniform_dissimilarity_is_zero(self):
+        """均一画像の dissimilarity は全方向で 0."""
+        f = self.ext.extract(self._make_uniform())
+        for angle in [0, 45, 90, 135]:
+            assert f[f"dissimilarity_1_{angle}"] == 0.0
+
+    # --- チェッカーボード ---
+
+    def test_checker_contrast_high_in_axis_directions(self):
+        """チェッカーボードは 0 度と 90 度で contrast が非常に高い (65025)."""
+        f = self.ext.extract(self._make_checker())
+        assert f["contrast_1_0"] > 60000
+        assert f["contrast_1_90"] > 60000
+
+    def test_checker_contrast_zero_in_diagonal(self):
+        """チェッカーボードは 45 度と 135 度で contrast が 0."""
+        f = self.ext.extract(self._make_checker())
+        assert f["contrast_1_45"] < 1.0
+        assert f["contrast_1_135"] < 1.0
+
+    def test_checker_correlation_negative_in_axis(self):
+        """チェッカーボードは 0 度と 90 度で correlation が -1 (反相関)."""
+        f = self.ext.extract(self._make_checker())
+        assert f["correlation_1_0"] < -0.9
+        assert f["correlation_1_90"] < -0.9
+
+    # --- グラデーション ---
+
+    def test_gradient_horizontal_contrast_zero(self):
+        """垂直グラデーションは水平方向 (0 度) の contrast が 0."""
+        f = self.ext.extract(self._make_gradient())
+        assert f["contrast_1_0"] == 0.0
+
+    def test_gradient_horizontal_homogeneity_one(self):
+        """垂直グラデーションは水平方向 (0 度) の homogeneity が 1.0."""
+        f = self.ext.extract(self._make_gradient())
+        assert f["homogeneity_1_0"] == 1.0
+
+    def test_gradient_horizontal_correlation_one(self):
+        """垂直グラデーションは水平方向 (0 度) の correlation が ~1.0."""
+        f = self.ext.extract(self._make_gradient())
+        assert f["correlation_1_0"] > 0.99
+
+    def test_gradient_vertical_contrast_positive(self):
+        """垂直グラデーションは垂直方向 (90 度) の contrast が > 0."""
+        f = self.ext.extract(self._make_gradient())
+        assert f["contrast_1_90"] > 1.0
+
+    # --- ランダム vs 均一 ---
+
+    def test_random_contrast_higher_than_uniform(self):
+        """ランダム画像の contrast は均一画像より大きい."""
+        f_rand = self.ext.extract(self._make_random())
+        f_uni = self.ext.extract(self._make_uniform())
+        assert f_rand["contrast_1_0"] > f_uni["contrast_1_0"]
+
+    def test_random_energy_lower_than_uniform(self):
+        """ランダム画像の energy は均一画像より小さい."""
+        f_rand = self.ext.extract(self._make_random())
+        f_uni = self.ext.extract(self._make_uniform())
+        assert f_rand["energy_1_0"] < f_uni["energy_1_0"]
+
+    def test_random_homogeneity_lower_than_uniform(self):
+        """ランダム画像の homogeneity は均一画像より小さい."""
+        f_rand = self.ext.extract(self._make_random())
+        f_uni = self.ext.extract(self._make_uniform())
+        assert f_rand["homogeneity_1_0"] < f_uni["homogeneity_1_0"]
+
+    # --- ランダム: 閾値テスト ---
+
+    def test_random_energy_near_zero(self):
+        """ランダム画像の energy は非常に小さい (< 0.05)."""
+        f = self.ext.extract(self._make_random())
+        assert f["energy_1_0"] < 0.05
+
+    def test_random_contrast_above_1000(self):
+        """ランダム画像の contrast は > 1000."""
+        f = self.ext.extract(self._make_random())
+        assert f["contrast_1_0"] > 1000
