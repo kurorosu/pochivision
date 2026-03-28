@@ -502,8 +502,8 @@ class TestFFTFrequencyExtractor:
         features = self.extractor.extract(self._make_h_stripe())
         assert features["band_1_0.00_0.10"] < 0.5
 
-    def test_band_energies_sum_to_near_one(self):
-        """帯域エネルギーの合計が ~1.0 になることを確認."""
+    def test_band_energies_sum_to_one_square(self):
+        """正方形画像の帯域エネルギー合計が ~1.0."""
         np.random.seed(42)
         image = np.random.randint(0, 256, (64, 64), dtype=np.uint8)
         features = self.extractor.extract(image)
@@ -512,7 +512,19 @@ class TestFFTFrequencyExtractor:
             + features["band_2_0.10_0.30"]
             + features["band_3_0.30_0.50"]
         )
-        assert 0.8 <= total <= 1.1, f"got {total}"
+        assert 0.95 <= total <= 1.05, f"got {total}"
+
+    def test_band_energies_sum_to_one_nonsquare(self):
+        """非正方形画像でも帯域エネルギー合計が ~1.0."""
+        np.random.seed(42)
+        image = np.random.randint(0, 256, (32, 96), dtype=np.uint8)
+        features = self.extractor.extract(image)
+        total = (
+            features["band_1_0.00_0.10"]
+            + features["band_2_0.10_0.30"]
+            + features["band_3_0.30_0.50"]
+        )
+        assert 0.95 <= total <= 1.05, f"got {total}"
 
     # --- high_low_ratio ---
 
