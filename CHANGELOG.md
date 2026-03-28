@@ -9,12 +9,12 @@
 - 無し
 
 ### Changed
-- 無し
+- GLCM に `resize_shape` オプションを追加. (NA.)
 
 ### Fixed
 - GLCM の `cv2.normalize(NORM_MINMAX)` を削除し, uint8 変換と整数除算量子化に変更. コントラスト情報が保持される. ([#160](https://github.com/kurorosu/pochivision/pull/160))
 - GLCM の `except Exception` を削除しエラーをログ出力後に再送出するよう変更. ([#161](https://github.com/kurorosu/pochivision/pull/161))
-- GLCM の NaN/Inf を 0.0 ではなく NaN として保持し, 警告ログを出力するよう変更. (NA.)
+- GLCM の NaN/Inf を 0.0 ではなく NaN として保持し, 警告ログを出力するよう変更. ([#162](https://github.com/kurorosu/pochivision/pull/162))
 
 ### Removed
 - 無し

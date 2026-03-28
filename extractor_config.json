@@ -25,7 +25,8 @@
         "homogeneity",
         "energy",
         "correlation",
-        "ASM"]
+        "ASM"],
+      "resize_shape": [512, 512]
     },
     "fft": {
       "frequency_bands": [
