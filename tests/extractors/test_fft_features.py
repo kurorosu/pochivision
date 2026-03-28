@@ -132,6 +132,19 @@ class TestFFTFrequencyExtractor:
         with pytest.raises(ValueError, match="Input image must be 2D or 3D"):
             self.extractor.extract(invalid_image)
 
+    def test_extract_too_small_image(self):
+        """極小画像で ValueError が発生することを確認."""
+        for size in [(1, 1), (2, 2), (3, 3), (3, 64), (64, 3)]:
+            small_image = np.ones(size, dtype=np.uint8) * 128
+            with pytest.raises(ValueError, match="Image too small for FFT"):
+                self.extractor.extract(small_image)
+
+    def test_extract_minimum_size_works(self):
+        """最小サイズ (4x4) の画像が正常に処理されることを確認."""
+        min_image = np.random.randint(0, 256, (4, 4), dtype=np.uint8)
+        features = self.extractor.extract(min_image)
+        assert "high_low_ratio" in features
+
     def test_extract_different_dtypes(self):
         """異なるデータ型の画像での特徴量抽出をテスト."""
         base_image = np.random.randint(0, 256, (32, 32), dtype=np.uint8)

@@ -370,6 +370,13 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         else:
             raise ValueError(f"Input image must be 2D or 3D, got shape: {image.shape}")
 
+        _MIN_FFT_SIZE = 4
+        if gray_image.shape[0] < _MIN_FFT_SIZE or gray_image.shape[1] < _MIN_FFT_SIZE:
+            raise ValueError(
+                f"Image too small for FFT: {gray_image.shape}. "
+                f"Minimum size is {_MIN_FFT_SIZE}x{_MIN_FFT_SIZE}."
+            )
+
         # コントラスト情報を保持するため float64 のまま FFT に渡す
         gray_image = gray_image.astype(np.float64)
 
