@@ -6,6 +6,20 @@
 ## [Unreleased]
 
 ### Added
+- 無し
+
+### Changed
+- 無し
+
+### Fixed
+- 無し
+
+### Removed
+- 無し
+
+## [0.1.2] - 2026-03-28
+
+### Added
 - `docs/fft_features.md` を追加. FFT 特徴量抽出器の全特徴量・パラメータ・設計制約の解説. ([#149](https://github.com/kurorosu/pochivision/pull/149))
 
 ### Changed
@@ -19,34 +33,9 @@
 - FFT 帯域エネルギーの最終帯域を上限なしに変更し, 非正方形画像でも合計が ~1.0 になるよう修正. ([#145](https://github.com/kurorosu/pochivision/pull/145))
 - FFT 抽出で最小画像サイズ (4x4) のバリデーションを追加. 極小画像で全特徴量がサイレントにゼロになる問題を解消. ([#146](https://github.com/kurorosu/pochivision/pull/146))
 - FFT `max_peak_amp` を検出ピーク内の最大振幅に修正 (グローバル最大値ではなく). ([#147](https://github.com/kurorosu/pochivision/pull/147))
-- FFT `except Exception` を削除しエラーを伝播するよう変更. `mm_per_pixel` のバリデーションを追加. ([#150](https://github.com/kurorosu/pochivision/pull/150))
-- FFT 特徴量抽出器のクラス docstring に前処理フロー・設計制約を追記. エントロピー単位を `normalized` に修正. (NA.)
 - FFT エントロピーを正規化エントロピー (`entropy / log2(N)`, [0, 1] 範囲) に変更し, 帯域間で比較可能に. ([#148](https://github.com/kurorosu/pochivision/pull/148))
-
-### Removed
-- 無し
-
-## [0.1.1] - 2026-03-28
-
-### Added
-- 無し
-
-### Changed
-- `pochivision/tools/` をプロジェクトルートの `tools/` に移動し, パッケージから分離. 未使用の dev 依存 `flake8`, `pylint` を削除. ([#117](https://github.com/kurorosu/pochivision/pull/117))
-- `test_blur_processors.py` のモックテスト 2 件を削除し, 全テストを古典派テストに統一. ([#118](https://github.com/kurorosu/pochivision/pull/118))
-- FFT を1回計算して全ヘルパーで共有するようリファクタリング. HLAC 2次パターンの自己ペアを除外し特徴次元を 45→37 に修正. ([#126](https://github.com/kurorosu/pochivision/pull/126))
-- Issue テンプレートの Branch/Label セクションを統一. ([#128](https://github.com/kurorosu/pochivision/pull/128))
-
-### Fixed
-- HSV 特徴量抽出の Hue チャンネルに循環統計 (`scipy.stats.circmean` / `circstd`) を適用し, 0/180 境界付近の統計値を修正. 単位ラベルを `hue_0_179` に変更. ([#119](https://github.com/kurorosu/pochivision/pull/119))
-- CircleCounter の真円度フィルタを合成円ではなく実画像のエッジ輪郭に基づく評価に修正. ([#120](https://github.com/kurorosu/pochivision/pull/120))
-- `(H,W,1)` 形状画像で CLAHE/Equalize がクラッシュする問題を修正. `to_grayscale` で BGRA 画像に `COLOR_BGRA2GRAY` を使用するよう修正. ([#121](https://github.com/kurorosu/pochivision/pull/121))
-- モーションブラーカーネル構築を `cv2.line` 方式に変更し, 斜め角度でのギャップを解消. ([#122](https://github.com/kurorosu/pochivision/pull/122))
-- FFT 方向エネルギーの 0/180 度境界処理に対応. スペクトルエントロピーのゼロ要素バイアスを修正. ([#123](https://github.com/kurorosu/pochivision/pull/123))
-- `PipelineExecutor` に `mode` 値の検証を追加し, 個別プロセッサの例外でパイプライン全体が中断しないよう修正. ([#124](https://github.com/kurorosu/pochivision/pull/124))
-- resize の補間方法を拡大時に `INTER_LINEAR` に切替, edge_detection の float 判定を `np.floating` に修正, CLAHE バリデータで tuple を許容. ([#125](https://github.com/kurorosu/pochivision/pull/125))
-- SWT のサイズ調整を `2^max_level` の倍数に対応. 正規化判定を値ベースから `dtype` ベースに変更. ([#132](https://github.com/kurorosu/pochivision/pull/132))
-- LBP ヒストグラムのビン数を理論値 (uniform: P+2, default: 2^P) に固定し, 画像依存の特徴ベクトル長不定を解消. ([#133](https://github.com/kurorosu/pochivision/pull/133))
+- FFT `except Exception` を削除しエラーを伝播するよう変更. `mm_per_pixel` のバリデーションを追加. ([#150](https://github.com/kurorosu/pochivision/pull/150))
+- FFT 特徴量抽出器のクラス docstring に前処理フロー・設計制約を追記. エントロピー単位を `normalized` に修正. ([#151](https://github.com/kurorosu/pochivision/pull/151))
 
 ### Removed
 - 無し
