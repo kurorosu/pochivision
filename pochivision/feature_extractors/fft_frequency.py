@@ -76,22 +76,26 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         self.peak_threshold_ratio = self.config["peak_threshold_ratio"]
         self.mm_per_pixel = self.config.get("mm_per_pixel")
 
-    def _compute_band_energy(
-        self, image: np.ndarray, bands: List[Tuple[float, float]]
-    ) -> Dict[str, float]:
+    def _compute_fft_data(
+        self, image: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
-        周波数帯域ごとのエネルギーを計算する.
+        FFT を1回計算し, 各ヘルパーで共有するデータを返す.
 
         Args:
             image (np.ndarray): グレースケール画像
-            bands (List[Tuple[float, float]]): 周波数帯域のリスト
 
         Returns:
-            Dict[str, float]: 帯域別エネルギーの辞書
+            Tuple: (magnitude, power_spectrum, freq_norm, angle_map)
+                - magnitude: 振幅スペクトル |F|
+                - power_spectrum: パワースペクトル |F|^2
+                - freq_norm: 正規化周波数マップ (0〜0.5)
+                - angle_map: 角度マップ (0〜180度)
         """
         f = np.fft.fft2(image)
         fshift = np.fft.fftshift(f)
-        magnitude = np.abs(fshift) ** 2
+        magnitude = np.abs(fshift)
+        power_spectrum = magnitude**2
 
         h, w = image.shape
         cy, cx = h // 2, w // 2
@@ -101,171 +105,150 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         dist = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
         freq_norm = dist / max_radius / 2
 
-        total_energy = np.sum(magnitude)
+        dy = y - cy
+        dx = x - cx
+        angle = np.arctan2(dy, dx) * 180 / np.pi
+        angle_map = (angle + 360) % 180
+
+        return magnitude, power_spectrum, freq_norm, angle_map
+
+    def _compute_band_energy(
+        self,
+        power_spectrum: np.ndarray,
+        freq_norm: np.ndarray,
+        bands: List[Tuple[float, float]],
+    ) -> Dict[str, float]:
+        """
+        周波数帯域ごとのエネルギーを計算する.
+
+        Args:
+            power_spectrum (np.ndarray): パワースペクトル
+            freq_norm (np.ndarray): 正規化周波数マップ
+            bands (List[Tuple[float, float]]): 周波数帯域のリスト
+
+        Returns:
+            Dict[str, float]: 帯域別エネルギーの辞書
+        """
+        total_energy = np.sum(power_spectrum)
         energies = {}
 
         for i, (fmin, fmax) in enumerate(bands):
             mask = (freq_norm >= fmin) & (freq_norm < fmax)
-            energy = np.sum(magnitude[mask]) / total_energy if total_energy > 0 else 0.0
+            energy = (
+                np.sum(power_spectrum[mask]) / total_energy if total_energy > 0 else 0.0
+            )
             band_key = f"band_{i+1}_{fmin:.2f}_{fmax:.2f}"
             energies[band_key] = energy
 
         return energies
 
-    def _compute_spectral_centroid(self, image: np.ndarray) -> float:
+    def _compute_spectral_centroid(
+        self, magnitude: np.ndarray, freq_norm: np.ndarray
+    ) -> float:
         """
         2D画像のスペクトル重心を計算する.
 
         Args:
-            image (np.ndarray): グレースケール画像
+            magnitude (np.ndarray): 振幅スペクトル
+            freq_norm (np.ndarray): 正規化周波数マップ
 
         Returns:
             float: スペクトル重心（正規化された空間周波数）
         """
-        h, w = image.shape
-        cy, cx = h // 2, w // 2
-
-        # 2D FFTとスペクトル
-        f = np.fft.fft2(image)
-        fshift = np.fft.fftshift(f)
-        magnitude = np.abs(fshift)
-
-        # 距離ベースの周波数マップ（0〜0.5）
-        y, x = np.ogrid[:h, :w]
-        dist = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
-        max_radius = np.sqrt(cx**2 + cy**2)
-        norm_freq = dist / max_radius / 2  # 0〜0.5に正規化
-
-        # スペクトル重心の計算
-        numerator = np.sum(norm_freq * magnitude)
         denominator = np.sum(magnitude)
-
-        return numerator / denominator if denominator != 0 else 0.0
+        if denominator == 0:
+            return 0.0
+        return float(np.sum(freq_norm * magnitude) / denominator)
 
     def _compute_high_low_freq_ratio(
-        self, image: np.ndarray, threshold: float
+        self, power_spectrum: np.ndarray, freq_norm: np.ndarray, threshold: float
     ) -> float:
         """
         高周波/低周波エネルギー比を計算する.
 
         Args:
-            image (np.ndarray): グレースケール画像
+            power_spectrum (np.ndarray): パワースペクトル
+            freq_norm (np.ndarray): 正規化周波数マップ
             threshold (float): 高周波/低周波の境界閾値
 
         Returns:
-            float: 高周波/低周波エネルギー比
+            float: 高周波/低周波エネルギー比. 低周波が 0 の場合は 0.0.
         """
-        h, w = image.shape
-        cy, cx = h // 2, w // 2
-        max_radius = np.sqrt(cx**2 + cy**2)
+        low_energy = np.sum(power_spectrum[freq_norm < threshold])
+        high_energy = np.sum(power_spectrum[freq_norm >= threshold])
+        return float(high_energy / low_energy) if low_energy > 0 else 0.0
 
-        f = np.fft.fft2(image)
-        fshift = np.fft.fftshift(f)
-        magnitude = np.abs(fshift) ** 2  # パワースペクトル
-
-        y, x = np.ogrid[:h, :w]
-        dist = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
-        norm_freq = dist / max_radius / 2  # 0〜0.5
-
-        low_mask = norm_freq < threshold
-        high_mask = norm_freq >= threshold
-
-        low_energy = np.sum(magnitude[low_mask])
-        high_energy = np.sum(magnitude[high_mask])
-
-        return float(high_energy / low_energy) if low_energy > 0 else np.inf
-
-    def _compute_spectral_std(self, image: np.ndarray) -> float:
+    def _compute_spectral_std(
+        self, magnitude: np.ndarray, freq_norm: np.ndarray
+    ) -> float:
         """
         スペクトルの標準偏差を計算する.
 
         Args:
-            image (np.ndarray): グレースケール画像
+            magnitude (np.ndarray): 振幅スペクトル
+            freq_norm (np.ndarray): 正規化周波数マップ
 
         Returns:
             float: スペクトルの標準偏差
         """
-        h, w = image.shape
-        cy, cx = h // 2, w // 2
-        max_radius = np.sqrt(cx**2 + cy**2)
-
-        f = np.fft.fft2(image)
-        fshift = np.fft.fftshift(f)
-        magnitude = np.abs(fshift)
-
-        y, x = np.ogrid[:h, :w]
-        dist = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
-        norm_freq = dist / max_radius / 2
-
-        weights = magnitude
-        total_weight = np.sum(weights)
+        total_weight = np.sum(magnitude)
         if total_weight == 0:
             return 0.0
 
-        mean = np.sum(norm_freq * weights) / total_weight
-        var = np.sum(((norm_freq - mean) ** 2) * weights) / total_weight
+        mean = np.sum(freq_norm * magnitude) / total_weight
+        var = np.sum(((freq_norm - mean) ** 2) * magnitude) / total_weight
         return float(np.sqrt(var))
 
     def _compute_directional_energy(
-        self, image: np.ndarray, angle_deg: float, tolerance_deg: float
+        self,
+        power_spectrum: np.ndarray,
+        angle_map: np.ndarray,
+        angle_deg: float,
+        tolerance_deg: float,
     ) -> float:
         """
         指定方向のエネルギーを計算する.
 
         Args:
-            image (np.ndarray): グレースケール画像
+            power_spectrum (np.ndarray): パワースペクトル
+            angle_map (np.ndarray): 角度マップ (0〜180度)
             angle_deg (float): 角度（度）
             tolerance_deg (float): 許容角度（度）
 
         Returns:
             float: 方向性エネルギー比
         """
-        h, w = image.shape
-        f = np.fft.fft2(image)
-        fshift = np.fft.fftshift(f)
-        magnitude = np.abs(fshift) ** 2
-
-        cy, cx = h // 2, w // 2
-        y, x = np.ogrid[:h, :w]
-        dy = y - cy
-        dx = x - cx
-        angle = np.arctan2(dy, dx) * 180 / np.pi  # -180〜180度
-
-        angle = (angle + 360) % 180  # 0〜180度に正規化
-        diff = np.abs(angle - angle_deg)
+        diff = np.abs(angle_map - angle_deg)
+        diff = np.minimum(
+            diff, 180 - diff
+        )  # 0度と180度は同一方向のため短い方の角度差を採用
         mask = diff <= tolerance_deg
 
-        directional_energy = np.sum(magnitude[mask])
-        total_energy = np.sum(magnitude)
-        return directional_energy / total_energy if total_energy > 0 else 0.0
+        total_energy = np.sum(power_spectrum)
+        return (
+            float(np.sum(power_spectrum[mask]) / total_energy)
+            if total_energy > 0
+            else 0.0
+        )
 
     def _compute_spectral_peaks(
-        self, image: np.ndarray, threshold_ratio: float
+        self, magnitude: np.ndarray, threshold_ratio: float
     ) -> Tuple[int, float]:
         """
         スペクトルピーク数と最大値を計算する.
 
         Args:
-            image (np.ndarray): グレースケール画像
+            magnitude (np.ndarray): 振幅スペクトル
             threshold_ratio (float): ピーク検出の閾値比
 
         Returns:
             Tuple[int, float]: (ピーク数, 最大ピーク振幅)
         """
-        f = np.fft.fft2(image)
-        fshift = np.fft.fftshift(f)
-        magnitude = np.abs(fshift)
-
-        # 局所ピークを検出
         max_local = maximum_filter(magnitude, size=3)
         peaks = (magnitude == max_local) & (
             magnitude > magnitude.max() * threshold_ratio
         )
-
-        num_peaks = int(np.sum(peaks))
-        max_peak = float(magnitude.max())
-
-        return num_peaks, max_peak
+        return int(np.sum(peaks)), float(magnitude.max())
 
     def _compute_spectral_entropy(self, magnitude: np.ndarray) -> float:
         """
@@ -277,47 +260,41 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         Returns:
             float: スペクトラルエントロピー
         """
-        # 正規化してプロバビリティ分布に変換
         total = np.sum(magnitude)
         if total == 0:
             return 0.0
 
         prob = magnitude / total
-        # エントロピー計算（0 log 0 = 0として処理）
-        prob_safe = prob + 1e-12  # 数値安定性のための小さな値
-        entropy = -np.sum(prob * np.log2(prob_safe))
+        # エントロピー計算（0 log 0 = 0 として処理: ゼロ要素を除外）
+        nonzero = prob > 0
+        entropy = -np.sum(prob[nonzero] * np.log2(prob[nonzero]))
         return float(entropy)
 
     def _compute_directional_entropy(
-        self, image: np.ndarray, angle_deg: float, tolerance_deg: float
+        self,
+        magnitude: np.ndarray,
+        angle_map: np.ndarray,
+        angle_deg: float,
+        tolerance_deg: float,
     ) -> float:
         """
         指定方向のスペクトラムエントロピーを計算する.
 
         Args:
-            image (np.ndarray): グレースケール画像
+            magnitude (np.ndarray): 振幅スペクトル
+            angle_map (np.ndarray): 角度マップ (0〜180度)
             angle_deg (float): 角度（度）
             tolerance_deg (float): 許容角度（度）
 
         Returns:
             float: 方向性スペクトラルエントロピー
         """
-        h, w = image.shape
-        f = np.fft.fft2(image)
-        fshift = np.fft.fftshift(f)
-        magnitude = np.abs(fshift)
-
-        cy, cx = h // 2, w // 2
-        y, x = np.ogrid[:h, :w]
-        dy = y - cy
-        dx = x - cx
-        angle = np.arctan2(dy, dx) * 180 / np.pi  # -180〜180度
-
-        angle = (angle + 360) % 180  # 0〜180度に正規化
-        diff = np.abs(angle - angle_deg)
+        diff = np.abs(angle_map - angle_deg)
+        diff = np.minimum(
+            diff, 180 - diff
+        )  # 0度と180度は同一方向のため短い方の角度差を採用
         mask = diff <= tolerance_deg
 
-        # 指定方向のスペクトラムを抽出
         directional_magnitude = magnitude[mask]
         if directional_magnitude.size == 0:
             return 0.0
@@ -325,30 +302,22 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         return self._compute_spectral_entropy(directional_magnitude)
 
     def _compute_band_entropy(
-        self, image: np.ndarray, bands: List[Tuple[float, float]]
+        self,
+        magnitude: np.ndarray,
+        freq_norm: np.ndarray,
+        bands: List[Tuple[float, float]],
     ) -> Dict[str, float]:
         """
         周波数帯域ごとのエントロピーを計算する.
 
         Args:
-            image (np.ndarray): グレースケール画像
+            magnitude (np.ndarray): 振幅スペクトル
+            freq_norm (np.ndarray): 正規化周波数マップ
             bands (List[Tuple[float, float]]): 周波数帯域のリスト
 
         Returns:
             Dict[str, float]: 帯域別エントロピーの辞書
         """
-        f = np.fft.fft2(image)
-        fshift = np.fft.fftshift(f)
-        magnitude = np.abs(fshift)
-
-        h, w = image.shape
-        cy, cx = h // 2, w // 2
-        max_radius = np.sqrt(cx**2 + cy**2)
-
-        y, x = np.ogrid[:h, :w]
-        dist = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
-        freq_norm = dist / max_radius / 2
-
         entropies = {}
 
         for i, (fmin, fmax) in enumerate(bands):
@@ -411,68 +380,63 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
             if self.mm_per_pixel is not None:
                 scale = 1.0 / self.mm_per_pixel
 
-            # 1. 高周波/低周波エネルギー比
-            high_low_ratio = self._compute_high_low_freq_ratio(
-                gray_image, self.high_low_threshold
+            # FFT を1回だけ計算し, 全ヘルパーで共有
+            magnitude, power_spectrum, freq_norm, angle_map = self._compute_fft_data(
+                gray_image
             )
-            # 無限大の値をチェック
-            if np.isinf(high_low_ratio):
-                high_low_ratio = 0.0
-            results["high_low_ratio"] = float(high_low_ratio)
+
+            # 1. 高周波/低周波エネルギー比
+            results["high_low_ratio"] = self._compute_high_low_freq_ratio(
+                power_spectrum, freq_norm, self.high_low_threshold
+            )
 
             # 2. スペクトルの標準偏差
-            spectral_std = self._compute_spectral_std(gray_image) * scale
-            results["spectral_std"] = float(spectral_std)
+            results["spectral_std"] = (
+                self._compute_spectral_std(magnitude, freq_norm) * scale
+            )
 
             # 3. 方向性エネルギー（水平／垂直）
-            horizontal_energy = self._compute_directional_energy(
-                gray_image, 0.0, self.directional_tolerance
+            results["horizontal_energy"] = self._compute_directional_energy(
+                power_spectrum, angle_map, 0.0, self.directional_tolerance
             )
-            results["horizontal_energy"] = float(horizontal_energy)
-
-            vertical_energy = self._compute_directional_energy(
-                gray_image, 90.0, self.directional_tolerance
+            results["vertical_energy"] = self._compute_directional_energy(
+                power_spectrum, angle_map, 90.0, self.directional_tolerance
             )
-            results["vertical_energy"] = float(vertical_energy)
 
             # 4. スペクトルピーク数と最大値
             num_peaks, max_peak_amp = self._compute_spectral_peaks(
-                gray_image, self.peak_threshold_ratio
+                magnitude, self.peak_threshold_ratio
             )
             results["num_peaks"] = int(num_peaks)
             results["max_peak_amp"] = float(max_peak_amp)
 
             # 5. 周波数帯エネルギー
-            band_energies = self._compute_band_energy(gray_image, self.frequency_bands)
-            results.update(band_energies)
+            results.update(
+                self._compute_band_energy(
+                    power_spectrum, freq_norm, self.frequency_bands
+                )
+            )
 
             # 6. スペクトル重心
-            spectral_centroid = self._compute_spectral_centroid(gray_image) * scale
-            results["spectral_centroid"] = float(spectral_centroid)
+            results["spectral_centroid"] = (
+                self._compute_spectral_centroid(magnitude, freq_norm) * scale
+            )
 
             # 7. スペクトラル全体エントロピー
-            f = np.fft.fft2(gray_image)
-            fshift = np.fft.fftshift(f)
-            magnitude = np.abs(fshift)
-            spectral_entropy = self._compute_spectral_entropy(magnitude)
-            results["spectral_entropy"] = float(spectral_entropy)
+            results["spectral_entropy"] = self._compute_spectral_entropy(magnitude)
 
             # 8. 方向性エントロピー（水平／垂直）
-            horizontal_entropy = self._compute_directional_entropy(
-                gray_image, 0.0, self.directional_tolerance
+            results["horizontal_entropy"] = self._compute_directional_entropy(
+                magnitude, angle_map, 0.0, self.directional_tolerance
             )
-            results["horizontal_entropy"] = float(horizontal_entropy)
-
-            vertical_entropy = self._compute_directional_entropy(
-                gray_image, 90.0, self.directional_tolerance
+            results["vertical_entropy"] = self._compute_directional_entropy(
+                magnitude, angle_map, 90.0, self.directional_tolerance
             )
-            results["vertical_entropy"] = float(vertical_entropy)
 
             # 9. 周波数帯域エントロピー
-            band_entropies = self._compute_band_entropy(
-                gray_image, self.frequency_bands
+            results.update(
+                self._compute_band_entropy(magnitude, freq_norm, self.frequency_bands)
             )
-            results.update(band_entropies)
 
             # NaNや無限大の値をチェックして修正
             for key, value in results.items():

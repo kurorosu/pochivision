@@ -24,7 +24,7 @@ class HLACTextureExtractor(BaseFeatureExtractor):
     高次の空間的相関パターンを定量化できます。
 
     抽出する特徴量:
-    - 標準HLAC: 45次元の特徴量（0次、1次、2次自己相関） [correlation_coefficient]
+    - 標準HLAC: 37次元の特徴量（0次1 + 1次8 + 2次28） [correlation_coefficient]
     - 回転不変HLAC: 11次元の特徴量（回転に対して不変） [correlation_coefficient]
     - スケール不変性: 複数スケールでの特徴抽出 [correlation_coefficient]
     - 正規化: 特徴量の正規化による明度変化への頑健性 [normalized_correlation]
@@ -163,10 +163,10 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             k[1 + dy, 1 + dx] = 1  # 隣接画素
             patterns.append(k)
 
-        # 2次: 2つの隣接画素の組み合わせ
+        # 2次: 2つの異なる隣接画素の組み合わせ (自己ペア i==j は1次と重複するため除外)
         if self.order >= 2:
             for i in range(len(offsets)):
-                for j in range(i, len(offsets)):
+                for j in range(i + 1, len(offsets)):
                     dx1, dy1 = offsets[i]
                     dx2, dy2 = offsets[j]
                     k = np.zeros((3, 3), dtype=np.uint8)
@@ -324,7 +324,7 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             if default_config["order"] == 1:
                 num_features = 9  # 0次(1) + 1次(8)
             else:  # order == 2
-                num_features = 45  # 0次(1) + 1次(8) + 2次(36)
+                num_features = 37  # 0次(1) + 1次(8) + 2次(28)
 
         return [f"hlac_feature_{i:02d}" for i in range(num_features)]
 

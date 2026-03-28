@@ -137,7 +137,11 @@ class LBPTextureExtractor(BaseFeatureExtractor):
 
             lbp = local_binary_pattern(gray_image, self.P, self.R, method=self.method)
 
-            n_bins = int(lbp.max() + 1)  # 実際のラベル数で固定次元化
+            # 理論的ビン数を使用 (画像内容に依存しない固定次元)
+            if self.method == "uniform":
+                n_bins = self.P + 2
+            else:
+                n_bins = 2**self.P
             hist, _ = np.histogram(
                 lbp.ravel(), bins=n_bins, range=(0, n_bins), density=True
             )

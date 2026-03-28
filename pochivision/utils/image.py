@@ -24,9 +24,12 @@ def to_grayscale(image: np.ndarray) -> np.ndarray:
         if image.shape[2] == 1:
             # 3次元1チャンネル → 2次元グレースケール
             return image.squeeze(axis=2)
-        elif image.shape[2] in (3, 4):
-            # カラー画像（3または4チャンネル）
+        elif image.shape[2] == 3:
+            # BGR画像
             return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        elif image.shape[2] == 4:
+            # BGRA画像
+            return cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
         else:
             raise ValueError(
                 f"Unsupported channel count: {image.shape[2]}. "

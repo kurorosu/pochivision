@@ -235,5 +235,5 @@ tmp.txt
 .mypy_cache
 image_aggregated/
 extraction_results/
-pochivision/tools/samples/sample.bmp
+*.bmp
 profile_results/

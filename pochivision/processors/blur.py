@@ -372,17 +372,13 @@ class MotionBlurProcessor(BaseProcessor):
             kernel = np.zeros((kernel_size, kernel_size), dtype=np.float32)
             center = kernel_size // 2
             rad = np.deg2rad(angle)
-            cos_a = np.cos(rad)
-            sin_a = np.sin(rad)
-            for i in range(kernel_size):
-                x = int(center + (i - center) * cos_a)
-                y = int(center + (i - center) * sin_a)
-                if 0 <= x < kernel_size and 0 <= y < kernel_size:
-                    kernel[y, x] = 1
-            if np.sum(kernel) == 0:  # 全要素が0の場合、ゼロ除算を避ける
-                # 例えば、kernel_sizeが非常に小さい場合や特定の角度で発生しうる
-                # この場合、元画像をそのまま返すか、エラーとするか、あるいは小さな単位行列カーネルを適用するか
-                # ここでは元画像を返すことにする
+            half = (kernel_size - 1) / 2.0
+            dx = np.cos(rad) * half
+            dy = np.sin(rad) * half
+            pt1 = (int(np.round(center - dx)), int(np.round(center - dy)))
+            pt2 = (int(np.round(center + dx)), int(np.round(center + dy)))
+            cv2.line(kernel, pt1, pt2, 1.0, 1)
+            if np.sum(kernel) == 0:
                 return image
             kernel /= np.sum(kernel)
             return cv2.filter2D(image, -1, kernel)

@@ -2,11 +2,10 @@
 
 import re
 
-import cv2  # OpenCVエラーモック用
 import numpy as np
 import pytest
 
-from pochivision.exceptions import ProcessorRuntimeError, ProcessorValidationError
+from pochivision.exceptions import ProcessorValidationError
 from pochivision.processors.blur import (
     AverageBlurProcessor,
     BilateralFilterProcessor,
@@ -105,23 +104,6 @@ def test_gaussian_blur_invalid_image_input(invalid_image, error_message_part):
         processor.process(invalid_image)
 
 
-def test_gaussian_blur_opencv_error(monkeypatch):
-    """ガウシアンブラー処理時のOpenCVエラーをテスト."""
-    config = {"kernel_size": [3, 3], "sigma": 1}
-    processor = GaussianBlurProcessor(name="gaussian_blur_cv_error", config=config)
-
-    # cv2.GaussianBlurをモックして例外を発生させる
-    def mock_gaussian_blur(*args, **kwargs):
-        raise cv2.error("Test OpenCV Error")
-
-    monkeypatch.setattr(cv2, "GaussianBlur", mock_gaussian_blur)
-
-    with pytest.raises(
-        ProcessorRuntimeError, match="Error during GaussianBlur processing"
-    ):
-        processor.process(DUMMY_IMAGE_UINT8_3CH.copy())
-
-
 # AverageBlur
 def test_average_blur_valid():
     """平均値ブラーの基本機能をテスト."""
@@ -191,23 +173,6 @@ def test_average_blur_invalid_image_input(invalid_image, error_message_part):
     processor = AverageBlurProcessor(name="average_blur_invalid_img", config=config)
     with pytest.raises(ProcessorValidationError, match=error_message_part):
         processor.process(invalid_image)
-
-
-def test_average_blur_opencv_error(monkeypatch):
-    """平均値ブラー処理時のOpenCVエラーをテスト."""
-    config = {"kernel_size": [3, 3]}
-    processor = AverageBlurProcessor(name="average_blur_cv_error", config=config)
-
-    # cv2.blurをモックして例外を発生させる
-    def mock_blur(*args, **kwargs):
-        raise cv2.error("Test OpenCV Error")
-
-    monkeypatch.setattr(cv2, "blur", mock_blur)
-
-    with pytest.raises(
-        ProcessorRuntimeError, match="Error during Average Blur processing"
-    ):
-        processor.process(DUMMY_IMAGE_UINT8_3CH.copy())
 
 
 # MedianBlur

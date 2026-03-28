@@ -150,8 +150,11 @@ class TestFFTFrequencyExtractor:
         """周波数帯域エネルギー計算の内部メソッドをテスト."""
         image = np.random.randint(0, 256, (32, 32), dtype=np.uint8)
         bands = [[0.0, 0.1], [0.1, 0.3], [0.3, 0.5]]
+        magnitude, power_spectrum, freq_norm, angle_map = (
+            self.extractor._compute_fft_data(image)
+        )
 
-        energies = self.extractor._compute_band_energy(image, bands)
+        energies = self.extractor._compute_band_energy(power_spectrum, freq_norm, bands)
 
         assert len(energies) == 3
         assert "band_1_0.00_0.10" in energies
@@ -165,8 +168,9 @@ class TestFFTFrequencyExtractor:
     def test_compute_spectral_centroid(self):
         """スペクトル重心計算の内部メソッドをテスト."""
         image = np.random.randint(0, 256, (32, 32), dtype=np.uint8)
+        magnitude, _, freq_norm, _ = self.extractor._compute_fft_data(image)
 
-        centroid = self.extractor._compute_spectral_centroid(image)
+        centroid = self.extractor._compute_spectral_centroid(magnitude, freq_norm)
 
         assert isinstance(centroid, float)
         assert 0 <= centroid <= 0.5  # 正規化された周波数範囲
@@ -174,8 +178,11 @@ class TestFFTFrequencyExtractor:
     def test_compute_high_low_freq_ratio(self):
         """高周波/低周波比計算の内部メソッドをテスト."""
         image = np.random.randint(0, 256, (32, 32), dtype=np.uint8)
+        _, power_spectrum, freq_norm, _ = self.extractor._compute_fft_data(image)
 
-        ratio = self.extractor._compute_high_low_freq_ratio(image, 0.2)
+        ratio = self.extractor._compute_high_low_freq_ratio(
+            power_spectrum, freq_norm, 0.2
+        )
 
         assert isinstance(ratio, float)
         assert ratio >= 0
@@ -183,8 +190,9 @@ class TestFFTFrequencyExtractor:
     def test_compute_spectral_std(self):
         """スペクトル標準偏差計算の内部メソッドをテスト."""
         image = np.random.randint(0, 256, (32, 32), dtype=np.uint8)
+        magnitude, _, freq_norm, _ = self.extractor._compute_fft_data(image)
 
-        std = self.extractor._compute_spectral_std(image)
+        std = self.extractor._compute_spectral_std(magnitude, freq_norm)
 
         assert isinstance(std, float)
         assert std >= 0
@@ -192,22 +200,28 @@ class TestFFTFrequencyExtractor:
     def test_compute_directional_energy(self):
         """方向性エネルギー計算の内部メソッドをテスト."""
         image = np.random.randint(0, 256, (32, 32), dtype=np.uint8)
+        _, power_spectrum, _, angle_map = self.extractor._compute_fft_data(image)
 
         # 水平方向
-        horizontal = self.extractor._compute_directional_energy(image, 0.0, 10.0)
+        horizontal = self.extractor._compute_directional_energy(
+            power_spectrum, angle_map, 0.0, 10.0
+        )
         assert isinstance(horizontal, float)
         assert 0 <= horizontal <= 1
 
         # 垂直方向
-        vertical = self.extractor._compute_directional_energy(image, 90.0, 10.0)
+        vertical = self.extractor._compute_directional_energy(
+            power_spectrum, angle_map, 90.0, 10.0
+        )
         assert isinstance(vertical, float)
         assert 0 <= vertical <= 1
 
     def test_compute_spectral_peaks(self):
         """スペクトルピーク計算の内部メソッドをテスト."""
         image = np.random.randint(0, 256, (32, 32), dtype=np.uint8)
+        magnitude, _, _, _ = self.extractor._compute_fft_data(image)
 
-        num_peaks, max_peak = self.extractor._compute_spectral_peaks(image, 0.1)
+        num_peaks, max_peak = self.extractor._compute_spectral_peaks(magnitude, 0.1)
 
         assert isinstance(num_peaks, int)
         assert isinstance(max_peak, float)
@@ -237,17 +251,18 @@ class TestFFTFrequencyExtractor:
     def test_compute_directional_entropy(self):
         """方向性エントロピー計算の内部メソッドをテスト."""
         image = np.random.randint(0, 256, (32, 32), dtype=np.uint8)
+        magnitude, _, _, angle_map = self.extractor._compute_fft_data(image)
 
         # 水平方向エントロピー
         horizontal_entropy = self.extractor._compute_directional_entropy(
-            image, 0.0, 10.0
+            magnitude, angle_map, 0.0, 10.0
         )
         assert isinstance(horizontal_entropy, float)
         assert horizontal_entropy >= 0
 
         # 垂直方向エントロピー
         vertical_entropy = self.extractor._compute_directional_entropy(
-            image, 90.0, 10.0
+            magnitude, angle_map, 90.0, 10.0
         )
         assert isinstance(vertical_entropy, float)
         assert vertical_entropy >= 0
@@ -256,8 +271,9 @@ class TestFFTFrequencyExtractor:
         """周波数帯域エントロピー計算の内部メソッドをテスト."""
         image = np.random.randint(0, 256, (32, 32), dtype=np.uint8)
         bands = [[0.0, 0.1], [0.1, 0.3], [0.3, 0.5]]
+        magnitude, _, freq_norm, _ = self.extractor._compute_fft_data(image)
 
-        entropies = self.extractor._compute_band_entropy(image, bands)
+        entropies = self.extractor._compute_band_entropy(magnitude, freq_norm, bands)
 
         assert len(entropies) == 3
         assert "band_1_0.00_0.10_entropy" in entropies

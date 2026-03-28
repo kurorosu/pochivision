@@ -27,11 +27,11 @@ def test_hlac_texture_basic():
     for name, value in features.items():
         print(f"  {name}: {value:.6f}")
 
-    # 基本的な特徴量が含まれているかチェック（45次元）
-    assert len(features) == 45, f"特徴量数が45ではありません: {len(features)}"
+    # 基本的な特徴量が含まれているかチェック（37次元）
+    assert len(features) == 37, f"特徴量数が37ではありません: {len(features)}"
 
     # 特徴量名の形式チェック（ゼロパディング対応）
-    for i in range(45):
+    for i in range(37):
         feature_name = f"hlac_feature_{i:02d}"
         assert feature_name in features, f"特徴量 {feature_name} が見つかりません"
 
@@ -59,8 +59,8 @@ def test_hlac_rotation_invariant():
     np.random.seed(42)
     test_image = np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8)
 
-    # 1. 標準HLAC（45次元）
-    print("\n--- 標準HLAC (45次元) ---")
+    # 1. 標準HLAC（37次元）
+    print("\n--- 標準HLAC (37次元) ---")
     extractor_standard = HLACTextureExtractor()
     features_standard = extractor_standard.extract(test_image)
     print(f"特徴量数: {len(features_standard)}")
@@ -79,8 +79,8 @@ def test_hlac_rotation_invariant():
 
     # 特徴量数の確認
     assert (
-        len(features_standard) == 45
-    ), f"標準HLACの特徴量数が45ではありません: {len(features_standard)}"
+        len(features_standard) == 37
+    ), f"標準HLACの特徴量数が37ではありません: {len(features_standard)}"
     assert (
         len(features_ri) == 11
     ), f"回転不変HLACの特徴量数が11ではありません: {len(features_ri)}"
@@ -119,8 +119,8 @@ def test_hlac_different_orders():
         len(features_order1) == 9
     ), f"1次HLACの特徴量数が9ではありません: {len(features_order1)}"
     assert (
-        len(features_order2) == 45
-    ), f"2次HLACの特徴量数が45ではありません: {len(features_order2)}"
+        len(features_order2) == 37
+    ), f"2次HLACの特徴量数が37ではありません: {len(features_order2)}"
 
 
 def test_hlac_multiscale():
@@ -390,7 +390,7 @@ def test_feature_names_and_units():
 
     # 基本特徴量名の確認
     base_names = HLACTextureExtractor.get_base_feature_names()
-    expected_base_names = [f"hlac_feature_{i:02d}" for i in range(45)]
+    expected_base_names = [f"hlac_feature_{i:02d}" for i in range(37)]
     print(f"基本特徴量名の数: {len(base_names)}")
     print(f"基本特徴量名の例: {base_names[:5]}")
     assert (
@@ -400,7 +400,7 @@ def test_feature_names_and_units():
     # 単位付き特徴量名の確認
     unit_names = HLACTextureExtractor.get_feature_names()
     expected_unit_names = [
-        f"hlac_feature_{i:02d}[correlation_coefficient]" for i in range(45)
+        f"hlac_feature_{i:02d}[correlation_coefficient]" for i in range(37)
     ]
     print(f"単位付き特徴量名の数: {len(unit_names)}")
     print(f"単位付き特徴量名の例: {unit_names[:5]}")
@@ -411,7 +411,7 @@ def test_feature_names_and_units():
     # 単位辞書の確認
     units = HLACTextureExtractor.get_feature_units()
     expected_units = {
-        f"hlac_feature_{i:02d}": "correlation_coefficient" for i in range(45)
+        f"hlac_feature_{i:02d}": "correlation_coefficient" for i in range(37)
     }
     print(f"特徴量単位辞書のサイズ: {len(units)}")
     print(f"特徴量単位辞書の例: {dict(list(units.items())[:5])}")

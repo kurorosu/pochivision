@@ -328,10 +328,10 @@ def test_feature_names_and_units():
     # 単位付き特徴量名の確認
     unit_names = HSVStatisticsExtractor.get_feature_names()
     expected_unit_names = [
-        "hue_mean[degree]",
-        "hue_median[degree]",
-        "hue_variance[squared_degree]",
-        "hue_std_dev[degree]",
+        "hue_mean[hue_0_179]",
+        "hue_median[hue_0_179]",
+        "hue_variance[hue_0_179_squared]",
+        "hue_std_dev[hue_0_179]",
         "hue_cv[ratio]",
         "saturation_mean[intensity]",
         "saturation_median[intensity]",
@@ -353,10 +353,10 @@ def test_feature_names_and_units():
     # 単位辞書の確認
     units = HSVStatisticsExtractor.get_feature_units()
     expected_units = {
-        "hue_mean": "degree",
-        "hue_median": "degree",
-        "hue_variance": "squared_degree",
-        "hue_std_dev": "degree",
+        "hue_mean": "hue_0_179",
+        "hue_median": "hue_0_179",
+        "hue_variance": "hue_0_179_squared",
+        "hue_std_dev": "hue_0_179",
         "hue_cv": "ratio",
         "saturation_mean": "intensity",
         "saturation_median": "intensity",
@@ -394,8 +394,8 @@ def test_unit_for_feature_method():
 
     # 正常なHSV特徴量名
     test_cases = [
-        ("hue_mean", "degree"),
-        ("hue_variance", "squared_degree"),
+        ("hue_mean", "hue_0_179"),
+        ("hue_variance", "hue_0_179_squared"),
         ("saturation_mean", "intensity"),
         ("saturation_variance", "squared_intensity"),
         ("value_cv", "ratio"),
@@ -416,6 +416,44 @@ def test_unit_for_feature_method():
         assert unit == "unknown", f"Expected 'unknown', got {unit} for {invalid_name}"
 
     print("単位取得メソッドテスト: 成功")
+
+
+def test_hue_circular_statistics():
+    """Hue チャンネルの循環統計が正しく計算されることをテスト."""
+    extractor = HSVStatisticsExtractor()
+
+    # Hue が 0/180 境界付近の赤ピクセルで構成される画像を作成
+    # HSV で H=5 と H=175 はどちらも赤付近
+    hsv_image = np.zeros((100, 100, 3), dtype=np.uint8)
+    hsv_image[:50, :, :] = [5, 255, 255]  # H=5 (赤)
+    hsv_image[50:, :, :] = [175, 255, 255]  # H=175 (赤)
+    bgr_image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
+
+    features = extractor.extract(bgr_image)
+
+    # 循環平均は 0 付近 (赤) であるべき, 90 (緑) ではない
+    hue_mean = features["hue_mean"]
+    assert (
+        hue_mean < 10 or hue_mean > 170
+    ), f"Hue mean should be near 0/180 (red), got {hue_mean}"
+
+    # 循環標準偏差は小さいはず (両方とも赤付近)
+    hue_std = features["hue_std_dev"]
+    assert hue_std < 30, f"Hue std_dev should be small for similar hues, got {hue_std}"
+
+
+def test_hue_circular_vs_linear_difference():
+    """循環統計と線形統計で結果が異なるケースをテスト."""
+    extractor = HSVStatisticsExtractor()
+
+    # 全ピクセルが同じ Hue の場合, 循環統計でも分散は 0
+    hsv_uniform = np.zeros((50, 50, 3), dtype=np.uint8)
+    hsv_uniform[:, :, :] = [90, 200, 200]  # H=90 (緑)
+    bgr_uniform = cv2.cvtColor(hsv_uniform, cv2.COLOR_HSV2BGR)
+
+    features = extractor.extract(bgr_uniform)
+    assert features["hue_variance"] < 0.1, "Uniform hue should have ~0 variance"
+    assert features["hue_std_dev"] < 0.1, "Uniform hue should have ~0 std_dev"
 
 
 if __name__ == "__main__":

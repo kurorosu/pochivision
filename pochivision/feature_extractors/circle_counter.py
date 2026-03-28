@@ -143,7 +143,10 @@ class CircleCounterExtractor(BaseFeatureExtractor):
         self, gray: np.ndarray, circles: np.ndarray
     ) -> np.ndarray:
         """
-        検出された円を真円度でフィルタリングする.
+        検出された円を実画像のエッジに基づく真円度でフィルタリングする.
+
+        各候補円の周辺領域 (ROI) でエッジ検出・輪郭抽出を行い,
+        実際の輪郭形状の真円度 (4*pi*area / perimeter^2) で評価する.
 
         Args:
             gray (np.ndarray): グレースケール画像.
@@ -159,29 +162,44 @@ class CircleCounterExtractor(BaseFeatureExtractor):
         height, width = gray.shape
 
         for x, y, r in circles:
-            # 円の輪郭を作成
-            mask = np.zeros((height, width), dtype=np.uint8)
-            cv2.circle(mask, (x, y), r, 255, 1)
+            # ROI の範囲を計算 (円を囲む矩形 + マージン)
+            margin = max(r // 4, 2)
+            x1 = max(0, x - r - margin)
+            y1 = max(0, y - r - margin)
+            x2 = min(width, x + r + margin)
+            y2 = min(height, y + r + margin)
 
-            # 輪郭を取得
+            roi = gray[y1:y2, x1:x2]
+            if roi.size == 0:
+                continue
+
+            # ROI 内でエッジ検出
+            edges = cv2.Canny(roi, self.param1 // 2, self.param1)
+
+            # 円領域のマスクを作成し, ROI 外のエッジを除外
+            roi_mask = np.zeros_like(edges)
+            cx_roi, cy_roi = x - x1, y - y1
+            cv2.circle(roi_mask, (cx_roi, cy_roi), r + margin // 2, 255, -1)
+            edges = cv2.bitwise_and(edges, roi_mask)
+
+            # エッジから輪郭を抽出
             contours, _ = cv2.findContours(
-                mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+                edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
             )
 
-            if contours:
-                contour = contours[0]
+            if not contours:
+                continue
 
-                # 面積と周囲長の計算
-                area = cv2.contourArea(contour)
-                perimeter = cv2.arcLength(contour, True)
+            # 最大輪郭を選択
+            contour = max(contours, key=cv2.contourArea)
 
-                if perimeter > 0:
-                    # 真円度の計算: 4π × 面積 / 周囲長²
-                    circularity = 4 * np.pi * area / (perimeter * perimeter)
+            area = cv2.contourArea(contour)
+            perimeter = cv2.arcLength(contour, True)
 
-                    # 閾値を満たす場合のみ保持
-                    if circularity >= self.circularity_threshold:
-                        filtered_circles.append([x, y, r])
+            if perimeter > 0 and area > 0:
+                circularity = 4 * np.pi * area / (perimeter * perimeter)
+                if circularity >= self.circularity_threshold:
+                    filtered_circles.append([x, y, r])
 
         return np.array(filtered_circles) if filtered_circles else np.array([])
 

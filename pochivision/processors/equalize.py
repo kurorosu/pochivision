@@ -67,8 +67,10 @@ class EqualizeProcessor(BaseProcessor):
         self.validator.validate_image(image)
 
         try:
-            if len(image.shape) == 2 or image.shape[2] == 1:
+            if len(image.shape) == 2:
                 return cv2.equalizeHist(image)
+            if image.shape[2] == 1:
+                return cv2.equalizeHist(image.squeeze(axis=2))
 
             # カラー画像の処理
             if self.color_mode == "gray":
