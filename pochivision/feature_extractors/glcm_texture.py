@@ -170,9 +170,13 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
                             # 特徴量値を取得
                             feature_value = float(prop_values[d_idx, a_idx])
 
-                            # NaNや無限大の値をチェック
+                            # NaN/Inf は未定義を示す (例: 均一画像の correlation)
                             if np.isnan(feature_value) or np.isinf(feature_value):
-                                feature_value = 0.0
+                                LogManager().get_logger().warning(
+                                    f"GLCM {feature_name} is {feature_value}, "
+                                    "replacing with NaN"
+                                )
+                                feature_value = float("nan")
 
                             results[feature_name] = feature_value
 
