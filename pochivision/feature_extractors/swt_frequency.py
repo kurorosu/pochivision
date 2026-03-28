@@ -199,8 +199,8 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
         """
         SWT変換のために画像サイズを調整する.
 
-        SWTは各軸のデータ長が偶数である必要があるため、
-        奇数サイズの場合は1ピクセル追加して偶数サイズにする。
+        pywt.swt2 は level=N で各軸のデータ長が 2^N の倍数である必要がある.
+        不足分をパディングで補う.
 
         Args:
             image (np.ndarray): 入力画像
@@ -208,17 +208,17 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
         Returns:
             np.ndarray: サイズ調整された画像
         """
+        max_level = self.config.get("max_level", 1)
+        divisor = 2**max_level
         height, width = image.shape[:2]
 
-        # 調整が必要かチェック
-        height_adjustment = 1 if height % 2 == 1 else 0
-        width_adjustment = 1 if width % 2 == 1 else 0
+        # 2^max_level の倍数に切り上げ
+        height_adjustment = (divisor - height % divisor) % divisor
+        width_adjustment = (divisor - width % divisor) % divisor
 
         if height_adjustment == 0 and width_adjustment == 0:
-            # 調整不要
             return image
 
-        # 新しいサイズを計算
         new_height = height + height_adjustment
         new_width = width + width_adjustment
 
@@ -281,7 +281,7 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             # SWT変換のために画像サイズを調整（奇数サイズを偶数サイズに）
             gray_image = self._adjust_image_size_for_swt(gray_image)
 
-            if gray_image.max() > 1.0:
+            if np.issubdtype(gray_image.dtype, np.integer):
                 gray_image = gray_image.astype(np.float32) / 255.0
             else:
                 gray_image = gray_image.astype(np.float32)
