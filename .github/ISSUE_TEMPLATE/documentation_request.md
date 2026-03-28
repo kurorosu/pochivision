@@ -20,6 +20,10 @@ labels: documentation
 
 - [ ]
 
----
+## Branch
 
-> **Branch prefix**: `docs/`
+`docs/`
+
+## Label
+
+`documentation`

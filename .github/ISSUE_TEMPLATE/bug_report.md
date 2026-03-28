@@ -32,6 +32,10 @@ labels: bug
 
 <!-- Screenshots, logs, or any other relevant information. -->
 
----
+## Branch
 
-> **Branch prefix**: `fix/`
+`fix/`
+
+## Label
+
+`bug`

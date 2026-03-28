@@ -20,6 +20,10 @@ labels: test
 
 - [ ]
 
----
+## Branch
 
-> **Branch prefix**: `test/`
+`test/`
+
+## Label
+
+`test`
