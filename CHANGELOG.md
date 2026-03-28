@@ -21,7 +21,8 @@
 - FFT 方向エネルギーの 0/180 度境界処理に対応. スペクトルエントロピーのゼロ要素バイアスを修正. ([#123](https://github.com/kurorosu/pochivision/pull/123))
 - `PipelineExecutor` に `mode` 値の検証を追加し, 個別プロセッサの例外でパイプライン全体が中断しないよう修正. ([#124](https://github.com/kurorosu/pochivision/pull/124))
 - resize の補間方法を拡大時に `INTER_LINEAR` に切替, edge_detection の float 判定を `np.floating` に修正, CLAHE バリデータで tuple を許容. ([#125](https://github.com/kurorosu/pochivision/pull/125))
-- SWT のサイズ調整を `2^max_level` の倍数に対応. 正規化判定を値ベースから `dtype` ベースに変更. (NA.)
+- SWT のサイズ調整を `2^max_level` の倍数に対応. 正規化判定を値ベースから `dtype` ベースに変更. ([#132](https://github.com/kurorosu/pochivision/pull/132))
+- LBP ヒストグラムのビン数を理論値 (uniform: P+2, default: 2^P) に固定し, 画像依存の特徴ベクトル長不定を解消. (NA.)
 
 ### Removed
 - 無し
