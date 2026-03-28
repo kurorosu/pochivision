@@ -6,6 +6,8 @@ import cv2
 import numpy as np
 from scipy.ndimage import maximum_filter
 
+from pochivision.capturelib.log_manager import LogManager
+
 from .base import BaseFeatureExtractor
 from .registry import register_feature_extractor
 
@@ -15,8 +17,13 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
     """
     画像のFFT（高速フーリエ変換）周波数領域特徴量を抽出するクラス.
 
-    FFTは画像の周波数成分を解析し、テクスチャや周期性の特徴を抽出します。
-    空間領域の画像を周波数領域に変換することで、画像の周波数特性を定量化できます。
+    FFTは画像の周波数成分を解析し, テクスチャや周期性の特徴を抽出する.
+    空間領域の画像を周波数領域に変換することで, 画像の周波数特性を定量化できる.
+
+    前処理:
+    - グレースケール変換後, float64 のまま処理 (コントラスト情報を保持)
+    - Hanning 窓関数を適用 (画像境界のスペクトルリークを抑制)
+    - DC 成分 (平均輝度) を除外し, AC 成分のみで特徴量を計算
 
     抽出する特徴量:
     - high_low_ratio: 高周波/低周波エネルギー比 [ratio]
@@ -27,12 +34,20 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
     - max_peak_amp: 最大ピーク振幅 [amplitude]
     - band_energy: 周波数帯域別エネルギー [ratio]
     - spectral_centroid: スペクトル重心 [cycle/mm or cycle/pixel]
-    - spectral_entropy: スペクトラム全体のエントロピー [bits]
-    - horizontal_entropy: 水平方向スペクトラムエントロピー [bits]
-    - vertical_entropy: 垂直方向スペクトラムエントロピー [bits]
-    - band_entropy: 周波数帯域別エントロピー [bits]
+    - spectral_entropy: スペクトラム全体の正規化エントロピー [normalized, 0-1]
+    - horizontal_entropy: 水平方向の正規化エントロピー [normalized, 0-1]
+    - vertical_entropy: 垂直方向の正規化エントロピー [normalized, 0-1]
+    - band_entropy: 周波数帯域別の正規化エントロピー [normalized, 0-1]
 
-    設定により、周波数帯域、閾値、ピクセル解像度などを調整できます。
+    設計上の制約:
+    - 最小画像サイズ: 4x4. それ未満は ValueError を送出.
+    - Hanning 窓により画像端のピクセルがゼロに減衰するため,
+      max_peak_amp 等の絶対値はピクセル位置に依存する.
+    - 非正方形画像では freq_norm を max(cx, cy) で正規化するため,
+      短辺方向の Nyquist 周波数は 0.5 に達しない.
+      最終帯域は上限なしで対角線分を含め, 帯域合計 ~1.0 を保証する.
+
+    詳細は docs/fft_features.md を参照.
     """
 
     # 特徴量の単位定義
@@ -44,15 +59,15 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         "num_peaks": "count",
         "max_peak_amp": "amplitude",
         "spectral_centroid": "cycle/mm_or_cycle/pixel",
-        "spectral_entropy": "bits",
-        "horizontal_entropy": "bits",
-        "vertical_entropy": "bits",
+        "spectral_entropy": "normalized",
+        "horizontal_entropy": "normalized",
+        "vertical_entropy": "normalized",
         "band_1_0.00_0.10": "ratio",
         "band_2_0.10_0.30": "ratio",
         "band_3_0.30_0.50": "ratio",
-        "band_1_0.00_0.10_entropy": "bits",
-        "band_2_0.10_0.30_entropy": "bits",
-        "band_3_0.30_0.50_entropy": "bits",
+        "band_1_0.00_0.10_entropy": "normalized",
+        "band_2_0.10_0.30_entropy": "normalized",
+        "band_3_0.30_0.50_entropy": "normalized",
     }
 
     def __init__(
@@ -75,6 +90,10 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         self.directional_tolerance = self.config["directional_tolerance"]
         self.peak_threshold_ratio = self.config["peak_threshold_ratio"]
         self.mm_per_pixel = self.config.get("mm_per_pixel")
+        if self.mm_per_pixel is not None and self.mm_per_pixel <= 0:
+            raise ValueError(
+                f"mm_per_pixel must be a positive number, got {self.mm_per_pixel}"
+            )
 
     def _compute_fft_data(
         self, image: np.ndarray
@@ -92,18 +111,23 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
                 - freq_norm: 正規化周波数マップ (0〜0.5)
                 - angle_map: 角度マップ (0〜180度)
         """
-        f = np.fft.fft2(image)
+        h, w = image.shape
+        window = np.outer(np.hanning(h), np.hanning(w))
+        f = np.fft.fft2(image * window)
         fshift = np.fft.fftshift(f)
         magnitude = np.abs(fshift)
-        power_spectrum = magnitude**2
 
-        h, w = image.shape
         cy, cx = h // 2, w // 2
-        max_radius = np.sqrt(cx**2 + cy**2)
+
+        # DC 成分 (平均輝度) を除外し, AC 成分のみで特徴量を計算する
+        magnitude[cy, cx] = 0
+
+        power_spectrum = magnitude**2
+        max_dim = max(cx, cy)
 
         y, x = np.ogrid[:h, :w]
         dist = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
-        freq_norm = dist / max_radius / 2
+        freq_norm = dist / max_dim / 2
 
         dy = y - cy
         dx = x - cx
@@ -133,7 +157,11 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         energies = {}
 
         for i, (fmin, fmax) in enumerate(bands):
-            mask = (freq_norm >= fmin) & (freq_norm < fmax)
+            # 最終帯域は上限なし (非正方形画像の対角線で freq_norm > 0.5 になる分を含める)
+            if i == len(bands) - 1:
+                mask = freq_norm >= fmin
+            else:
+                mask = (freq_norm >= fmin) & (freq_norm < fmax)
             energy = (
                 np.sum(power_spectrum[mask]) / total_energy if total_energy > 0 else 0.0
             )
@@ -248,27 +276,33 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         peaks = (magnitude == max_local) & (
             magnitude > magnitude.max() * threshold_ratio
         )
-        return int(np.sum(peaks)), float(magnitude.max())
+        num_peaks = int(np.sum(peaks))
+        max_peak_amp = float(magnitude[peaks].max()) if num_peaks > 0 else 0.0
+        return num_peaks, max_peak_amp
 
     def _compute_spectral_entropy(self, magnitude: np.ndarray) -> float:
         """
-        スペクトラムのエントロピーを計算する.
+        正規化スペクトラムエントロピーを計算する.
+
+        Shannon エントロピーを log2(N) で正規化し, [0, 1] の範囲に変換する.
+        これにより異なるピクセル数の領域間でエントロピーを直接比較できる.
 
         Args:
             magnitude (np.ndarray): スペクトラムの振幅
 
         Returns:
-            float: スペクトラルエントロピー
+            float: 正規化スペクトラルエントロピー (0.0〜1.0)
         """
         total = np.sum(magnitude)
-        if total == 0:
+        n = magnitude.size
+        if total == 0 or n <= 1:
             return 0.0
 
         prob = magnitude / total
-        # エントロピー計算（0 log 0 = 0 として処理: ゼロ要素を除外）
         nonzero = prob > 0
         entropy = -np.sum(prob[nonzero] * np.log2(prob[nonzero]))
-        return float(entropy)
+        max_entropy = np.log2(n)
+        return float(entropy / max_entropy)
 
     def _compute_directional_entropy(
         self,
@@ -321,7 +355,11 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         entropies = {}
 
         for i, (fmin, fmax) in enumerate(bands):
-            mask = (freq_norm >= fmin) & (freq_norm < fmax)
+            # 最終帯域は上限なし (非正方形画像の対角線で freq_norm > 0.5 になる分を含める)
+            if i == len(bands) - 1:
+                mask = freq_norm >= fmin
+            else:
+                mask = (freq_norm >= fmin) & (freq_norm < fmax)
             band_magnitude = magnitude[mask]
 
             if band_magnitude.size == 0:
@@ -350,17 +388,6 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         if image is None or image.size == 0:
             raise ValueError("Input image is empty or None")
 
-        # 画像の型を適切に変換
-        if image.dtype not in [np.uint8, np.uint16, np.float32, np.float64]:
-            if image.dtype in [np.int32, np.int64]:
-                image = np.clip(image, 0, 255).astype(np.uint8)
-            else:
-                image = image.astype(np.float32)
-                if image.max() <= 1.0:
-                    image = (image * 255).astype(np.uint8)
-                else:
-                    image = np.clip(image, 0, 255).astype(np.uint8)
-
         if len(image.shape) == 3:
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         elif len(image.shape) == 2:
@@ -368,9 +395,15 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         else:
             raise ValueError(f"Input image must be 2D or 3D, got shape: {image.shape}")
 
-        gray_image = cv2.normalize(
-            gray_image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
-        )
+        _MIN_FFT_SIZE = 4
+        if gray_image.shape[0] < _MIN_FFT_SIZE or gray_image.shape[1] < _MIN_FFT_SIZE:
+            raise ValueError(
+                f"Image too small for FFT: {gray_image.shape}. "
+                f"Minimum size is {_MIN_FFT_SIZE}x{_MIN_FFT_SIZE}."
+            )
+
+        # コントラスト情報を保持するため float64 のまま FFT に渡す
+        gray_image = gray_image.astype(np.float64)
 
         results = {}
 
@@ -444,10 +477,8 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
                     results[key] = 0.0
 
         except Exception:
-            # エラーが発生した場合、すべて0で埋める
-            feature_names = self.get_feature_names()
-            results = {name: 0.0 for name in feature_names}
-            return results
+            LogManager().get_logger().exception("FFT feature extraction failed")
+            raise
 
         return results
 
