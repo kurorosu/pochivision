@@ -12,7 +12,7 @@
 - 無し
 
 ### Fixed
-- 無し
+- GLCM の `cv2.normalize(NORM_MINMAX)` を削除し, uint8 変換と整数除算量子化に変更. コントラスト情報が保持される. (NA.)
 
 ### Removed
 - 無し
