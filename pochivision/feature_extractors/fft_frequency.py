@@ -138,7 +138,11 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         energies = {}
 
         for i, (fmin, fmax) in enumerate(bands):
-            mask = (freq_norm >= fmin) & (freq_norm < fmax)
+            # 最終帯域は上限なし (非正方形画像の対角線で freq_norm > 0.5 になる分を含める)
+            if i == len(bands) - 1:
+                mask = freq_norm >= fmin
+            else:
+                mask = (freq_norm >= fmin) & (freq_norm < fmax)
             energy = (
                 np.sum(power_spectrum[mask]) / total_energy if total_energy > 0 else 0.0
             )
@@ -326,7 +330,11 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         entropies = {}
 
         for i, (fmin, fmax) in enumerate(bands):
-            mask = (freq_norm >= fmin) & (freq_norm < fmax)
+            # 最終帯域は上限なし (非正方形画像の対角線で freq_norm > 0.5 になる分を含める)
+            if i == len(bands) - 1:
+                mask = freq_norm >= fmin
+            else:
+                mask = (freq_norm >= fmin) & (freq_norm < fmax)
             band_magnitude = magnitude[mask]
 
             if band_magnitude.size == 0:
