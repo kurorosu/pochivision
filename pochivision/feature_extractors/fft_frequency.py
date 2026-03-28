@@ -351,17 +351,6 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         if image is None or image.size == 0:
             raise ValueError("Input image is empty or None")
 
-        # 画像の型を適切に変換
-        if image.dtype not in [np.uint8, np.uint16, np.float32, np.float64]:
-            if image.dtype in [np.int32, np.int64]:
-                image = np.clip(image, 0, 255).astype(np.uint8)
-            else:
-                image = image.astype(np.float32)
-                if image.max() <= 1.0:
-                    image = (image * 255).astype(np.uint8)
-                else:
-                    image = np.clip(image, 0, 255).astype(np.uint8)
-
         if len(image.shape) == 3:
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         elif len(image.shape) == 2:
@@ -369,9 +358,8 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         else:
             raise ValueError(f"Input image must be 2D or 3D, got shape: {image.shape}")
 
-        gray_image = cv2.normalize(
-            gray_image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
-        )
+        # コントラスト情報を保持するため float64 のまま FFT に渡す
+        gray_image = gray_image.astype(np.float64)
 
         results = {}
 

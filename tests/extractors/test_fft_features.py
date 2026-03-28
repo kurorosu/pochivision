@@ -520,9 +520,13 @@ class TestFFTFrequencyExtractor:
     # --- spectral_std ---
 
     def test_spectral_std_uniform_is_near_zero(self):
-        """単色画像のスペクトル標準偏差は ~0."""
-        features = self.extractor.extract(self._make_uniform())
-        assert features["spectral_std"] < 0.01
+        """単色画像のスペクトル標準偏差はランダム画像より十分小さい."""
+        features_uniform = self.extractor.extract(self._make_uniform())
+        np.random.seed(42)
+        features_random = self.extractor.extract(
+            np.random.randint(0, 256, (64, 64), dtype=np.uint8)
+        )
+        assert features_uniform["spectral_std"] < features_random["spectral_std"]
 
     def test_spectral_std_random_is_positive(self):
         """ランダム画像のスペクトル標準偏差は > 0."""
