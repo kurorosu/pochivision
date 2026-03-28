@@ -92,12 +92,13 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
                 - freq_norm: 正規化周波数マップ (0〜0.5)
                 - angle_map: 角度マップ (0〜180度)
         """
-        f = np.fft.fft2(image)
+        h, w = image.shape
+        window = np.outer(np.hanning(h), np.hanning(w))
+        f = np.fft.fft2(image * window)
         fshift = np.fft.fftshift(f)
         magnitude = np.abs(fshift)
         power_spectrum = magnitude**2
 
-        h, w = image.shape
         cy, cx = h // 2, w // 2
         max_dim = max(cx, cy)
 
