@@ -16,21 +16,27 @@ from .registry import register_feature_extractor
 @register_feature_extractor("glcm")
 class GLCMTextureExtractor(BaseFeatureExtractor):
     """
-    画像のGLCM（Gray-Level Co-occurrence Matrix）テクスチャ特徴量を抽出するクラス.
+    画像のGLCM (Gray-Level Co-occurrence Matrix) テクスチャ特徴量を抽出するクラス.
 
-    GLCMは画像のテクスチャ解析に使用される重要な特徴量で、
-    指定された距離と角度でのグレーレベルの共起関係を表現します。
-    テクスチャの粗さ、方向性、規則性などを定量化できます。
+    GLCM は画像のテクスチャ解析に使用される特徴量で,
+    指定された距離と角度でのグレーレベルの共起関係を表現する.
+    テクスチャの粗さ, 方向性, 規則性などを定量化できる.
 
-    抽出する特徴量:
-    - contrast: コントラスト（局所的な強度変化） [intensity_squared]
-    - dissimilarity: 非類似度（隣接ピクセル間の差異） [intensity]
-    - homogeneity: 均質性（局所的な均一性） [ratio]
-    - energy: エネルギー（テクスチャの均一性） [ratio]
-    - correlation: 相関（ピクセル間の線形依存関係） [correlation coefficient]
+    抽出するプロパティ (各距離・角度の組み合わせごとに出力):
+    - contrast: コントラスト (局所的な強度変化) [intensity_squared]
+    - dissimilarity: 非類似度 (隣接ピクセル間の差異) [intensity]
+    - homogeneity: 均質性 (局所的な均一性) [ratio]
+    - energy: エネルギー (テクスチャの均一性) [ratio]
+    - correlation: 相関 (ピクセル間の線形依存関係) [correlation_coefficient]
     - ASM: Angular Second Moment (エネルギーの二乗) [ratio]
 
-    設定により、距離、角度、グレーレベル数、対称性、正規化などを調整できます。
+    特徴量名の形式: ``{property}_{distance}_{angle_deg}``
+    (例: ``contrast_1_0``, ``energy_2_45``)
+
+    特徴量数 = len(properties) x len(distances) x len(angles).
+    デフォルト設定 (6 プロパティ x 3 距離 x 4 角度) では 72 特徴量.
+
+    設定により, 距離, 角度, グレーレベル数, 対称性, 正規化, リサイズ形状などを調整できる.
     """
 
     # 特徴量の単位定義
