@@ -6,6 +6,8 @@ import cv2
 import numpy as np
 from skimage.feature import graycomatrix, graycoprops
 
+from pochivision.capturelib.log_manager import LogManager
+
 from .base import BaseFeatureExtractor
 from .registry import register_feature_extractor
 
@@ -175,21 +177,14 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
                             results[feature_name] = feature_value
 
                 except Exception:
-                    # プロパティ計算でエラーが発生した場合、0で埋める
-                    for d_idx, distance in enumerate(self.distances):
-                        for a_idx, angle in enumerate(self.angles):
-                            angle_deg = int(np.degrees(angle))
-                            feature_name = f"{prop}_{distance}_{angle_deg}"
-                            results[feature_name] = 0.0
+                    LogManager().get_logger().exception(
+                        f"GLCM property '{prop}' computation failed"
+                    )
+                    raise
 
         except Exception:
-            # GLCM計算全体でエラーが発生した場合、すべて0で埋める
-            for prop in self.properties:
-                for distance in self.distances:
-                    for angle in self.angles:
-                        angle_deg = int(np.degrees(angle))
-                        feature_name = f"{prop}_{distance}_{angle_deg}"
-                        results[feature_name] = 0.0
+            LogManager().get_logger().exception("GLCM feature extraction failed")
+            raise
 
         return results
 
