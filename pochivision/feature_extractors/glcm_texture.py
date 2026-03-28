@@ -7,6 +7,7 @@ import numpy as np
 from skimage.feature import graycomatrix, graycoprops
 
 from pochivision.capturelib.log_manager import LogManager
+from pochivision.processors.resize import ResizeProcessor
 
 from .base import BaseFeatureExtractor
 from .registry import register_feature_extractor
@@ -63,6 +64,22 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
         self.symmetric = self.config["symmetric"]
         self.normed = self.config["normed"]
         self.properties = self.config["properties"]
+
+        # リサイズ形状 (None の場合はリサイズしない)
+        resize_shape_config = self.config["resize_shape"]
+        self.resize_shape = (
+            tuple(resize_shape_config) if resize_shape_config is not None else None
+        )
+
+        self.resize_processor = None
+        if self.resize_shape is not None:
+            resize_config = ResizeProcessor.get_default_config()
+            resize_config["width"] = self.resize_shape[1]
+            resize_config["height"] = self.resize_shape[0]
+            resize_config["preserve_aspect_ratio"] = False
+            self.resize_processor = ResizeProcessor(
+                name="resize_for_glcm", config=resize_config
+            )
 
     def _parse_angles(self, angles_config: List[Union[int, float]]) -> List[float]:
         """
@@ -129,6 +146,10 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
             gray_image = image.copy()
         else:
             raise ValueError(f"Input image must be 2D or 3D, got shape: {image.shape}")
+
+        # リサイズ (設定されている場合)
+        if self.resize_processor is not None:
+            gray_image = self.resize_processor.process(gray_image)
 
         # uint8 に変換 (NORM_MINMAX はコントラスト情報を破壊するため使用しない)
         if not np.issubdtype(gray_image.dtype, np.integer):
@@ -220,6 +241,7 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
                 "correlation",  # 相関
                 "ASM",  # Angular Second Moment
             ],
+            "resize_shape": None,  # リサイズ形状 (None=リサイズしない)
         }
 
     @staticmethod
