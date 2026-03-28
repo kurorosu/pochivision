@@ -99,11 +99,11 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
 
         h, w = image.shape
         cy, cx = h // 2, w // 2
-        max_radius = np.sqrt(cx**2 + cy**2)
+        max_dim = max(cx, cy)
 
         y, x = np.ogrid[:h, :w]
         dist = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
-        freq_norm = dist / max_radius / 2
+        freq_norm = dist / max_dim / 2
 
         dy = y - cy
         dx = x - cx
