@@ -128,17 +128,15 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
         else:
             raise ValueError(f"Input image must be 2D or 3D, got shape: {image.shape}")
 
-        # 画像の値域を0-255に正規化（levelsが256の場合）
-        if self.levels == 256:
-            # 画像を0-255の範囲に正規化
-            gray_image = cv2.normalize(
-                gray_image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
-            )
+        # uint8 に変換 (NORM_MINMAX はコントラスト情報を破壊するため使用しない)
+        if not np.issubdtype(gray_image.dtype, np.integer):
+            gray_image = np.clip(gray_image * 255, 0, 255).astype(np.uint8)
         else:
-            # 指定されたlevels数に量子化
-            gray_image = cv2.normalize(
-                gray_image, None, 0, self.levels - 1, cv2.NORM_MINMAX, dtype=cv2.CV_8U
-            )
+            gray_image = np.clip(gray_image, 0, 255).astype(np.uint8)
+
+        # levels < 256 の場合は整数除算で量子化
+        if self.levels < 256:
+            gray_image = (gray_image // (256 // self.levels)).astype(np.uint8)
 
         results = {}
 
