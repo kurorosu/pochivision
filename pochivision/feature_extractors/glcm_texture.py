@@ -28,7 +28,7 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
     - homogeneity: 均質性（局所的な均一性） [ratio]
     - energy: エネルギー（テクスチャの均一性） [ratio]
     - correlation: 相関（ピクセル間の線形依存関係） [correlation coefficient]
-    - asm: Angular Second Moment（エネルギーの二乗） [ratio]
+    - ASM: Angular Second Moment (エネルギーの二乗) [ratio]
 
     設定により、距離、角度、グレーレベル数、対称性、正規化などを調整できます。
     """
