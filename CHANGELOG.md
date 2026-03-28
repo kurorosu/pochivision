@@ -6,7 +6,8 @@
 ## [Unreleased]
 
 ### Added
-- GLCM の振る舞いテスト 17 件を追加. 均一画像, チェッカーボード, グラデーション, ランダム画像で特徴量値を検証. (NA.)
+- GLCM の振る舞いテスト 17 件を追加. 均一画像, チェッカーボード, グラデーション, ランダム画像で特徴量値を検証. ([#164](https://github.com/kurorosu/pochivision/pull/164))
+- GLCM docstring の `asm` を `ASM` に修正. (NA.)
 
 ### Changed
 - GLCM に `resize_shape` オプションを追加. ([#163](https://github.com/kurorosu/pochivision/pull/163))
