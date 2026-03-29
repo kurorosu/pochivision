@@ -450,3 +450,164 @@ if __name__ == "__main__":
     test_lbp_units_with_histogram()
     test_lbp_config_merging()
     print("\n=== 全てのテストが完了しました ===")
+
+
+from tests.extractors.conftest import DummyImages
+
+
+class TestLBPBehavior:
+    """LBP 特徴量の振る舞いテスト."""
+
+    _CONFIG = {
+        "P": 8,
+        "R": 1,
+        "method": "uniform",
+        "resize_shape": None,
+        "include_histogram": True,
+        "preserve_aspect_ratio": True,
+        "aspect_ratio_mode": "width",
+    }
+    _CONFIG_NO_HIST = {
+        "P": 8,
+        "R": 1,
+        "method": "uniform",
+        "resize_shape": None,
+        "include_histogram": False,
+        "preserve_aspect_ratio": True,
+        "aspect_ratio_mode": "width",
+    }
+
+    def setup_method(self):
+        """テストメソッドごとに extractor を初期化."""
+        self.ext = LBPTextureExtractor(config=self._CONFIG)
+
+    # --- 全黒画像 ---
+
+    def test_black_energy_is_one(self):
+        """全黒画像の energy は 1.0 (全ピクセルが同一パターン)."""
+        f = self.ext.extract(DummyImages.black())
+        assert f["lbp_energy"] == 1.0
+
+    def test_black_entropy_is_zero(self):
+        """全黒画像の entropy は 0.0."""
+        f = self.ext.extract(DummyImages.black())
+        assert f["lbp_entropy"] == 0.0
+
+    def test_black_std_is_zero(self):
+        """全黒画像の std は 0.0."""
+        f = self.ext.extract(DummyImages.black())
+        assert f["lbp_std"] == 0.0
+
+    def test_black_bin8_is_one(self):
+        """全黒画像は bin_8 (周囲すべて明るい) が 1.0."""
+        f = self.ext.extract(DummyImages.black())
+        assert f["lbp_bin_8"] == 1.0
+
+    # --- チェッカーボード ---
+
+    def test_checker_bin0_and_bin8_equal(self):
+        """チェッカーボードは bin_0 と bin_8 がそれぞれ 0.5."""
+        f = self.ext.extract(DummyImages.checker())
+        assert abs(f["lbp_bin_0"] - 0.5) < 0.01
+        assert abs(f["lbp_bin_8"] - 0.5) < 0.01
+
+    def test_checker_std_is_maximum(self):
+        """チェッカーボードの std は大きい (2値分布)."""
+        f = self.ext.extract(DummyImages.checker())
+        assert f["lbp_std"] > 3.0
+
+    def test_checker_energy_is_half(self):
+        """チェッカーボードの energy は ~0.5 (2パターンが均等)."""
+        f = self.ext.extract(DummyImages.checker())
+        assert abs(f["lbp_energy"] - 0.5) < 0.05
+
+    # --- 水平 = 垂直ストライプ (uniform LBP は回転不変) ---
+
+    def test_h_stripe_equals_v_stripe(self):
+        """uniform LBP では水平と垂直ストライプが同じ特徴量."""
+        fh = self.ext.extract(DummyImages.h_stripe())
+        fv = self.ext.extract(DummyImages.v_stripe())
+        for key in fh:
+            assert abs(fh[key] - fv[key]) < 1e-6, f"{key}: {fh[key]} vs {fv[key]}"
+
+    # --- ランダム ---
+
+    def test_random_entropy_high(self):
+        """ランダム画像の entropy は > 0.7 (多様なパターン)."""
+        f = self.ext.extract(DummyImages.random())
+        assert f["lbp_entropy"] > 0.7
+
+    def test_random_energy_low(self):
+        """ランダム画像の energy は < 0.3 (パターンが分散)."""
+        f = self.ext.extract(DummyImages.random())
+        assert f["lbp_energy"] < 0.3
+
+    def test_random_non_uniform_bin_high(self):
+        """ランダム画像の non-uniform ビン (bin_9) は > 0.1."""
+        f = self.ext.extract(DummyImages.random())
+        assert f["lbp_bin_9"] > 0.1
+
+    def test_random_std_positive(self):
+        """ランダム画像の std は > 1.0."""
+        f = self.ext.extract(DummyImages.random())
+        assert f["lbp_std"] > 1.0
+
+    # --- ランダム vs 全黒 ---
+
+    def test_random_entropy_higher_than_black(self):
+        """ランダムの entropy は全黒より高い."""
+        fr = self.ext.extract(DummyImages.random())
+        fb = self.ext.extract(DummyImages.black())
+        assert fr["lbp_entropy"] > fb["lbp_entropy"]
+
+    def test_random_energy_lower_than_black(self):
+        """ランダムの energy は全黒より低い."""
+        fr = self.ext.extract(DummyImages.random())
+        fb = self.ext.extract(DummyImages.black())
+        assert fr["lbp_energy"] < fb["lbp_energy"]
+
+    # --- ヒストグラム正規化 ---
+
+    def test_histogram_sums_to_one(self):
+        """ヒストグラムの合計が 1.0."""
+        f = self.ext.extract(DummyImages.random())
+        total = sum(f[f"lbp_bin_{i}"] for i in range(10))
+        assert abs(total - 1.0) < 0.001
+
+    def test_all_bins_non_negative(self):
+        """ヒストグラムの全ビンが非負."""
+        f = self.ext.extract(DummyImages.random())
+        for i in range(10):
+            assert f[f"lbp_bin_{i}"] >= 0.0
+
+    # --- 均一画像 ---
+
+    def test_uniform_low_entropy(self):
+        """均一画像の entropy は < 0.2."""
+        f = self.ext.extract(DummyImages.uniform())
+        assert f["lbp_entropy"] < 0.2
+
+    def test_uniform_high_energy(self):
+        """均一画像の energy は > 0.8."""
+        f = self.ext.extract(DummyImages.uniform())
+        assert f["lbp_energy"] > 0.8
+
+    def test_uniform_bin8_dominant(self):
+        """均一画像は bin_8 が > 0.9 (ほぼ全ピクセルが同一パターン)."""
+        f = self.ext.extract(DummyImages.uniform())
+        assert f["lbp_bin_8"] > 0.9
+
+    # --- include_histogram フラグ ---
+
+    def test_histogram_excluded_when_disabled(self):
+        """include_histogram=False では bin 特徴量が含まれない."""
+        ext_no_hist = LBPTextureExtractor(config=self._CONFIG_NO_HIST)
+        f = ext_no_hist.extract(DummyImages.random())
+        assert "lbp_bin_0" not in f
+        assert "lbp_mean" in f
+
+    def test_histogram_included_when_enabled(self):
+        """include_histogram=True では bin 特徴量が含まれる."""
+        f = self.ext.extract(DummyImages.random())
+        assert "lbp_bin_0" in f
+        assert "lbp_bin_9" in f
