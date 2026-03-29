@@ -18,6 +18,7 @@
 - HLAC の振る舞いテスト 11 件を追加. 全白, チェッカーボード, ストライプ, ランダム画像で特徴量値を検証. ([#181](https://github.com/kurorosu/pochivision/pull/181))
 - HLAC の二値化を `binary / 255` から `binary > 0` に変更, `convolve2d` + 二重反転を `correlate2d` に変更. ([#182](https://github.com/kurorosu/pochivision/pull/182))
 - HLAC docstring に回転不変性の制約 (90度回転のみ, 反転未対応) を追記. (NA.)
+- `docs/hlac_features.md` を追加. HLAC 特徴量抽出器の全特徴量・パラメータ・設計制約の解説. (NA.)
 
 ### Changed
 - GLCM に `resize_shape` オプションを追加. ([#163](https://github.com/kurorosu/pochivision/pull/163))
