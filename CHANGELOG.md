@@ -11,7 +11,8 @@
 - GLCM docstring の `asm` を `ASM` に修正. ([#165](https://github.com/kurorosu/pochivision/pull/165))
 - GLCM docstring に特徴量名形式・特徴量数の計算式を追記. ([#166](https://github.com/kurorosu/pochivision/pull/166))
 - HLAC の `except Exception` を削除しエラーをログ出力後に再送出するよう変更. ([#174](https://github.com/kurorosu/pochivision/pull/174))
-- HLAC のゼロパディングを削除し, 境界の特徴量減衰を解消. 二値化方式に適応的二値化 (`adaptive`) を追加しデフォルトに設定. (NA.)
+- HLAC のゼロパディングを削除し, 境界の特徴量減衰を解消. 二値化方式に適応的二値化 (`adaptive`) を追加しデフォルトに設定. ([#175](https://github.com/kurorosu/pochivision/pull/175))
+- HLAC `_get_default_results` のフォールバック特徴量数を 45 → 37 に修正. (NA.)
 
 ### Changed
 - GLCM に `resize_shape` オプションを追加. ([#163](https://github.com/kurorosu/pochivision/pull/163))

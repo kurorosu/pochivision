@@ -278,7 +278,7 @@ class HLACTextureExtractor(BaseFeatureExtractor):
         num_features = (
             len(self.kernels)
             if hasattr(self, "kernels")
-            else (11 if self.rotate_invariant else 45)
+            else (11 if self.rotate_invariant else 37)
         )
         return {f"hlac_feature_{i:02d}": 0.0 for i in range(num_features)}
 
