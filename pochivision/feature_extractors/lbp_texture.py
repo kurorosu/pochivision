@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from skimage.feature import local_binary_pattern
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.processors.resize import ResizeProcessor
 
 from .base import BaseFeatureExtractor
@@ -27,7 +28,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
        - 平均 [pattern index] 標準偏差 [pattern index]
        - 歪度 [dimensionless] 尖度 [dimensionless]
     - エントロピー: パターンの複雑さを表す [bits]
-    - 均一性: パターンの均一性を表す [ratio]
+    - energy: ヒストグラムのエネルギー (sum(p^2), GLCM の ASM と同一計算) [ratio]
     - 各LBPビンの正規化頻度（オプション） [ratio]
 
     設定により、近傍点数、半径、手法、画像リサイズなどを調整できます.
@@ -39,8 +40,8 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         "lbp_std": "pattern_index",
         "lbp_skewness": "dimensionless",
         "lbp_kurtosis": "dimensionless",
-        "lbp_entropy": "bits",
-        "lbp_uniformity": "ratio",
+        "lbp_entropy": "normalized",
+        "lbp_energy": "ratio",
     }
 
     def __init__(
@@ -98,7 +99,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
                 - lbp_skewness: LBPヒストグラムの歪度
                 - lbp_kurtosis: LBPヒストグラムの尖度
                 - lbp_entropy: LBPヒストグラムのエントロピー
-                - lbp_uniformity: LBPヒストグラムの均一性
+                - lbp_energy: LBPヒストグラムのエネルギー (sum(p^2))
                 - lbp_bin_{i}: 各LBPビンの正規化頻度（include_histogramがTrueの場合）
 
         Raises:
@@ -138,14 +139,29 @@ class LBPTextureExtractor(BaseFeatureExtractor):
 
             lbp = local_binary_pattern(gray_image, self.P, self.R, method=self.method)
 
-            # 理論的ビン数を使用 (画像内容に依存しない固定次元)
+            # メソッド別のビン数と範囲を設定
             if self.method == "uniform":
                 n_bins = self.P + 2
-            else:
+                hist_range = (0.0, float(n_bins))
+            elif self.method == "nri_uniform":
+                n_bins = self.P * (self.P - 1) + 3
+                hist_range = (0.0, float(n_bins))
+            elif self.method == "var":
+                # var メソッドは連続値を返すため, 実際の値域を使用
+                n_bins = 256
+                hist_range = (float(lbp.min()), float(lbp.max()) + 1e-10)
+            else:  # default, ror
                 n_bins = 2**self.P
+                hist_range = (0.0, float(n_bins))
+
+            # density=False + 手動正規化で確率分布 (和=1) を計算
             hist, _ = np.histogram(
-                lbp.ravel(), bins=n_bins, range=(0, n_bins), density=True
+                lbp.ravel(), bins=n_bins, range=hist_range, density=False
             )
+            hist = hist.astype(np.float64)
+            total = hist.sum()
+            if total > 0:
+                hist = hist / total
 
             results = self._calculate_statistics(hist, lbp)
 
@@ -157,14 +173,17 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             return results
 
         except Exception:
-            # エラーが発生した場合、デフォルト値で埋める
-            return self._get_default_results()
+            LogManager().get_logger().exception("LBP feature extraction failed")
+            raise
 
     def _calculate_statistics(
         self, hist: np.ndarray, lbp: np.ndarray
     ) -> Dict[str, float]:
         """
-        LBPヒストグラムから統計量を計算する.
+        LBP 画像とヒストグラムから統計量を計算する.
+
+        mean/std/skewness/kurtosis は LBP 画像の値から直接計算する.
+        entropy/energy はヒストグラムの分布から計算する.
 
         Args:
             hist (np.ndarray): 正規化されたLBPヒストグラム
@@ -176,58 +195,44 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         results = {}
 
         try:
-            # 基本統計量
-            # ヒストグラムの重心（平均）
-            bin_centers = np.arange(len(hist))
-            mean = np.sum(bin_centers * hist) if np.sum(hist) > 0 else 0.0
-            results["lbp_mean"] = float(mean)
+            # LBP 画像から直接計算 (パターン番号ではなくテクスチャ特性を反映)
+            lbp_flat = lbp.ravel().astype(np.float64)
+            mean = float(np.mean(lbp_flat))
+            std = float(np.std(lbp_flat))
+            results["lbp_mean"] = mean
+            results["lbp_std"] = std
 
-            # 標準偏差
-            variance = (
-                np.sum(((bin_centers - mean) ** 2) * hist) if np.sum(hist) > 0 else 0.0
-            )
-            std = np.sqrt(variance)
-            results["lbp_std"] = float(std)
-
-            # 歪度（skewness）
+            # 歪度
             if std > 0:
-                skewness = np.sum(((bin_centers - mean) ** 3) * hist) / (std**3)
+                skewness = float(np.mean(((lbp_flat - mean) / std) ** 3))
             else:
                 skewness = 0.0
-            results["lbp_skewness"] = float(skewness)
+            results["lbp_skewness"] = skewness
 
-            # 尖度（kurtosis）
+            # 尖度 (excess kurtosis)
             if std > 0:
-                kurtosis = np.sum(((bin_centers - mean) ** 4) * hist) / (std**4) - 3.0
+                kurtosis = float(np.mean(((lbp_flat - mean) / std) ** 4) - 3.0)
             else:
                 kurtosis = 0.0
-            results["lbp_kurtosis"] = float(kurtosis)
+            results["lbp_kurtosis"] = kurtosis
 
-            # エントロピー
-            # 0の値を除外してエントロピーを計算
+            # 正規化エントロピー [0, 1] (FFT/SWT と統一)
             hist_nonzero = hist[hist > 0]
-            if len(hist_nonzero) > 0:
-                entropy = -np.sum(hist_nonzero * np.log2(hist_nonzero))
+            if len(hist_nonzero) > 1:
+                raw_entropy = -np.sum(hist_nonzero * np.log2(hist_nonzero))
+                max_entropy = np.log2(len(hist))
+                entropy = raw_entropy / max_entropy if max_entropy > 0 else 0.0
             else:
                 entropy = 0.0
             results["lbp_entropy"] = float(entropy)
 
-            # 均一性（Uniformity）- エネルギーとも呼ばれる
-            uniformity = np.sum(hist**2)
-            results["lbp_uniformity"] = float(uniformity)
+            # エネルギー (Angular Second Moment): sum(p^2)
+            energy = np.sum(hist**2)
+            results["lbp_energy"] = float(energy)
 
         except Exception:
-            # 統計量計算でエラーが発生した場合、0で埋める
-            results.update(
-                {
-                    "lbp_mean": 0.0,
-                    "lbp_std": 0.0,
-                    "lbp_skewness": 0.0,
-                    "lbp_kurtosis": 0.0,
-                    "lbp_entropy": 0.0,
-                    "lbp_uniformity": 0.0,
-                }
-            )
+            LogManager().get_logger().exception("LBP statistics calculation failed")
+            raise
 
         return results
 
@@ -244,7 +249,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             "lbp_skewness": 0.0,
             "lbp_kurtosis": 0.0,
             "lbp_entropy": 0.0,
-            "lbp_uniformity": 0.0,
+            "lbp_energy": 0.0,
         }
 
         # ヒストグラムを含む場合のデフォルト値
@@ -312,20 +317,23 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             "lbp_skewness",
             "lbp_kurtosis",
             "lbp_entropy",
-            "lbp_uniformity",
+            "lbp_energy",
         ]
 
         # デフォルト設定でヒストグラムを含む場合
         default_config = LBPTextureExtractor.get_default_config()
         if default_config["include_histogram"]:
-            # uniform LBPの場合のビン数を計算
             P = default_config["P"]
             method = default_config["method"]
 
             if method == "uniform":
-                max_bins = P + 2  # uniform LBPの場合
+                max_bins = P + 2
+            elif method == "nri_uniform":
+                max_bins = P * (P - 1) + 3
+            elif method == "var":
+                max_bins = 256
             else:
-                max_bins = 2**P  # 通常のLBPの場合
+                max_bins = 2**P
 
             for i in range(max_bins):
                 feature_names.append(f"lbp_bin_{i}")
@@ -384,7 +392,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             "lbp_skewness",
             "lbp_kurtosis",
             "lbp_entropy",
-            "lbp_uniformity",
+            "lbp_energy",
         ]
 
         for feature in base_features:
@@ -398,9 +406,13 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             method = self.method
 
             if method == "uniform":
-                max_bins = P + 2  # uniform LBPの場合
+                max_bins = P + 2
+            elif method == "nri_uniform":
+                max_bins = P * (P - 1) + 3
+            elif method == "var":
+                max_bins = 256
             else:
-                max_bins = 2**P  # 通常のLBPの場合
+                max_bins = 2**P
 
             for i in range(max_bins):
                 feature_names.append(f"lbp_bin_{i}[ratio]")
@@ -421,19 +433,22 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             "lbp_skewness",
             "lbp_kurtosis",
             "lbp_entropy",
-            "lbp_uniformity",
+            "lbp_energy",
         ]
 
         # インスタンスの設定でヒストグラムを含む場合
         if self.include_histogram:
-            # uniform LBPの場合のビン数を計算
             P = self.P
             method = self.method
 
             if method == "uniform":
-                max_bins = P + 2  # uniform LBPの場合
+                max_bins = P + 2
+            elif method == "nri_uniform":
+                max_bins = P * (P - 1) + 3
+            elif method == "var":
+                max_bins = 256
             else:
-                max_bins = 2**P  # 通常のLBPの場合
+                max_bins = 2**P
 
             for i in range(max_bins):
                 feature_names.append(f"lbp_bin_{i}")
@@ -451,14 +466,17 @@ class LBPTextureExtractor(BaseFeatureExtractor):
 
         # インスタンスの設定でヒストグラムを含む場合
         if self.include_histogram:
-            # uniform LBPの場合のビン数を計算
             P = self.P
             method = self.method
 
             if method == "uniform":
-                max_bins = P + 2  # uniform LBPの場合
+                max_bins = P + 2
+            elif method == "nri_uniform":
+                max_bins = P * (P - 1) + 3
+            elif method == "var":
+                max_bins = 256
             else:
-                max_bins = 2**P  # 通常のLBPの場合
+                max_bins = 2**P
 
             for i in range(max_bins):
                 units[f"lbp_bin_{i}"] = "ratio"

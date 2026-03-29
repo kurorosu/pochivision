@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from pochivision.feature_extractors.fft_frequency import FFTFrequencyExtractor
+from tests.extractors.conftest import DummyImages
 
 
 class TestFFTFrequencyExtractor:
@@ -459,60 +460,21 @@ class TestFFTFrequencyExtractor:
             assert not np.isnan(value)
             assert not np.isinf(value)
 
-    # --- 振る舞いテスト用の共通画像 ---
-
-    @staticmethod
-    def _make_gradient(size: int = 64) -> np.ndarray:
-        """低周波: 滑らかな垂直グラデーション."""
-        img = np.zeros((size, size), dtype=np.uint8)
-        for i in range(size):
-            img[i, :] = int(i * 255 / (size - 1))
-        return img
-
-    @staticmethod
-    def _make_h_stripe(size: int = 64, period: int = 4) -> np.ndarray:
-        """中周波: 水平ストライプ (period px 周期)."""
-        img = np.zeros((size, size), dtype=np.uint8)
-        for k in range(period // 2):
-            img[k::period, :] = 255
-        return img
-
-    @staticmethod
-    def _make_v_stripe(size: int = 64, period: int = 4) -> np.ndarray:
-        """中周波: 垂直ストライプ (period px 周期)."""
-        img = np.zeros((size, size), dtype=np.uint8)
-        for k in range(period // 2):
-            img[:, k::period] = 255
-        return img
-
-    @staticmethod
-    def _make_checker(size: int = 64) -> np.ndarray:
-        """高周波: チェッカーボード."""
-        img = np.zeros((size, size), dtype=np.uint8)
-        img[0::2, 0::2] = 255
-        img[1::2, 1::2] = 255
-        return img
-
-    @staticmethod
-    def _make_uniform(size: int = 64, value: int = 128) -> np.ndarray:
-        """単色画像."""
-        return np.full((size, size), value, dtype=np.uint8)
-
     # --- band_energy ---
 
     def test_gradient_energy_concentrated_in_low_band(self):
         """グラデーション画像はエネルギーの 95% 以上が低帯域に集中."""
-        features = self.extractor.extract(self._make_gradient())
+        features = self.extractor.extract(DummyImages.gradient())
         assert features["band_1_0.00_0.10"] > 0.95
 
     def test_stripe_energy_majority_in_mid_band(self):
         """4px ストライプは中帯域にエネルギーの 50% 以上が集中."""
-        features = self.extractor.extract(self._make_h_stripe())
+        features = self.extractor.extract(DummyImages.h_stripe())
         assert features["band_2_0.10_0.30"] > 0.5
 
     def test_stripe_low_band_not_dominant(self):
         """ストライプの低帯域エネルギーは 50% 未満 (DC 除外の効果)."""
-        features = self.extractor.extract(self._make_h_stripe())
+        features = self.extractor.extract(DummyImages.h_stripe())
         assert features["band_1_0.00_0.10"] < 0.5
 
     def test_band_energies_sum_to_one_square(self):
@@ -543,19 +505,19 @@ class TestFFTFrequencyExtractor:
 
     def test_gradient_high_low_ratio_near_zero(self):
         """グラデーション画像の high_low_ratio は ~0 (低周波のみ)."""
-        features = self.extractor.extract(self._make_gradient())
+        features = self.extractor.extract(DummyImages.gradient())
         assert features["high_low_ratio"] < 0.01
 
     def test_stripe_high_low_ratio_above_one(self):
         """ストライプ画像の high_low_ratio は > 1 (高周波 > 低周波)."""
-        features = self.extractor.extract(self._make_h_stripe())
+        features = self.extractor.extract(DummyImages.h_stripe())
         assert features["high_low_ratio"] > 1.0
 
     # --- spectral_std ---
 
     def test_spectral_std_uniform_is_near_zero(self):
         """単色画像のスペクトル標準偏差はランダム画像より十分小さい."""
-        features_uniform = self.extractor.extract(self._make_uniform())
+        features_uniform = self.extractor.extract(DummyImages.uniform())
         np.random.seed(42)
         features_random = self.extractor.extract(
             np.random.randint(0, 256, (64, 64), dtype=np.uint8)
@@ -575,41 +537,41 @@ class TestFFTFrequencyExtractor:
 
     def test_h_stripe_vertical_energy_above_70pct(self):
         """水平ストライプの vertical_energy は 70% 以上."""
-        features = self.extractor.extract(self._make_h_stripe())
+        features = self.extractor.extract(DummyImages.h_stripe())
         assert features["vertical_energy"] > 0.7
 
     def test_h_stripe_vertical_greater_than_horizontal(self):
         """水平ストライプは vertical_energy > horizontal_energy."""
-        features = self.extractor.extract(self._make_h_stripe())
+        features = self.extractor.extract(DummyImages.h_stripe())
         assert features["vertical_energy"] > features["horizontal_energy"]
 
     def test_v_stripe_horizontal_greater_than_vertical(self):
         """垂直ストライプは horizontal_energy > vertical_energy."""
-        features = self.extractor.extract(self._make_v_stripe())
+        features = self.extractor.extract(DummyImages.v_stripe())
         assert features["horizontal_energy"] > features["vertical_energy"]
 
     # --- spectral_centroid ---
 
     def test_gradient_centroid_below_005(self):
         """グラデーション画像のスペクトル重心は < 0.05 (低周波に集中)."""
-        features = self.extractor.extract(self._make_gradient())
+        features = self.extractor.extract(DummyImages.gradient())
         assert features["spectral_centroid"] < 0.05
 
     def test_stripe_centroid_near_025(self):
         """ストライプ画像のスペクトル重心は 0.1-0.3 付近."""
-        features = self.extractor.extract(self._make_h_stripe())
+        features = self.extractor.extract(DummyImages.h_stripe())
         assert 0.1 < features["spectral_centroid"] < 0.3
 
     # --- num_peaks / max_peak_amp ---
 
     def test_num_peaks_positive_for_stripe(self):
         """ストライプ画像のピーク数は 1 以上."""
-        features = self.extractor.extract(self._make_h_stripe())
+        features = self.extractor.extract(DummyImages.h_stripe())
         assert features["num_peaks"] >= 1
 
     def test_max_peak_amp_positive(self):
         """max_peak_amp は非ゼロ画像で正の値."""
-        features = self.extractor.extract(self._make_h_stripe())
+        features = self.extractor.extract(DummyImages.h_stripe())
         assert features["max_peak_amp"] > 0
 
     # --- spectral_entropy ---
@@ -628,15 +590,15 @@ class TestFFTFrequencyExtractor:
         features_random = self.extractor.extract(
             np.random.randint(0, 256, (64, 64), dtype=np.uint8)
         )
-        features_stripe = self.extractor.extract(self._make_h_stripe())
+        features_stripe = self.extractor.extract(DummyImages.h_stripe())
         assert features_stripe["spectral_entropy"] < features_random["spectral_entropy"]
 
     # --- directional_entropy ---
 
     def test_directional_entropy_h_stripe_more_vertical(self):
         """水平ストライプは垂直方向のエントロピーが垂直ストライプより大きい."""
-        features_h = self.extractor.extract(self._make_h_stripe())
-        features_v = self.extractor.extract(self._make_v_stripe())
+        features_h = self.extractor.extract(DummyImages.h_stripe())
+        features_v = self.extractor.extract(DummyImages.v_stripe())
         assert features_h["vertical_entropy"] > features_v["vertical_entropy"]
 
     # --- band_entropy ---
