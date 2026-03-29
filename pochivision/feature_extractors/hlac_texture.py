@@ -96,6 +96,9 @@ class HLACTextureExtractor(BaseFeatureExtractor):
         else:
             self.binarizer = OtsuBinarizationProcessor(name="otsu_for_hlac", config={})
 
+        # スケールリサイザーのキャッシュ (初回呼び出し時に生成)
+        self._scale_resizers: Dict[tuple, ResizeProcessor] = {}
+
         # HLACカーネルの事前生成
         self.kernels = self._generate_hlac_kernels()
 
@@ -235,22 +238,23 @@ class HLACTextureExtractor(BaseFeatureExtractor):
                 new_height = int(image.shape[0] * scale)
                 new_width = int(image.shape[1] * scale)
                 if new_height > 0 and new_width > 0:
-                    # ResizeProcessorを使用してリサイズ
-                    resize_config = ResizeProcessor.get_default_config()
-                    resize_config["width"] = new_width
-                    resize_config["height"] = new_height
-                    resize_config["preserve_aspect_ratio"] = False
-
-                    scale_resize_processor = ResizeProcessor(
-                        name=f"resize_scale_{scale}", config=resize_config
-                    )
-                    scaled_image = scale_resize_processor.process(image)
+                    # スケール用リサイザーをキャッシュ (同一サイズなら再利用)
+                    cache_key = (new_width, new_height)
+                    if cache_key not in self._scale_resizers:
+                        resize_config = ResizeProcessor.get_default_config()
+                        resize_config["width"] = new_width
+                        resize_config["height"] = new_height
+                        resize_config["preserve_aspect_ratio"] = False
+                        self._scale_resizers[cache_key] = ResizeProcessor(
+                            name=f"resize_scale_{scale}", config=resize_config
+                        )
+                    scaled_image = self._scale_resizers[cache_key].process(image)
                 else:
-                    continue  # スケールが小さすぎる場合はスキップ
+                    continue
             else:
                 scaled_image = image
 
-            # 大津法二値化プロセッサを使用
+            # 二値化プロセッサを使用
             binary_image = self.binarizer.process(scaled_image)
             # HLACでは0と1の二値画像が必要なので255を1に正規化
             binary_image = (binary_image / 255).astype(np.uint8)
