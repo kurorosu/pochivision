@@ -179,7 +179,10 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         self, hist: np.ndarray, lbp: np.ndarray
     ) -> Dict[str, float]:
         """
-        LBPヒストグラムから統計量を計算する.
+        LBP 画像とヒストグラムから統計量を計算する.
+
+        mean/std/skewness/kurtosis は LBP 画像の値から直接計算する.
+        entropy/energy はヒストグラムの分布から計算する.
 
         Args:
             hist (np.ndarray): 正規化されたLBPヒストグラム
@@ -191,32 +194,26 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         results = {}
 
         try:
-            # 基本統計量
-            # ヒストグラムの重心（平均）
-            bin_centers = np.arange(len(hist))
-            mean = np.sum(bin_centers * hist) if np.sum(hist) > 0 else 0.0
-            results["lbp_mean"] = float(mean)
+            # LBP 画像から直接計算 (パターン番号ではなくテクスチャ特性を反映)
+            lbp_flat = lbp.ravel().astype(np.float64)
+            mean = float(np.mean(lbp_flat))
+            std = float(np.std(lbp_flat))
+            results["lbp_mean"] = mean
+            results["lbp_std"] = std
 
-            # 標準偏差
-            variance = (
-                np.sum(((bin_centers - mean) ** 2) * hist) if np.sum(hist) > 0 else 0.0
-            )
-            std = np.sqrt(variance)
-            results["lbp_std"] = float(std)
-
-            # 歪度（skewness）
+            # 歪度
             if std > 0:
-                skewness = np.sum(((bin_centers - mean) ** 3) * hist) / (std**3)
+                skewness = float(np.mean(((lbp_flat - mean) / std) ** 3))
             else:
                 skewness = 0.0
-            results["lbp_skewness"] = float(skewness)
+            results["lbp_skewness"] = skewness
 
-            # 尖度（kurtosis）
+            # 尖度 (excess kurtosis)
             if std > 0:
-                kurtosis = np.sum(((bin_centers - mean) ** 4) * hist) / (std**4) - 3.0
+                kurtosis = float(np.mean(((lbp_flat - mean) / std) ** 4) - 3.0)
             else:
                 kurtosis = 0.0
-            results["lbp_kurtosis"] = float(kurtosis)
+            results["lbp_kurtosis"] = kurtosis
 
             # 正規化エントロピー [0, 1] (FFT/SWT と統一)
             hist_nonzero = hist[hist > 0]
