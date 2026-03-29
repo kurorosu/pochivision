@@ -27,7 +27,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
        - 平均 [pattern index] 標準偏差 [pattern index]
        - 歪度 [dimensionless] 尖度 [dimensionless]
     - エントロピー: パターンの複雑さを表す [bits]
-    - 均一性: パターンの均一性を表す [ratio]
+    - energy: ヒストグラムのエネルギー (sum(p^2), GLCM の ASM と同一計算) [ratio]
     - 各LBPビンの正規化頻度（オプション） [ratio]
 
     設定により、近傍点数、半径、手法、画像リサイズなどを調整できます.
@@ -40,7 +40,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         "lbp_skewness": "dimensionless",
         "lbp_kurtosis": "dimensionless",
         "lbp_entropy": "normalized",
-        "lbp_uniformity": "ratio",
+        "lbp_energy": "ratio",
     }
 
     def __init__(
@@ -98,7 +98,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
                 - lbp_skewness: LBPヒストグラムの歪度
                 - lbp_kurtosis: LBPヒストグラムの尖度
                 - lbp_entropy: LBPヒストグラムのエントロピー
-                - lbp_uniformity: LBPヒストグラムの均一性
+                - lbp_energy: LBPヒストグラムのエネルギー (sum(p^2))
                 - lbp_bin_{i}: 各LBPビンの正規化頻度（include_histogramがTrueの場合）
 
         Raises:
@@ -228,9 +228,9 @@ class LBPTextureExtractor(BaseFeatureExtractor):
                 entropy = 0.0
             results["lbp_entropy"] = float(entropy)
 
-            # 均一性（Uniformity）- エネルギーとも呼ばれる
-            uniformity = np.sum(hist**2)
-            results["lbp_uniformity"] = float(uniformity)
+            # エネルギー (Angular Second Moment): sum(p^2)
+            energy = np.sum(hist**2)
+            results["lbp_energy"] = float(energy)
 
         except Exception:
             # 統計量計算でエラーが発生した場合、0で埋める
@@ -241,7 +241,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
                     "lbp_skewness": 0.0,
                     "lbp_kurtosis": 0.0,
                     "lbp_entropy": 0.0,
-                    "lbp_uniformity": 0.0,
+                    "lbp_energy": 0.0,
                 }
             )
 
@@ -260,7 +260,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             "lbp_skewness": 0.0,
             "lbp_kurtosis": 0.0,
             "lbp_entropy": 0.0,
-            "lbp_uniformity": 0.0,
+            "lbp_energy": 0.0,
         }
 
         # ヒストグラムを含む場合のデフォルト値
@@ -328,7 +328,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             "lbp_skewness",
             "lbp_kurtosis",
             "lbp_entropy",
-            "lbp_uniformity",
+            "lbp_energy",
         ]
 
         # デフォルト設定でヒストグラムを含む場合
@@ -403,7 +403,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             "lbp_skewness",
             "lbp_kurtosis",
             "lbp_entropy",
-            "lbp_uniformity",
+            "lbp_energy",
         ]
 
         for feature in base_features:
@@ -444,7 +444,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             "lbp_skewness",
             "lbp_kurtosis",
             "lbp_entropy",
-            "lbp_uniformity",
+            "lbp_energy",
         ]
 
         # インスタンスの設定でヒストグラムを含む場合

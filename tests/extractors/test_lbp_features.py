@@ -34,7 +34,7 @@ def test_lbp_texture_basic():
         "lbp_skewness",
         "lbp_kurtosis",
         "lbp_entropy",
-        "lbp_uniformity",
+        "lbp_energy",
     ]
     for feature in expected_features:
         assert feature in features, f"特徴量 {feature} が見つかりません"
@@ -281,7 +281,7 @@ def test_lbp_feature_names_and_config():
     print(f"特徴量の単位辞書: {feature_units}")
 
     # 個別の特徴量の単位取得テスト
-    test_features = ["lbp_mean", "lbp_entropy", "lbp_uniformity", "nonexistent_feature"]
+    test_features = ["lbp_mean", "lbp_entropy", "lbp_energy", "nonexistent_feature"]
     for feature in test_features:
         unit = LBPTextureExtractor._get_unit_for_feature(feature)
         print(f"特徴量 '{feature}' の単位: {unit}")
@@ -328,7 +328,7 @@ def test_lbp_feature_names_and_config():
         "lbp_skewness": "dimensionless",
         "lbp_kurtosis": "dimensionless",
         "lbp_entropy": "normalized",
-        "lbp_uniformity": "ratio",
+        "lbp_energy": "ratio",
     }
 
     for feature, expected_unit in expected_units.items():

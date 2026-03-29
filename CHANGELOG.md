@@ -14,7 +14,8 @@
 
 ### Fixed
 - LBP ヒストグラム計算を `density=True` から手動正規化に変更. var メソッドの値域と nri_uniform のビン数を修正. ([#217](https://github.com/kurorosu/pochivision/pull/217))
-- LBP エントロピーを `log2(n_bins)` で正規化し [0, 1] 範囲に変更. 単位を `normalized` に統一. (NA.)
+- LBP エントロピーを `log2(n_bins)` で正規化し [0, 1] 範囲に変更. 単位を `normalized` に統一. ([#218](https://github.com/kurorosu/pochivision/pull/218))
+- LBP `lbp_uniformity` を `lbp_energy` にリネームし GLCM の energy (ASM) と名称を統一. (NA.)
 
 ### Removed
 - 無し
