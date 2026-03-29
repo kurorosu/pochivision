@@ -7,6 +7,7 @@ import numpy as np
 from scipy.ndimage import maximum_filter
 
 from pochivision.capturelib.log_manager import LogManager
+from pochivision.processors.resize import ResizeProcessor
 
 from .base import BaseFeatureExtractor
 from .registry import register_feature_extractor
@@ -90,6 +91,25 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         self.directional_tolerance = self.config["directional_tolerance"]
         self.peak_threshold_ratio = self.config["peak_threshold_ratio"]
         self.mm_per_pixel = self.config.get("mm_per_pixel")
+
+        # リサイズ
+        resize_shape_config = self.config["resize_shape"]
+        self.resize_shape = (
+            tuple(resize_shape_config) if resize_shape_config is not None else None
+        )
+        self.resize_processor = None
+        if self.resize_shape is not None:
+            resize_config = ResizeProcessor.get_default_config()
+            resize_config["width"] = self.resize_shape[1]
+            resize_config["height"] = self.resize_shape[0]
+            resize_config["preserve_aspect_ratio"] = self.config[
+                "preserve_aspect_ratio"
+            ]
+            resize_config["aspect_ratio_mode"] = self.config["aspect_ratio_mode"]
+            self.resize_processor = ResizeProcessor(
+                name="resize_for_fft", config=resize_config
+            )
+
         if self.mm_per_pixel is not None and self.mm_per_pixel <= 0:
             raise ValueError(
                 f"mm_per_pixel must be a positive number, got {self.mm_per_pixel}"
@@ -395,6 +415,9 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         else:
             raise ValueError(f"Input image must be 2D or 3D, got shape: {image.shape}")
 
+        if self.resize_processor is not None:
+            gray_image = self.resize_processor.process(gray_image)
+
         _MIN_FFT_SIZE = 4
         if gray_image.shape[0] < _MIN_FFT_SIZE or gray_image.shape[1] < _MIN_FFT_SIZE:
             raise ValueError(
@@ -505,6 +528,9 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
             "directional_tolerance": 10.0,  # 方向性エネルギーの許容角度（度）
             "peak_threshold_ratio": 0.1,  # ピーク検出の閾値比
             "mm_per_pixel": None,  # ピクセル解像度（Noneの場合はピクセル単位）
+            "resize_shape": None,  # リサイズ形状 (None=リサイズしない)
+            "preserve_aspect_ratio": True,  # アスペクト比を保持
+            "aspect_ratio_mode": "width",  # 基準軸 ("width" or "height")
         }
 
     @staticmethod

@@ -76,9 +76,10 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             resize_config = ResizeProcessor.get_default_config()
             resize_config["width"] = self.resize_shape[1]
             resize_config["height"] = self.resize_shape[0]
-            # 特徴量抽出では正確なサイズ合わせが必要なため、アスペクト比保持を無効化
-            resize_config["preserve_aspect_ratio"] = False
-
+            resize_config["preserve_aspect_ratio"] = self.config[
+                "preserve_aspect_ratio"
+            ]
+            resize_config["aspect_ratio_mode"] = self.config["aspect_ratio_mode"]
             self.resize_processor = ResizeProcessor(
                 name="resize_for_lbp", config=resize_config
             )
@@ -278,6 +279,8 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             "method": "uniform",  # 回転不変uniform LBP
             "resize_shape": [128, 128],  # 128x128にリサイズ
             "include_histogram": False,  # ヒストグラムは含めない（統計量のみ）
+            "preserve_aspect_ratio": True,
+            "aspect_ratio_mode": "width",
         }
 
     @staticmethod
