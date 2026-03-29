@@ -205,17 +205,17 @@ pochivision follows SOLID principles with a modular architecture:
 
 Feature extractors analyze processed images and output numerical features for downstream AI tasks.
 
-| # | Name | Description |
-|---|------|-------------|
-| 1 | `rgb` | RGB channel statistics (mean, std, etc.) |
-| 2 | `hsv` | HSV channel statistics |
-| 3 | `brightness` | Brightness statistics |
-| 4 | `glcm` | GLCM texture features (contrast, energy, etc.) |
-| 5 | `hlac` | HLAC texture features |
-| 6 | `lbp` | LBP texture features |
-| 7 | `fft` | FFT frequency features |
-| 8 | `swt` | SWT frequency features |
-| 9 | `circle_counter` | Circle detection and counting |
+| # | Name | Description | Guide |
+|---|------|-------------|-------|
+| 1 | `rgb` | RGB channel statistics (mean, std, etc.) | |
+| 2 | `hsv` | HSV channel statistics | |
+| 3 | `brightness` | Brightness statistics | |
+| 4 | `glcm` | GLCM texture features (contrast, energy, etc.) | [docs/glcm_features.md](docs/glcm_features.md) |
+| 5 | `hlac` | HLAC texture features | [docs/hlac_features.md](docs/hlac_features.md) |
+| 6 | `lbp` | LBP texture features | [docs/lbp_features.md](docs/lbp_features.md) |
+| 7 | `fft` | FFT frequency features | [docs/fft_features.md](docs/fft_features.md) |
+| 8 | `swt` | SWT frequency features | [docs/swt_features.md](docs/swt_features.md) |
+| 9 | `circle_counter` | Circle detection and counting | |
 
 ## License
 
