@@ -7,7 +7,11 @@ import numpy as np
 from scipy.signal import convolve2d
 
 from pochivision.capturelib.log_manager import LogManager
-from pochivision.processors.binarization import OtsuBinarizationProcessor
+from pochivision.processors.base import BaseProcessor
+from pochivision.processors.binarization import (
+    GaussianAdaptiveBinarizationProcessor,
+    OtsuBinarizationProcessor,
+)
 from pochivision.processors.resize import ResizeProcessor
 
 from .base import BaseFeatureExtractor
@@ -78,8 +82,19 @@ class HLACTextureExtractor(BaseFeatureExtractor):
                 name="resize_for_hlac", config=resize_config
             )
 
-        # 大津法二値化プロセッサの準備
-        self.otsu_processor = OtsuBinarizationProcessor(name="otsu_for_hlac", config={})
+        # 二値化プロセッサの準備
+        self.binarization_method = self.config["binarization_method"]
+        self.binarizer: BaseProcessor
+        if self.binarization_method == "adaptive":
+            adaptive_config = {
+                "block_size": self.config.get("adaptive_block_size", 11),
+                "c": self.config.get("adaptive_c", 2),
+            }
+            self.binarizer = GaussianAdaptiveBinarizationProcessor(
+                name="adaptive_for_hlac", config=adaptive_config
+            )
+        else:
+            self.binarizer = OtsuBinarizationProcessor(name="otsu_for_hlac", config={})
 
         # HLACカーネルの事前生成
         self.kernels = self._generate_hlac_kernels()
@@ -236,18 +251,13 @@ class HLACTextureExtractor(BaseFeatureExtractor):
                 scaled_image = image
 
             # 大津法二値化プロセッサを使用
-            binary_image = self.otsu_processor.process(scaled_image)
+            binary_image = self.binarizer.process(scaled_image)
             # HLACでは0と1の二値画像が必要なので255を1に正規化
             binary_image = (binary_image / 255).astype(np.uint8)
 
-            # パディング（境界処理）
-            padded_image = np.pad(binary_image, pad_width=1, mode="constant")
-
-            # 各カーネルに対して畳み込み処理
+            # 各カーネルに対して相関計算 (パディングなしで境界を除外)
             for i, kernel in enumerate(self.kernels):
-                # 畳み込み計算
-                conv_result = convolve2d(padded_image, kernel[::-1, ::-1], mode="valid")
-                # パターンマッチング（カーネルの合計値と一致する画素数をカウント）
+                conv_result = convolve2d(binary_image, kernel[::-1, ::-1], mode="valid")
                 total_features[i] += np.sum(conv_result == kernel.sum())
 
         # 正規化処理
@@ -291,6 +301,9 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             "normalize": True,
             "scales": [1.0, 0.75, 0.5],
             "resize_shape": None,
+            "binarization_method": "adaptive",  # "otsu" or "adaptive"
+            "adaptive_block_size": 11,  # adaptive 時のブロックサイズ
+            "adaptive_c": 2,  # adaptive 時の定数 C
         }
 
     @staticmethod

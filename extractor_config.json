@@ -56,7 +56,10 @@
       "rotate_invariant": true,
       "normalize": true,
       "scales": [1.0, 0.75, 0.5],
-      "resize_shape": [512, 512]
+      "resize_shape": [512, 512],
+      "binarization_method": "adaptive",
+      "adaptive_block_size": 11,
+      "adaptive_c": 2
     },
     "circle_counter": {
       "min_radius": 5,
