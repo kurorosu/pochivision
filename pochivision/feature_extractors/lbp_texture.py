@@ -138,14 +138,29 @@ class LBPTextureExtractor(BaseFeatureExtractor):
 
             lbp = local_binary_pattern(gray_image, self.P, self.R, method=self.method)
 
-            # 理論的ビン数を使用 (画像内容に依存しない固定次元)
+            # メソッド別のビン数と範囲を設定
             if self.method == "uniform":
                 n_bins = self.P + 2
-            else:
+                hist_range = (0.0, float(n_bins))
+            elif self.method == "nri_uniform":
+                n_bins = self.P * (self.P - 1) + 3
+                hist_range = (0.0, float(n_bins))
+            elif self.method == "var":
+                # var メソッドは連続値を返すため, 実際の値域を使用
+                n_bins = 256
+                hist_range = (float(lbp.min()), float(lbp.max()) + 1e-10)
+            else:  # default, ror
                 n_bins = 2**self.P
+                hist_range = (0.0, float(n_bins))
+
+            # density=False + 手動正規化で確率分布 (和=1) を計算
             hist, _ = np.histogram(
-                lbp.ravel(), bins=n_bins, range=(0, n_bins), density=True
+                lbp.ravel(), bins=n_bins, range=hist_range, density=False
             )
+            hist = hist.astype(np.float64)
+            total = hist.sum()
+            if total > 0:
+                hist = hist / total
 
             results = self._calculate_statistics(hist, lbp)
 
@@ -318,14 +333,17 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         # デフォルト設定でヒストグラムを含む場合
         default_config = LBPTextureExtractor.get_default_config()
         if default_config["include_histogram"]:
-            # uniform LBPの場合のビン数を計算
             P = default_config["P"]
             method = default_config["method"]
 
             if method == "uniform":
-                max_bins = P + 2  # uniform LBPの場合
+                max_bins = P + 2
+            elif method == "nri_uniform":
+                max_bins = P * (P - 1) + 3
+            elif method == "var":
+                max_bins = 256
             else:
-                max_bins = 2**P  # 通常のLBPの場合
+                max_bins = 2**P
 
             for i in range(max_bins):
                 feature_names.append(f"lbp_bin_{i}")
@@ -398,9 +416,13 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             method = self.method
 
             if method == "uniform":
-                max_bins = P + 2  # uniform LBPの場合
+                max_bins = P + 2
+            elif method == "nri_uniform":
+                max_bins = P * (P - 1) + 3
+            elif method == "var":
+                max_bins = 256
             else:
-                max_bins = 2**P  # 通常のLBPの場合
+                max_bins = 2**P
 
             for i in range(max_bins):
                 feature_names.append(f"lbp_bin_{i}[ratio]")
@@ -426,14 +448,17 @@ class LBPTextureExtractor(BaseFeatureExtractor):
 
         # インスタンスの設定でヒストグラムを含む場合
         if self.include_histogram:
-            # uniform LBPの場合のビン数を計算
             P = self.P
             method = self.method
 
             if method == "uniform":
-                max_bins = P + 2  # uniform LBPの場合
+                max_bins = P + 2
+            elif method == "nri_uniform":
+                max_bins = P * (P - 1) + 3
+            elif method == "var":
+                max_bins = 256
             else:
-                max_bins = 2**P  # 通常のLBPの場合
+                max_bins = 2**P
 
             for i in range(max_bins):
                 feature_names.append(f"lbp_bin_{i}")
@@ -451,14 +476,17 @@ class LBPTextureExtractor(BaseFeatureExtractor):
 
         # インスタンスの設定でヒストグラムを含む場合
         if self.include_histogram:
-            # uniform LBPの場合のビン数を計算
             P = self.P
             method = self.method
 
             if method == "uniform":
-                max_bins = P + 2  # uniform LBPの場合
+                max_bins = P + 2
+            elif method == "nri_uniform":
+                max_bins = P * (P - 1) + 3
+            elif method == "var":
+                max_bins = 256
             else:
-                max_bins = 2**P  # 通常のLBPの場合
+                max_bins = 2**P
 
             for i in range(max_bins):
                 units[f"lbp_bin_{i}"] = "ratio"
