@@ -20,6 +20,7 @@
 ## [0.1.4] - 2026-03-29
 
 ### Added
+- `docs/swt_features.md` を追加. SWT 特徴量抽出器の全特徴量・パラメータ・設計制約の解説. (NA.)
 - SWT の振る舞いテスト 18 件を追加. ([#208](https://github.com/kurorosu/pochivision/pull/208))
 
 ### Changed
