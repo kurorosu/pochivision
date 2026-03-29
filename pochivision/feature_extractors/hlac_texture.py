@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import cv2
 import numpy as np
-from scipy.signal import convolve2d
+from scipy.signal import correlate2d
 
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.processors.base import BaseProcessor
@@ -258,11 +258,11 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             # 二値化プロセッサを使用
             binary_image = self.binarizer.process(scaled_image)
             # HLACでは0と1の二値画像が必要なので255を1に正規化
-            binary_image = (binary_image / 255).astype(np.uint8)
+            binary_image = (binary_image > 0).astype(np.uint8)
 
             # 各カーネルに対して相関計算 (パディングなしで境界を除外)
             for i, kernel in enumerate(self.kernels):
-                conv_result = convolve2d(binary_image, kernel[::-1, ::-1], mode="valid")
+                conv_result = correlate2d(binary_image, kernel, mode="valid")
                 total_features[i] += np.sum(conv_result == kernel.sum())
 
         # 正規化処理
