@@ -402,3 +402,169 @@ class TestSWTFrequencyExtractor:
         assert len(features_3d) > 0
         assert all(isinstance(v, (int, float)) for v in features_2d.values())
         assert all(isinstance(v, (int, float)) for v in features_3d.values())
+
+
+class TestSWTBehavior:
+    """SWT 特徴量の振る舞いテスト."""
+
+    _CONFIG = {
+        "wavelet": "db1",
+        "max_level": 1,
+        "multiscale": True,
+        "resize_shape": None,
+        "preserve_aspect_ratio": True,
+        "aspect_ratio_mode": "width",
+    }
+
+    @staticmethod
+    def _make_uniform(size: int = 64, value: int = 128) -> np.ndarray:
+        return np.full((size, size), value, dtype=np.uint8)
+
+    @staticmethod
+    def _make_h_stripe(size: int = 64) -> np.ndarray:
+        img = np.zeros((size, size), dtype=np.uint8)
+        img[0::4, :] = 255
+        img[1::4, :] = 255
+        return img
+
+    @staticmethod
+    def _make_v_stripe(size: int = 64) -> np.ndarray:
+        img = np.zeros((size, size), dtype=np.uint8)
+        img[:, 0::4] = 255
+        img[:, 1::4] = 255
+        return img
+
+    @staticmethod
+    def _make_random(size: int = 64) -> np.ndarray:
+        np.random.seed(42)
+        return np.random.randint(0, 256, (size, size), dtype=np.uint8)
+
+    def setup_method(self):
+        """テストメソッドごとに extractor を初期化."""
+        self.ext = SWTFrequencyExtractor(config=self._CONFIG)
+
+    # --- 均一画像 ---
+
+    def test_uniform_detail_energy_zero(self):
+        """均一画像の detail energy (LH, HL, HH) は全てゼロ."""
+        f = self.ext.extract(self._make_uniform())
+        assert f["L1_energy_lh"] == 0.0
+        assert f["L1_energy_hl"] == 0.0
+        assert f["L1_energy_hh"] == 0.0
+
+    def test_uniform_entropy_zero(self):
+        """均一画像のエントロピーは全てゼロ."""
+        f = self.ext.extract(self._make_uniform())
+        assert f["L1_entropy_ll"] == 0.0
+        assert f["L1_entropy_lh"] == 0.0
+        assert f["L1_entropy_hl"] == 0.0
+        assert f["L1_entropy_hh"] == 0.0
+
+    def test_uniform_std_zero(self):
+        """均一画像の detail std は全てゼロ."""
+        f = self.ext.extract(self._make_uniform())
+        assert f["L1_std_lh"] == 0.0
+        assert f["L1_std_hl"] == 0.0
+        assert f["L1_std_hh"] == 0.0
+
+    # --- 水平ストライプ → HL=0, LH>0 ---
+
+    def test_h_stripe_lh_energy_positive(self):
+        """水平ストライプは LH (垂直エッジ検出) のエネルギーが正."""
+        f = self.ext.extract(self._make_h_stripe())
+        assert f["L1_energy_lh"] > 100
+
+    def test_h_stripe_hl_energy_zero(self):
+        """水平ストライプは HL (水平エッジ検出) のエネルギーがゼロ."""
+        f = self.ext.extract(self._make_h_stripe())
+        assert f["L1_energy_hl"] < 0.01
+
+    def test_h_stripe_energy_ratio_h_is_one(self):
+        """水平ストライプは energy_ratio_h (LH 方向) が ~1.0."""
+        f = self.ext.extract(self._make_h_stripe())
+        assert f["L1_energy_ratio_h"] > 0.95
+
+    def test_h_stripe_energy_ratio_v_is_zero(self):
+        """水平ストライプは energy_ratio_v (HL 方向) が ~0."""
+        f = self.ext.extract(self._make_h_stripe())
+        assert f["L1_energy_ratio_v"] < 0.05
+
+    # --- 垂直ストライプ → LH=0, HL>0 (水平と逆) ---
+
+    def test_v_stripe_hl_energy_positive(self):
+        """垂直ストライプは HL (水平エッジ検出) のエネルギーが正."""
+        f = self.ext.extract(self._make_v_stripe())
+        assert f["L1_energy_hl"] > 100
+
+    def test_v_stripe_lh_energy_zero(self):
+        """垂直ストライプは LH (垂直エッジ検出) のエネルギーがゼロ."""
+        f = self.ext.extract(self._make_v_stripe())
+        assert f["L1_energy_lh"] < 0.01
+
+    def test_v_stripe_energy_ratio_v_is_one(self):
+        """垂直ストライプは energy_ratio_v (HL 方向) が ~1.0."""
+        f = self.ext.extract(self._make_v_stripe())
+        assert f["L1_energy_ratio_v"] > 0.95
+
+    # --- ランダム ---
+
+    def test_random_all_ratios_nonzero(self):
+        """ランダム画像は全方向の energy_ratio が正."""
+        f = self.ext.extract(self._make_random())
+        assert f["L1_energy_ratio_h"] > 0.1
+        assert f["L1_energy_ratio_v"] > 0.1
+        assert f["L1_energy_ratio_d"] > 0.1
+
+    def test_random_ratios_sum_near_one(self):
+        """ランダム画像の energy_ratio の合計が ~1.0."""
+        f = self.ext.extract(self._make_random())
+        total = f["L1_energy_ratio_h"] + f["L1_energy_ratio_v"] + f["L1_energy_ratio_d"]
+        assert 0.95 <= total <= 1.05
+
+    def test_random_entropy_positive(self):
+        """ランダム画像のエントロピーは全て正."""
+        f = self.ext.extract(self._make_random())
+        assert f["L1_entropy_ll"] > 1.0
+        assert f["L1_entropy_lh"] > 1.0
+        assert f["L1_entropy_hl"] > 1.0
+        assert f["L1_entropy_hh"] > 1.0
+
+    # --- dtype 一致 ---
+
+    def test_uint8_equals_float32(self):
+        """同じ画像の uint8 と float32 (0-255) で特徴量が一致."""
+        np.random.seed(42)
+        img_uint8 = np.random.randint(0, 256, (64, 64), dtype=np.uint8)
+        img_float = img_uint8.astype(np.float32)  # [0, 255] range
+
+        f_u = self.ext.extract(img_uint8)
+        f_f = self.ext.extract(img_float)
+
+        for key in f_u:
+            assert abs(f_u[key] - f_f[key]) < 1e-6, f"{key}: {f_u[key]} vs {f_f[key]}"
+
+    # --- 極小画像ガード ---
+
+    def test_small_image_raises(self):
+        """4x4 未満の画像で ValueError が発生."""
+        for size in [(1, 1), (2, 2), (3, 3), (3, 64), (64, 3)]:
+            small = np.ones(size, dtype=np.uint8) * 128
+            with pytest.raises(ValueError, match="Image too small for SWT"):
+                self.ext.extract(small)
+
+    def test_minimum_size_works(self):
+        """最小サイズ (4x4) の画像が正常に処理される."""
+        min_img = np.random.randint(0, 256, (4, 4), dtype=np.uint8)
+        f = self.ext.extract(min_img)
+        assert "L1_energy_ll" in f
+
+    # --- 方向性の対称性 ---
+
+    def test_h_stripe_v_stripe_symmetry(self):
+        """水平と垂直ストライプの LH/HL エネルギーが入れ替わる."""
+        fh = self.ext.extract(self._make_h_stripe())
+        fv = self.ext.extract(self._make_v_stripe())
+        # 水平ストライプの LH ≈ 垂直ストライプの HL
+        assert abs(fh["L1_energy_lh"] - fv["L1_energy_hl"]) < 1.0
+        # 水平ストライプの HL ≈ 垂直ストライプの LH
+        assert abs(fh["L1_energy_hl"] - fv["L1_energy_lh"]) < 1.0

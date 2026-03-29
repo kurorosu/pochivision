@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 import numpy as np
 import pywt
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.processors.resize import ResizeProcessor
 from pochivision.utils.image import to_grayscale
 
@@ -23,28 +24,28 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
 
     抽出する特徴量:
     - mean_ll: 低周波成分（LL）の平均値 [coefficient]
-    - mean_lh: 水平高周波成分（LH）の平均値 [coefficient]
-    - mean_hl: 垂直高周波成分（HL）の平均値 [coefficient]
+    - mean_lh: LH サブバンド (垂直エッジ検出) の平均値 [coefficient]
+    - mean_hl: HL サブバンド (水平エッジ検出) の平均値 [coefficient]
     - mean_hh: 対角高周波成分（HH）の平均値 [coefficient]
     - energy_ll: 低周波成分（LL）のエネルギー [coefficient_squared]
-    - energy_lh: 水平高周波成分（LH）のエネルギー [coefficient_squared]
-    - energy_hl: 垂直高周波成分（HL）のエネルギー [coefficient_squared]
+    - energy_lh: LH サブバンド (垂直エッジ検出) のエネルギー [coefficient_squared]
+    - energy_hl: HL サブバンド (水平エッジ検出) のエネルギー [coefficient_squared]
     - energy_hh: 対角高周波成分（HH）のエネルギー [coefficient_squared]
     - energy_ratio_h: 水平方向エネルギー比 [ratio]
     - energy_ratio_v: 垂直方向エネルギー比 [ratio]
     - energy_ratio_d: 対角方向エネルギー比 [ratio]
     - total_energy: 全エネルギー [coefficient_squared]
     - entropy_ll: 低周波成分のエントロピー [bits]
-    - entropy_lh: 水平高周波成分のエントロピー [bits]
-    - entropy_hl: 垂直高周波成分のエントロピー [bits]
+    - entropy_lh: LH サブバンド (垂直エッジ検出) のエントロピー [bits]
+    - entropy_hl: HL サブバンド (水平エッジ検出) のエントロピー [bits]
     - entropy_hh: 対角高周波成分のエントロピー [bits]
     - std_ll: 低周波成分の標準偏差 [coefficient]
-    - std_lh: 水平高周波成分の標準偏差 [coefficient]
-    - std_hl: 垂直高周波成分の標準偏差 [coefficient]
+    - std_lh: LH サブバンド (垂直エッジ検出) の標準偏差 [coefficient]
+    - std_hl: HL サブバンド (水平エッジ検出) の標準偏差 [coefficient]
     - std_hh: 対角高周波成分の標準偏差 [coefficient]
 
-    マルチスケール解析を行う場合、各レベルの特徴量が追加されます。
-    マルチスケールでない場合は、最高レベル（最も詳細な分解レベル）の特徴量のみが抽出されます。
+    マルチスケール解析を行う場合, L1 (高周波) から LN (低周波) の各レベルの特徴量が追加される.
+    マルチスケールでない場合は, level 1 (最細, 高周波詳細) の特徴量のみが抽出される.
     """
 
     def __init__(
@@ -129,22 +130,21 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
         # 値の範囲を取得
         min_val, max_val = flattened.min(), flattened.max()
 
-        # 範囲が0の場合（すべて同じ値）はエントロピー0
+        # 値域が極めて狭い場合はエントロピー 0 (均一に近い)
         if max_val == min_val:
             return 0.0
 
-        # ヒストグラムを計算（256ビンで正規化された範囲）
-        hist, _ = np.histogram(
-            flattened, bins=256, range=(min_val, max_val), density=False
-        )
+        # 256 段階に量子化してヒストグラムを作成
+        # 浮動小数点の精度問題を回避するため, 整数インデックスに変換
+        normalized = (flattened - min_val) / (max_val - min_val)  # [0, 1]
+        indices = np.clip((normalized * 255).astype(np.int32), 0, 255)
+        hist = np.bincount(indices, minlength=256).astype(np.float64)
 
-        # 確率に変換
+        # 確率に変換, ゼロを除外
         prob = hist / np.sum(hist)
-
-        # ゼロ確率を除去（log(0)を回避）
         prob = prob[prob > 0]
 
-        # シャノンエントロピーを計算: -Σ p * log2(p)
+        # シャノンエントロピーを計算: -sum(p * log2(p))
         return float(-np.sum(prob * np.log2(prob)))
 
     def _compute_std(self, coeffs: np.ndarray) -> float:
@@ -308,19 +308,32 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             ValueError: 画像の次元が不正な場合
             RuntimeError: SWT変換に失敗した場合
         """
+        _MIN_SWT_SIZE = 4
+        if image is None or image.size == 0:
+            raise ValueError("Input image is empty or None")
+
         try:
             gray_image = to_grayscale(image)
 
             if self.resize_processor is not None:
                 gray_image = self.resize_processor.process(gray_image)
 
+            if (
+                gray_image.shape[0] < _MIN_SWT_SIZE
+                or gray_image.shape[1] < _MIN_SWT_SIZE
+            ):
+                raise ValueError(
+                    f"Image too small for SWT: {gray_image.shape}. "
+                    f"Minimum size is {_MIN_SWT_SIZE}x{_MIN_SWT_SIZE}."
+                )
+
             # SWT変換のために画像サイズを調整（奇数サイズを偶数サイズに）
             gray_image = self._adjust_image_size_for_swt(gray_image)
 
-            if np.issubdtype(gray_image.dtype, np.integer):
-                gray_image = gray_image.astype(np.float32) / 255.0
-            else:
-                gray_image = gray_image.astype(np.float32)
+            # dtype に関わらず同じ画像から同じ特徴量が得られるよう [0, 1] に統一
+            gray_image = gray_image.astype(np.float32)
+            if gray_image.max() > 1.0:
+                gray_image = gray_image / 255.0
 
             # 設定値を使用してSWT変換を実行
             max_level = self.config.get("max_level", 1)
@@ -333,30 +346,25 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             features = {}
 
             if self.config.get("multiscale", True):
-                # マルチスケール解析：各レベルの特徴量を抽出
-                for level_idx, level_coeffs in enumerate(coeffs, start=1):
+                # マルチスケール解析: 各レベルの特徴量を抽出
+                # pywt.swt2 は coarsest-first で返すので逆順にし,
+                # L1=最細 (level 1), LN=最粗 (level N) とする
+                max_level = len(coeffs)
+                for level_idx, level_coeffs in enumerate(reversed(coeffs), start=1):
                     level_features = self._extract_single_level_features(
                         level_coeffs, level=level_idx
                     )
                     features.update(level_features)
             else:
-                # 単一スケール解析：最高レベル（最も詳細な分解レベル）のみ
-                highest_level_coeffs = coeffs[-1]
-                features = self._extract_single_level_features(highest_level_coeffs)
+                # 単一スケール解析: level 1 (最細, 高周波詳細) のみ
+                finest_level_coeffs = coeffs[-1]
+                features = self._extract_single_level_features(finest_level_coeffs)
 
             return features
 
-        except Exception as e:
-            # より詳細なエラーメッセージを提供
-            max_level = self.config.get("max_level", 1)
-
-            error_msg = f"SWT特徴量抽出中にエラーが発生しました: {str(e)}"
-            error_msg += f" (画像サイズ: {image.shape})"
-            if "gray_image" in locals():
-                error_msg += f" (調整後サイズ: {gray_image.shape})"
-            error_msg += f" (設定レベル: {max_level})"
-
-            raise RuntimeError(error_msg) from e
+        except Exception:
+            LogManager().get_logger().exception("SWT feature extraction failed")
+            raise
 
     @staticmethod
     def get_default_config() -> Dict[str, Any]:
@@ -378,13 +386,17 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
     @staticmethod
     def get_feature_names(config: Optional[Dict[str, Any]] = None) -> List[str]:
         """
-        抽出される特徴量名のリストを取得する（単位付き）.
+        抽出される特徴量名のリストを取得する (単位付き).
+
+        特徴量名は `multiscale` と `max_level` に依存するため,
+        実際のインスタンス設定と一致させるには config を渡す必要がある.
+        config=None の場合はデフォルト設定 (multiscale=True, max_level=1) を使用.
 
         Args:
-            config (Optional[Dict[str, Any]]): 設定辞書。Noneの場合はデフォルト設定を使用。
+            config (Optional[Dict[str, Any]]): 設定辞書.
 
         Returns:
-            List[str]: 特徴量名のリスト（単位付き）.
+            List[str]: 特徴量名のリスト (単位付き).
         """
         base_names = SWTFrequencyExtractor.get_base_feature_names(config)
         return [
