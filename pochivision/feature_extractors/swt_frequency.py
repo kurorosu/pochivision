@@ -316,10 +316,10 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             # SWT変換のために画像サイズを調整（奇数サイズを偶数サイズに）
             gray_image = self._adjust_image_size_for_swt(gray_image)
 
-            if np.issubdtype(gray_image.dtype, np.integer):
-                gray_image = gray_image.astype(np.float32) / 255.0
-            else:
-                gray_image = gray_image.astype(np.float32)
+            # dtype に関わらず同じ画像から同じ特徴量が得られるよう [0, 1] に統一
+            gray_image = gray_image.astype(np.float32)
+            if gray_image.max() > 1.0:
+                gray_image = gray_image / 255.0
 
             # 設定値を使用してSWT変換を実行
             max_level = self.config.get("max_level", 1)
