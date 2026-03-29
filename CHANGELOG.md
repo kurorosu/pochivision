@@ -12,7 +12,7 @@
 - 無し
 
 ### Fixed
-- 無し
+- SWT エントロピー計算を `np.histogram` から `np.bincount` ベースに変更し, 狭い値域でのクラッシュを解消. (NA.)
 
 ### Removed
 - 無し
