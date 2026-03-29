@@ -29,12 +29,18 @@ class HLACTextureExtractor(BaseFeatureExtractor):
     高次の空間的相関パターンを定量化できます。
 
     抽出する特徴量:
-    - 標準HLAC: 37次元の特徴量（0次1 + 1次8 + 2次28） [correlation_coefficient]
-    - 回転不変HLAC: 11次元の特徴量（回転に対して不変） [correlation_coefficient]
+    - 標準HLAC: 37次元 (0次1 + 1次8 + 2次28) [correlation_coefficient]
+    - 回転不変HLAC: 11次元 (90度回転で等価なパターンを統合) [correlation_coefficient]
     - スケール不変性: 複数スケールでの特徴抽出 [correlation_coefficient]
-    - 正規化: 特徴量の正規化による明度変化への頑健性 [normalized_correlation]
+    - 正規化: L1 正規化による明度変化への頑健性 [normalized_correlation]
 
-    設定により、次数、回転不変性、正規化、スケール係数などを調整できます。
+    回転不変性の制約:
+    - 90度単位の回転 (0, 90, 180, 270度) のみ対応.
+    - 左右反転 / 上下反転は未対応.
+    - 8方向すべての変換 (4回転 x 2反転) に対応する場合は
+      更に特徴量次元が減少するが, 現実装では反転を含めない.
+
+    設定により, 次数, 回転不変性, 正規化, スケール係数, 二値化方式などを調整できる.
     """
 
     # 特徴量の単位定義
