@@ -332,8 +332,11 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             features = {}
 
             if self.config.get("multiscale", True):
-                # マルチスケール解析：各レベルの特徴量を抽出
-                for level_idx, level_coeffs in enumerate(coeffs, start=1):
+                # マルチスケール解析: 各レベルの特徴量を抽出
+                # pywt.swt2 は coarsest-first で返すので逆順にし,
+                # L1=最細 (level 1), LN=最粗 (level N) とする
+                max_level = len(coeffs)
+                for level_idx, level_coeffs in enumerate(reversed(coeffs), start=1):
                     level_features = self._extract_single_level_features(
                         level_coeffs, level=level_idx
                     )
