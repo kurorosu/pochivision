@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 import numpy as np
 import pywt
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.processors.resize import ResizeProcessor
 from pochivision.utils.image import to_grayscale
 
@@ -348,17 +349,9 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
 
             return features
 
-        except Exception as e:
-            # より詳細なエラーメッセージを提供
-            max_level = self.config.get("max_level", 1)
-
-            error_msg = f"SWT特徴量抽出中にエラーが発生しました: {str(e)}"
-            error_msg += f" (画像サイズ: {image.shape})"
-            if "gray_image" in locals():
-                error_msg += f" (調整後サイズ: {gray_image.shape})"
-            error_msg += f" (設定レベル: {max_level})"
-
-            raise RuntimeError(error_msg) from e
+        except Exception:
+            LogManager().get_logger().exception("SWT feature extraction failed")
+            raise
 
     @staticmethod
     def get_default_config() -> Dict[str, Any]:

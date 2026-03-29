@@ -15,7 +15,8 @@
 - SWT エントロピー計算を `np.histogram` から `np.bincount` ベースに変更し, 狭い値域でのクラッシュを解消. ([#193](https://github.com/kurorosu/pochivision/pull/193))
 - SWT マルチスケールのレベルラベリングを修正し, L1=高周波, LN=低周波に変更. ([#194](https://github.com/kurorosu/pochivision/pull/194))
 - SWT `multiscale=False` 時のレベル選択と docstring を明確化 (level 1, 高周波詳細). ([#195](https://github.com/kurorosu/pochivision/pull/195))
-- SWT の dtype 正規化を統一し, uint8 と float32 (0-255) で同じ特徴量が得られるよう修正. (NA.)
+- SWT の dtype 正規化を統一し, uint8 と float32 (0-255) で同じ特徴量が得られるよう修正. ([#196](https://github.com/kurorosu/pochivision/pull/196))
+- SWT の `except Exception` を `LogManager` ログ出力 + `raise` に変更し, FFT/GLCM/HLAC と統一. (NA.)
 
 ### Removed
 - 無し
