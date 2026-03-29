@@ -6,7 +6,7 @@
 ## [Unreleased]
 
 ### Added
-- `docs/glcm_features.md` を追加. GLCM 特徴量抽出器の全プロパティ・パラメータ・設計制約の解説. (NA.)
+- `docs/glcm_features.md` を追加. GLCM 特徴量抽出器の全プロパティ・パラメータ・設計制約の解説. ([#176](https://github.com/kurorosu/pochivision/pull/176))
 - GLCM の振る舞いテスト 17 件を追加. 均一画像, チェッカーボード, グラデーション, ランダム画像で特徴量値を検証. ([#164](https://github.com/kurorosu/pochivision/pull/164))
 - GLCM docstring の `asm` を `ASM` に修正. ([#165](https://github.com/kurorosu/pochivision/pull/165))
 - GLCM docstring に特徴量名形式・特徴量数の計算式を追記. ([#166](https://github.com/kurorosu/pochivision/pull/166))
@@ -17,7 +17,8 @@
 - FFT と SWT に `resize_shape` を追加. 全抽出器 (GLCM, LBP, HLAC, FFT, SWT) に `preserve_aspect_ratio` / `aspect_ratio_mode` を追加しデフォルト `true` / `"width"` に設定. ([#180](https://github.com/kurorosu/pochivision/pull/180))
 - HLAC の振る舞いテスト 11 件を追加. 全白, チェッカーボード, ストライプ, ランダム画像で特徴量値を検証. ([#181](https://github.com/kurorosu/pochivision/pull/181))
 - HLAC の二値化を `binary / 255` から `binary > 0` に変更, `convolve2d` + 二重反転を `correlate2d` に変更. ([#182](https://github.com/kurorosu/pochivision/pull/182))
-- HLAC docstring に回転不変性の制約 (90度回転のみ, 反転未対応) を追記. (NA.)
+- HLAC docstring に回転不変性の制約 (90度回転のみ, 反転未対応) を追記. ([#183](https://github.com/kurorosu/pochivision/pull/183))
+- `docs/hlac_features.md` を追加. FFT/GLCM docs にリサイズパラメータを追記. (NA.)
 
 ### Changed
 - GLCM に `resize_shape` オプションを追加. ([#163](https://github.com/kurorosu/pochivision/pull/163))
