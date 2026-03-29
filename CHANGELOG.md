@@ -18,7 +18,8 @@
 - LBP `lbp_uniformity` を `lbp_energy` にリネームし GLCM の energy (ASM) と名称を統一. ([#219](https://github.com/kurorosu/pochivision/pull/219))
 - リサイズ対応 5 抽出器 (GLCM, FFT, SWT, LBP, HLAC) のスキーマに `preserve_aspect_ratio` / `aspect_ratio_mode` を追加. FFT/SWT スキーマに `resize_shape` を追加. ([#220](https://github.com/kurorosu/pochivision/pull/220))
 - LBP の mean/std/skewness/kurtosis をヒストグラムのビン番号統計から LBP 画像の直接統計に変更. ([#221](https://github.com/kurorosu/pochivision/pull/221))
-- LBP の `except Exception` を `LogManager` ログ出力 + `raise` に変更. ([#205](https://github.com/kurorosu/pochivision/pull/205)) (NA.)
+- LBP の `except Exception` を `LogManager` ログ出力 + `raise` に変更. ([#222](https://github.com/kurorosu/pochivision/pull/222))
+- LBP の振る舞いテスト 21 件を追加. 全黒, チェッカーボード, ストライプ, ランダム, ヒストグラム正規化を検証. (NA.)
 
 ### Removed
 - 無し
