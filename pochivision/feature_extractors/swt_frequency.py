@@ -129,22 +129,21 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
         # 値の範囲を取得
         min_val, max_val = flattened.min(), flattened.max()
 
-        # 範囲が0の場合（すべて同じ値）はエントロピー0
+        # 値域が極めて狭い場合はエントロピー 0 (均一に近い)
         if max_val == min_val:
             return 0.0
 
-        # ヒストグラムを計算（256ビンで正規化された範囲）
-        hist, _ = np.histogram(
-            flattened, bins=256, range=(min_val, max_val), density=False
-        )
+        # 256 段階に量子化してヒストグラムを作成
+        # 浮動小数点の精度問題を回避するため, 整数インデックスに変換
+        normalized = (flattened - min_val) / (max_val - min_val)  # [0, 1]
+        indices = np.clip((normalized * 255).astype(np.int32), 0, 255)
+        hist = np.bincount(indices, minlength=256).astype(np.float64)
 
-        # 確率に変換
+        # 確率に変換, ゼロを除外
         prob = hist / np.sum(hist)
-
-        # ゼロ確率を除去（log(0)を回避）
         prob = prob[prob > 0]
 
-        # シャノンエントロピーを計算: -Σ p * log2(p)
+        # シャノンエントロピーを計算: -sum(p * log2(p))
         return float(-np.sum(prob * np.log2(prob)))
 
     def _compute_std(self, coeffs: np.ndarray) -> float:
