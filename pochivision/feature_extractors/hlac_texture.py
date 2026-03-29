@@ -240,14 +240,9 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             # HLACでは0と1の二値画像が必要なので255を1に正規化
             binary_image = (binary_image / 255).astype(np.uint8)
 
-            # パディング（境界処理）
-            padded_image = np.pad(binary_image, pad_width=1, mode="constant")
-
-            # 各カーネルに対して畳み込み処理
+            # 各カーネルに対して相関計算 (パディングなしで境界を除外)
             for i, kernel in enumerate(self.kernels):
-                # 畳み込み計算
-                conv_result = convolve2d(padded_image, kernel[::-1, ::-1], mode="valid")
-                # パターンマッチング（カーネルの合計値と一致する画素数をカウント）
+                conv_result = convolve2d(binary_image, kernel[::-1, ::-1], mode="valid")
                 total_features[i] += np.sum(conv_result == kernel.sum())
 
         # 正規化処理
