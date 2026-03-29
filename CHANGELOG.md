@@ -16,7 +16,8 @@
 - HLAC のスケールリサイザーを初回呼び出し時にキャッシュし, 毎回のインスタンス化を解消. ([#179](https://github.com/kurorosu/pochivision/pull/179))
 - FFT と SWT に `resize_shape` を追加. 全抽出器 (GLCM, LBP, HLAC, FFT, SWT) に `preserve_aspect_ratio` / `aspect_ratio_mode` を追加しデフォルト `true` / `"width"` に設定. ([#180](https://github.com/kurorosu/pochivision/pull/180))
 - HLAC の振る舞いテスト 11 件を追加. 全白, チェッカーボード, ストライプ, ランダム画像で特徴量値を検証. ([#181](https://github.com/kurorosu/pochivision/pull/181))
-- HLAC の二値化を `binary / 255` から `binary > 0` に変更, `convolve2d` + 二重反転を `correlate2d` に変更. (NA.)
+- HLAC の二値化を `binary / 255` から `binary > 0` に変更, `convolve2d` + 二重反転を `correlate2d` に変更. ([#182](https://github.com/kurorosu/pochivision/pull/182))
+- HLAC docstring に回転不変性の制約 (90度回転のみ, 反転未対応) を追記. (NA.)
 
 ### Changed
 - GLCM に `resize_shape` オプションを追加. ([#163](https://github.com/kurorosu/pochivision/pull/163))
