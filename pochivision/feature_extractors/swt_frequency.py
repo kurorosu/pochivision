@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 import numpy as np
 import pywt
 
+from pochivision.processors.resize import ResizeProcessor
 from pochivision.utils.image import to_grayscale
 
 from .base import BaseFeatureExtractor
@@ -45,6 +46,38 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
     マルチスケール解析を行う場合、各レベルの特徴量が追加されます。
     マルチスケールでない場合は、最高レベル（最も詳細な分解レベル）の特徴量のみが抽出されます。
     """
+
+    def __init__(
+        self,
+        name: str = "swt_frequency",
+        config: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """
+        SWTFrequencyExtractorのコンストラクタ.
+
+        Args:
+            name (str): 特徴量抽出器名.
+            config (dict, optional): 設定パラメータ.
+        """
+        super().__init__(name, config or {})
+
+        # リサイズ
+        resize_shape_config = self.config["resize_shape"]
+        self.resize_shape = (
+            tuple(resize_shape_config) if resize_shape_config is not None else None
+        )
+        self.resize_processor = None
+        if self.resize_shape is not None:
+            resize_config = ResizeProcessor.get_default_config()
+            resize_config["width"] = self.resize_shape[1]
+            resize_config["height"] = self.resize_shape[0]
+            resize_config["preserve_aspect_ratio"] = self.config[
+                "preserve_aspect_ratio"
+            ]
+            resize_config["aspect_ratio_mode"] = self.config["aspect_ratio_mode"]
+            self.resize_processor = ResizeProcessor(
+                name="resize_for_swt", config=resize_config
+            )
 
     # 特徴量の単位定義
     _FEATURE_UNITS = {
@@ -278,6 +311,9 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
         try:
             gray_image = to_grayscale(image)
 
+            if self.resize_processor is not None:
+                gray_image = self.resize_processor.process(gray_image)
+
             # SWT変換のために画像サイズを調整（奇数サイズを偶数サイズに）
             gray_image = self._adjust_image_size_for_swt(gray_image)
 
@@ -334,6 +370,9 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             "wavelet": "db1",
             "max_level": 1,
             "multiscale": True,
+            "resize_shape": None,
+            "preserve_aspect_ratio": True,
+            "aspect_ratio_mode": "width",
         }
 
     @staticmethod

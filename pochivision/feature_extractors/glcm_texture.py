@@ -82,7 +82,10 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
             resize_config = ResizeProcessor.get_default_config()
             resize_config["width"] = self.resize_shape[1]
             resize_config["height"] = self.resize_shape[0]
-            resize_config["preserve_aspect_ratio"] = False
+            resize_config["preserve_aspect_ratio"] = self.config[
+                "preserve_aspect_ratio"
+            ]
+            resize_config["aspect_ratio_mode"] = self.config["aspect_ratio_mode"]
             self.resize_processor = ResizeProcessor(
                 name="resize_for_glcm", config=resize_config
             )
@@ -248,6 +251,8 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
                 "ASM",  # Angular Second Moment
             ],
             "resize_shape": None,  # リサイズ形状 (None=リサイズしない)
+            "preserve_aspect_ratio": True,
+            "aspect_ratio_mode": "width",
         }
 
     @staticmethod

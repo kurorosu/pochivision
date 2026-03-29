@@ -75,9 +75,10 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             resize_config = ResizeProcessor.get_default_config()
             resize_config["width"] = self.resize_shape[1]
             resize_config["height"] = self.resize_shape[0]
-            # 特徴量抽出では正確なサイズ合わせが必要なため、アスペクト比保持を無効化
-            resize_config["preserve_aspect_ratio"] = False
-
+            resize_config["preserve_aspect_ratio"] = self.config[
+                "preserve_aspect_ratio"
+            ]
+            resize_config["aspect_ratio_mode"] = self.config["aspect_ratio_mode"]
             self.resize_processor = ResizeProcessor(
                 name="resize_for_hlac", config=resize_config
             )
@@ -305,6 +306,8 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             "normalize": True,
             "scales": [1.0, 0.75, 0.5],
             "resize_shape": None,
+            "preserve_aspect_ratio": True,
+            "aspect_ratio_mode": "width",
             "binarization_method": "adaptive",  # "otsu" or "adaptive"
             "adaptive_block_size": 11,  # adaptive 時のブロックサイズ
             "adaptive_c": 2,  # adaptive 時の定数 C
