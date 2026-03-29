@@ -6,6 +6,7 @@
 ## [Unreleased]
 
 ### Added
+- `docs/glcm_features.md` を追加. GLCM 特徴量抽出器の全プロパティ・パラメータ・設計制約の解説. (NA.)
 - GLCM の振る舞いテスト 17 件を追加. 均一画像, チェッカーボード, グラデーション, ランダム画像で特徴量値を検証. ([#164](https://github.com/kurorosu/pochivision/pull/164))
 - GLCM docstring の `asm` を `ASM` に修正. ([#165](https://github.com/kurorosu/pochivision/pull/165))
 - GLCM docstring に特徴量名形式・特徴量数の計算式を追記. ([#166](https://github.com/kurorosu/pochivision/pull/166))
