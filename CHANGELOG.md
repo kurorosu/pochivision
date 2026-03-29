@@ -9,7 +9,7 @@
 - 無し
 
 ### Changed
-- 無し
+- 振る舞いテスト用ダミー画像を `tests/extractors/conftest.py` の `DummyImages` クラスに共通化. FFT/GLCM/HLAC/SWT の重複ヘルパーを削除. (NA.)
 
 ### Fixed
 - 無し

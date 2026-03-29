@@ -6,7 +6,7 @@
 
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, StrictFloat, StrictInt, StrictStr
+from pydantic import BaseModel, ConfigDict, Field, StrictFloat, StrictInt, StrictStr
 
 
 class GaussianBlurParams(BaseModel):
@@ -67,11 +67,7 @@ class BilateralFilterParams(BaseModel):
     sigma_color: StrictFloat = Field(alias="sigmaColor")
     sigma_space: StrictFloat = Field(alias="sigmaSpace")
 
-    class Config:
-        """Pydanticの設定クラス."""
-
-        populate_by_name = True  # 名前またはエイリアスでフィールドにアクセス可能にする
-        allow_population_by_field_name = True  # 後方互換性のため
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class MotionBlurParams(BaseModel):
@@ -104,7 +100,7 @@ class CLAHEParams(BaseModel):
     color_mode: Optional[StrictStr] = Field(default="gray", pattern="^(gray|lab|bgr)$")
     clip_limit: Optional[StrictFloat] = Field(default=2.0, gt=0)
     tile_grid_size: Optional[List[StrictInt]] = Field(
-        default=[8, 8], min_items=2, max_items=2, each_item_gt=0
+        default=[8, 8], min_length=2, max_length=2
     )
 
 
@@ -130,10 +126,10 @@ class ContourParams(BaseModel):
     select_mode: Optional[StrictStr] = Field(default="rank", pattern="^(rank|all)$")
     contour_rank: Optional[StrictInt] = Field(default=0, ge=0)
     outside_color: Optional[List[StrictInt]] = Field(
-        default=[0, 0, 0], min_items=3, max_items=3
+        default=[0, 0, 0], min_length=3, max_length=3
     )
     inside_color: Optional[List[StrictInt]] = Field(
-        default=[255, 255, 255], min_items=3, max_items=3
+        default=[255, 255, 255], min_length=3, max_length=3
     )
 
 

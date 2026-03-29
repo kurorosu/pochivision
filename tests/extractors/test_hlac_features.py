@@ -4,6 +4,7 @@ import numpy as np
 import pytest  # noqa: F401
 
 from pochivision.feature_extractors import HLACTextureExtractor, get_feature_extractor
+from tests.extractors.conftest import DummyImages
 
 
 def test_hlac_texture_basic():
@@ -505,54 +506,27 @@ class TestHLACBehavior:
         "aspect_ratio_mode": "width",
     }
 
-    @staticmethod
-    def _make_white(size: int = 32) -> np.ndarray:
-        return np.full((size, size), 255, dtype=np.uint8)
-
-    @staticmethod
-    def _make_black(size: int = 32) -> np.ndarray:
-        return np.zeros((size, size), dtype=np.uint8)
-
-    @staticmethod
-    def _make_checker(size: int = 32) -> np.ndarray:
-        img = np.zeros((size, size), dtype=np.uint8)
-        img[0::2, 0::2] = 255
-        img[1::2, 1::2] = 255
-        return img
-
-    @staticmethod
-    def _make_h_stripe(size: int = 32, period: int = 4) -> np.ndarray:
-        img = np.zeros((size, size), dtype=np.uint8)
-        for k in range(period // 2):
-            img[k::period, :] = 255
-        return img
-
-    @staticmethod
-    def _make_random(size: int = 32) -> np.ndarray:
-        np.random.seed(42)
-        return np.random.randint(0, 256, (size, size), dtype=np.uint8)
-
     # --- 全白画像 ---
 
     def test_white_0th_order_equals_valid_pixels(self):
         """全白画像の 0th order は valid 領域のピクセル数と一致."""
         ext = HLACTextureExtractor(config=self._CONFIG_RAW)
-        f = ext.extract(self._make_white())
+        f = ext.extract(DummyImages.white(32))
         # 32x32 画像で mode="valid" + 3x3 カーネル → 30x30 = 900
         assert f["hlac_feature_00"] == 900
 
     def test_white_1st_order_all_equal(self):
         """全白画像の 1st order は全方向同じ値."""
         ext = HLACTextureExtractor(config=self._CONFIG_RAW)
-        f = ext.extract(self._make_white())
+        f = ext.extract(DummyImages.white(32))
         values = [f[f"hlac_feature_{i:02d}"] for i in range(1, 9)]
         assert len(set(values)) == 1  # 全方向同値
 
     def test_white_equals_black(self):
         """全白と全黒は adaptive 二値化後に同じパターンになる."""
         ext = HLACTextureExtractor(config=self._CONFIG_RAW)
-        fw = ext.extract(self._make_white())
-        fb = ext.extract(self._make_black())
+        fw = ext.extract(DummyImages.white(32))
+        fb = ext.extract(DummyImages.black(32))
         for i in range(37):
             assert fw[f"hlac_feature_{i:02d}"] == fb[f"hlac_feature_{i:02d}"]
 
@@ -561,7 +535,7 @@ class TestHLACBehavior:
     def test_checker_1st_order_axis_zero(self):
         """チェッカーボードの 1st order は軸方向 (feature_01,03,05,07) がゼロ."""
         ext = HLACTextureExtractor(config=self._CONFIG_RAW)
-        f = ext.extract(self._make_checker())
+        f = ext.extract(DummyImages.checker(32))
         # offsets: 01=(0,-1), 03=(-1,0), 05=(0,1), 07=(1,0) が軸方向
         for i in [1, 3, 5, 7]:
             assert f[f"hlac_feature_{i:02d}"] == 0
@@ -569,7 +543,7 @@ class TestHLACBehavior:
     def test_checker_1st_order_diagonal_nonzero(self):
         """チェッカーボードの 1st order は対角方向 (feature_02,04,06,08) が非ゼロ."""
         ext = HLACTextureExtractor(config=self._CONFIG_RAW)
-        f = ext.extract(self._make_checker())
+        f = ext.extract(DummyImages.checker(32))
         for i in [2, 4, 6, 8]:
             assert f[f"hlac_feature_{i:02d}"] > 0
 
@@ -578,7 +552,7 @@ class TestHLACBehavior:
     def test_h_stripe_vertical_direction_highest(self):
         """水平ストライプは垂直方向 (feature_03, 07) の 1st order が最大."""
         ext = HLACTextureExtractor(config=self._CONFIG_RAW)
-        f = ext.extract(self._make_h_stripe())
+        f = ext.extract(DummyImages.h_stripe(32))
         # feature_03=(-1,0)上, feature_07=(1,0)下 が垂直方向
         vertical = f["hlac_feature_03"]
         horizontal = f["hlac_feature_01"]  # (0,-1)左
@@ -589,7 +563,7 @@ class TestHLACBehavior:
     def test_random_1st_order_nearly_uniform(self):
         """ランダム画像の 1st order は全方向ほぼ均等."""
         ext = HLACTextureExtractor(config=self._CONFIG_RAW)
-        f = ext.extract(self._make_random())
+        f = ext.extract(DummyImages.random(32))
         values = [f[f"hlac_feature_{i:02d}"] for i in range(1, 9)]
         mean_val = sum(values) / len(values)
         for v in values:
@@ -600,8 +574,8 @@ class TestHLACBehavior:
     def test_checker_differs_from_random(self):
         """チェッカーボードとランダムの特徴量が区別可能."""
         ext = HLACTextureExtractor(config=self._CONFIG_NORM)
-        fc = ext.extract(self._make_checker())
-        fr = ext.extract(self._make_random())
+        fc = ext.extract(DummyImages.checker(32))
+        fr = ext.extract(DummyImages.random(32))
         # チェッカーボードの軸方向 1st order = 0, ランダムは > 0
         assert fc["hlac_feature_01"] == 0
         assert fr["hlac_feature_01"] > 0
@@ -611,14 +585,14 @@ class TestHLACBehavior:
     def test_normalized_sum_is_one(self):
         """正規化時の全特徴量の合計は ~1.0."""
         ext = HLACTextureExtractor(config=self._CONFIG_NORM)
-        f = ext.extract(self._make_random())
+        f = ext.extract(DummyImages.random(32))
         total = sum(f.values())
         assert 0.99 <= total <= 1.01
 
     def test_normalized_0th_less_than_one(self):
         """正規化時の 0th order は 1.0 未満."""
         ext = HLACTextureExtractor(config=self._CONFIG_NORM)
-        f = ext.extract(self._make_random())
+        f = ext.extract(DummyImages.random(32))
         assert f["hlac_feature_00"] < 1.0
 
     # --- 水平 vs 垂直ストライプ ---
@@ -630,7 +604,7 @@ class TestHLACBehavior:
         v_stripe[:, 0::4] = 255
         v_stripe[:, 1::4] = 255
 
-        fh = ext.extract(self._make_h_stripe())
+        fh = ext.extract(DummyImages.h_stripe(32))
         fv = ext.extract(v_stripe)
         # 水平ストライプは feature_03 (上) が高い, 垂直ストライプは feature_01 (左) が高い
         assert fh["hlac_feature_03"] > fh["hlac_feature_01"]
