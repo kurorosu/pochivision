@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from scipy.signal import convolve2d
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.processors.binarization import OtsuBinarizationProcessor
 from pochivision.processors.resize import ResizeProcessor
 
@@ -139,8 +140,8 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             return results
 
         except Exception:
-            # エラーが発生した場合、デフォルト値で埋める
-            return self._get_default_results()
+            LogManager().get_logger().exception("HLAC feature extraction failed")
+            raise
 
     def _generate_hlac_kernels(self) -> List[np.ndarray]:
         """
