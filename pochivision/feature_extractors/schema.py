@@ -64,6 +64,15 @@ class GLCMTextureParams(BaseModel):
         ],
         description="計算するプロパティのリスト",
     )
+    resize_shape: Optional[List[StrictInt]] = Field(
+        default=None, description="リサイズ形状 [高さ, 幅]"
+    )
+    preserve_aspect_ratio: Optional[StrictBool] = Field(
+        default=True, description="アスペクト比を保持するか"
+    )
+    aspect_ratio_mode: Optional[StrictStr] = Field(
+        default="width", pattern="^(width|height)$", description="基準軸"
+    )
 
 
 class FFTFrequencyParams(BaseModel):
@@ -90,6 +99,15 @@ class FFTFrequencyParams(BaseModel):
         gt=0.0,
         description="ピクセルあたりのmm（Noneの場合はピクセル単位）",
     )
+    resize_shape: Optional[List[StrictInt]] = Field(
+        default=None, description="リサイズ形状 [高さ, 幅]"
+    )
+    preserve_aspect_ratio: Optional[StrictBool] = Field(
+        default=True, description="アスペクト比を保持するか"
+    )
+    aspect_ratio_mode: Optional[StrictStr] = Field(
+        default="width", pattern="^(width|height)$", description="基準軸"
+    )
 
 
 class SWTFrequencyParams(BaseModel):
@@ -105,10 +123,19 @@ class SWTFrequencyParams(BaseModel):
     multiscale: Optional[StrictBool] = Field(
         default=True,
         description=(
-            "マルチスケール解析を行うかどうか。"
-            "Trueの場合は各レベルの特徴量を抽出、"
-            "Falseの場合は最高レベル（最も詳細な分解レベル）のみ抽出"
+            "マルチスケール解析を行うかどうか. "
+            "True: 各レベルの特徴量を抽出, "
+            "False: level 1 (高周波) のみ抽出"
         ),
+    )
+    resize_shape: Optional[List[StrictInt]] = Field(
+        default=None, description="リサイズ形状 [高さ, 幅]"
+    )
+    preserve_aspect_ratio: Optional[StrictBool] = Field(
+        default=True, description="アスペクト比を保持するか"
+    )
+    aspect_ratio_mode: Optional[StrictStr] = Field(
+        default="width", pattern="^(width|height)$", description="基準軸"
     )
 
 
@@ -134,6 +161,12 @@ class LBPTextureParams(BaseModel):
         default=False,
         description="ヒストグラムの各ビンを特徴量として含むかどうか",
     )
+    preserve_aspect_ratio: Optional[StrictBool] = Field(
+        default=True, description="アスペクト比を保持するか"
+    )
+    aspect_ratio_mode: Optional[StrictStr] = Field(
+        default="width", pattern="^(width|height)$", description="基準軸"
+    )
 
 
 class HLACTextureParams(BaseModel):
@@ -155,6 +188,12 @@ class HLACTextureParams(BaseModel):
     resize_shape: Optional[List[StrictInt]] = Field(
         default=None,
         description="リサイズ形状 [高さ, 幅]（Noneの場合はリサイズしない）",
+    )
+    preserve_aspect_ratio: Optional[StrictBool] = Field(
+        default=True, description="アスペクト比を保持するか"
+    )
+    aspect_ratio_mode: Optional[StrictStr] = Field(
+        default="width", pattern="^(width|height)$", description="基準軸"
     )
 
 
