@@ -12,7 +12,8 @@
 - 無し
 
 ### Fixed
-- SWT エントロピー計算を `np.histogram` から `np.bincount` ベースに変更し, 狭い値域でのクラッシュを解消. (NA.)
+- SWT エントロピー計算を `np.histogram` から `np.bincount` ベースに変更し, 狭い値域でのクラッシュを解消. ([#193](https://github.com/kurorosu/pochivision/pull/193))
+- SWT マルチスケールのレベルラベリングを反転し, L1=最細 (高周波), LN=最粗 (低周波) にウェーブレット慣習と統一. (NA.)
 
 ### Removed
 - 無し
