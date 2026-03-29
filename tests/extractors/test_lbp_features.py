@@ -327,7 +327,7 @@ def test_lbp_feature_names_and_config():
         "lbp_std": "pattern_index",
         "lbp_skewness": "dimensionless",
         "lbp_kurtosis": "dimensionless",
-        "lbp_entropy": "bits",
+        "lbp_entropy": "normalized",
         "lbp_uniformity": "ratio",
     }
 
