@@ -6,6 +6,9 @@ import cv2
 import numpy as np
 from skimage.feature import graycomatrix, graycoprops
 
+from pochivision.capturelib.log_manager import LogManager
+from pochivision.processors.resize import ResizeProcessor
+
 from .base import BaseFeatureExtractor
 from .registry import register_feature_extractor
 
@@ -13,21 +16,27 @@ from .registry import register_feature_extractor
 @register_feature_extractor("glcm")
 class GLCMTextureExtractor(BaseFeatureExtractor):
     """
-    画像のGLCM（Gray-Level Co-occurrence Matrix）テクスチャ特徴量を抽出するクラス.
+    画像のGLCM (Gray-Level Co-occurrence Matrix) テクスチャ特徴量を抽出するクラス.
 
-    GLCMは画像のテクスチャ解析に使用される重要な特徴量で、
-    指定された距離と角度でのグレーレベルの共起関係を表現します。
-    テクスチャの粗さ、方向性、規則性などを定量化できます。
+    GLCM は画像のテクスチャ解析に使用される特徴量で,
+    指定された距離と角度でのグレーレベルの共起関係を表現する.
+    テクスチャの粗さ, 方向性, 規則性などを定量化できる.
 
-    抽出する特徴量:
-    - contrast: コントラスト（局所的な強度変化） [intensity_squared]
-    - dissimilarity: 非類似度（隣接ピクセル間の差異） [intensity]
-    - homogeneity: 均質性（局所的な均一性） [ratio]
-    - energy: エネルギー（テクスチャの均一性） [ratio]
-    - correlation: 相関（ピクセル間の線形依存関係） [correlation coefficient]
-    - asm: Angular Second Moment（エネルギーの二乗） [ratio]
+    抽出するプロパティ (各距離・角度の組み合わせごとに出力):
+    - contrast: コントラスト (局所的な強度変化) [intensity_squared]
+    - dissimilarity: 非類似度 (隣接ピクセル間の差異) [intensity]
+    - homogeneity: 均質性 (局所的な均一性) [ratio]
+    - energy: エネルギー (テクスチャの均一性) [ratio]
+    - correlation: 相関 (ピクセル間の線形依存関係) [correlation_coefficient]
+    - ASM: Angular Second Moment (エネルギーの二乗) [ratio]
 
-    設定により、距離、角度、グレーレベル数、対称性、正規化などを調整できます。
+    特徴量名の形式: ``{property}_{distance}_{angle_deg}``
+    (例: ``contrast_1_0``, ``energy_2_45``)
+
+    特徴量数 = len(properties) x len(distances) x len(angles).
+    デフォルト設定 (6 プロパティ x 3 距離 x 4 角度) では 72 特徴量.
+
+    設定により, 距離, 角度, グレーレベル数, 対称性, 正規化, リサイズ形状などを調整できる.
     """
 
     # 特徴量の単位定義
@@ -61,6 +70,25 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
         self.symmetric = self.config["symmetric"]
         self.normed = self.config["normed"]
         self.properties = self.config["properties"]
+
+        # リサイズ形状 (None の場合はリサイズしない)
+        resize_shape_config = self.config["resize_shape"]
+        self.resize_shape = (
+            tuple(resize_shape_config) if resize_shape_config is not None else None
+        )
+
+        self.resize_processor = None
+        if self.resize_shape is not None:
+            resize_config = ResizeProcessor.get_default_config()
+            resize_config["width"] = self.resize_shape[1]
+            resize_config["height"] = self.resize_shape[0]
+            resize_config["preserve_aspect_ratio"] = self.config[
+                "preserve_aspect_ratio"
+            ]
+            resize_config["aspect_ratio_mode"] = self.config["aspect_ratio_mode"]
+            self.resize_processor = ResizeProcessor(
+                name="resize_for_glcm", config=resize_config
+            )
 
     def _parse_angles(self, angles_config: List[Union[int, float]]) -> List[float]:
         """
@@ -128,17 +156,19 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
         else:
             raise ValueError(f"Input image must be 2D or 3D, got shape: {image.shape}")
 
-        # 画像の値域を0-255に正規化（levelsが256の場合）
-        if self.levels == 256:
-            # 画像を0-255の範囲に正規化
-            gray_image = cv2.normalize(
-                gray_image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U
-            )
+        # リサイズ (設定されている場合)
+        if self.resize_processor is not None:
+            gray_image = self.resize_processor.process(gray_image)
+
+        # uint8 に変換 (NORM_MINMAX はコントラスト情報を破壊するため使用しない)
+        if not np.issubdtype(gray_image.dtype, np.integer):
+            gray_image = np.clip(gray_image * 255, 0, 255).astype(np.uint8)
         else:
-            # 指定されたlevels数に量子化
-            gray_image = cv2.normalize(
-                gray_image, None, 0, self.levels - 1, cv2.NORM_MINMAX, dtype=cv2.CV_8U
-            )
+            gray_image = np.clip(gray_image, 0, 255).astype(np.uint8)
+
+        # levels < 256 の場合は整数除算で量子化
+        if self.levels < 256:
+            gray_image = (gray_image // (256 // self.levels)).astype(np.uint8)
 
         results = {}
 
@@ -170,28 +200,25 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
                             # 特徴量値を取得
                             feature_value = float(prop_values[d_idx, a_idx])
 
-                            # NaNや無限大の値をチェック
+                            # NaN/Inf は未定義を示す (例: 均一画像の correlation)
                             if np.isnan(feature_value) or np.isinf(feature_value):
-                                feature_value = 0.0
+                                LogManager().get_logger().warning(
+                                    f"GLCM {feature_name} is {feature_value}, "
+                                    "replacing with NaN"
+                                )
+                                feature_value = float("nan")
 
                             results[feature_name] = feature_value
 
                 except Exception:
-                    # プロパティ計算でエラーが発生した場合、0で埋める
-                    for d_idx, distance in enumerate(self.distances):
-                        for a_idx, angle in enumerate(self.angles):
-                            angle_deg = int(np.degrees(angle))
-                            feature_name = f"{prop}_{distance}_{angle_deg}"
-                            results[feature_name] = 0.0
+                    LogManager().get_logger().exception(
+                        f"GLCM property '{prop}' computation failed"
+                    )
+                    raise
 
         except Exception:
-            # GLCM計算全体でエラーが発生した場合、すべて0で埋める
-            for prop in self.properties:
-                for distance in self.distances:
-                    for angle in self.angles:
-                        angle_deg = int(np.degrees(angle))
-                        feature_name = f"{prop}_{distance}_{angle_deg}"
-                        results[feature_name] = 0.0
+            LogManager().get_logger().exception("GLCM feature extraction failed")
+            raise
 
         return results
 
@@ -223,6 +250,9 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
                 "correlation",  # 相関
                 "ASM",  # Angular Second Moment
             ],
+            "resize_shape": None,  # リサイズ形状 (None=リサイズしない)
+            "preserve_aspect_ratio": True,
+            "aspect_ratio_mode": "width",
         }
 
     @staticmethod

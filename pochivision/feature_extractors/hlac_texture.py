@@ -4,9 +4,14 @@ from typing import Any, Dict, List, Optional, Union
 
 import cv2
 import numpy as np
-from scipy.signal import convolve2d
+from scipy.signal import correlate2d
 
-from pochivision.processors.binarization import OtsuBinarizationProcessor
+from pochivision.capturelib.log_manager import LogManager
+from pochivision.processors.base import BaseProcessor
+from pochivision.processors.binarization import (
+    GaussianAdaptiveBinarizationProcessor,
+    OtsuBinarizationProcessor,
+)
 from pochivision.processors.resize import ResizeProcessor
 
 from .base import BaseFeatureExtractor
@@ -24,12 +29,18 @@ class HLACTextureExtractor(BaseFeatureExtractor):
     高次の空間的相関パターンを定量化できます。
 
     抽出する特徴量:
-    - 標準HLAC: 37次元の特徴量（0次1 + 1次8 + 2次28） [correlation_coefficient]
-    - 回転不変HLAC: 11次元の特徴量（回転に対して不変） [correlation_coefficient]
+    - 標準HLAC: 37次元 (0次1 + 1次8 + 2次28) [correlation_coefficient]
+    - 回転不変HLAC: 11次元 (90度回転で等価なパターンを統合) [correlation_coefficient]
     - スケール不変性: 複数スケールでの特徴抽出 [correlation_coefficient]
-    - 正規化: 特徴量の正規化による明度変化への頑健性 [normalized_correlation]
+    - 正規化: L1 正規化による明度変化への頑健性 [normalized_correlation]
 
-    設定により、次数、回転不変性、正規化、スケール係数などを調整できます。
+    回転不変性の制約:
+    - 90度単位の回転 (0, 90, 180, 270度) のみ対応.
+    - 左右反転 / 上下反転は未対応.
+    - 8方向すべての変換 (4回転 x 2反転) に対応する場合は
+      更に特徴量次元が減少するが, 現実装では反転を含めない.
+
+    設定により, 次数, 回転不変性, 正規化, スケール係数, 二値化方式などを調整できる.
     """
 
     # 特徴量の単位定義
@@ -70,15 +81,30 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             resize_config = ResizeProcessor.get_default_config()
             resize_config["width"] = self.resize_shape[1]
             resize_config["height"] = self.resize_shape[0]
-            # 特徴量抽出では正確なサイズ合わせが必要なため、アスペクト比保持を無効化
-            resize_config["preserve_aspect_ratio"] = False
-
+            resize_config["preserve_aspect_ratio"] = self.config[
+                "preserve_aspect_ratio"
+            ]
+            resize_config["aspect_ratio_mode"] = self.config["aspect_ratio_mode"]
             self.resize_processor = ResizeProcessor(
                 name="resize_for_hlac", config=resize_config
             )
 
-        # 大津法二値化プロセッサの準備
-        self.otsu_processor = OtsuBinarizationProcessor(name="otsu_for_hlac", config={})
+        # 二値化プロセッサの準備
+        self.binarization_method = self.config["binarization_method"]
+        self.binarizer: BaseProcessor
+        if self.binarization_method == "adaptive":
+            adaptive_config = {
+                "block_size": self.config.get("adaptive_block_size", 11),
+                "c": self.config.get("adaptive_c", 2),
+            }
+            self.binarizer = GaussianAdaptiveBinarizationProcessor(
+                name="adaptive_for_hlac", config=adaptive_config
+            )
+        else:
+            self.binarizer = OtsuBinarizationProcessor(name="otsu_for_hlac", config={})
+
+        # スケールリサイザーのキャッシュ (初回呼び出し時に生成)
+        self._scale_resizers: Dict[tuple, ResizeProcessor] = {}
 
         # HLACカーネルの事前生成
         self.kernels = self._generate_hlac_kernels()
@@ -139,8 +165,8 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             return results
 
         except Exception:
-            # エラーが発生した場合、デフォルト値で埋める
-            return self._get_default_results()
+            LogManager().get_logger().exception("HLAC feature extraction failed")
+            raise
 
     def _generate_hlac_kernels(self) -> List[np.ndarray]:
         """
@@ -219,34 +245,30 @@ class HLACTextureExtractor(BaseFeatureExtractor):
                 new_height = int(image.shape[0] * scale)
                 new_width = int(image.shape[1] * scale)
                 if new_height > 0 and new_width > 0:
-                    # ResizeProcessorを使用してリサイズ
-                    resize_config = ResizeProcessor.get_default_config()
-                    resize_config["width"] = new_width
-                    resize_config["height"] = new_height
-                    resize_config["preserve_aspect_ratio"] = False
-
-                    scale_resize_processor = ResizeProcessor(
-                        name=f"resize_scale_{scale}", config=resize_config
-                    )
-                    scaled_image = scale_resize_processor.process(image)
+                    # スケール用リサイザーをキャッシュ (同一サイズなら再利用)
+                    cache_key = (new_width, new_height)
+                    if cache_key not in self._scale_resizers:
+                        resize_config = ResizeProcessor.get_default_config()
+                        resize_config["width"] = new_width
+                        resize_config["height"] = new_height
+                        resize_config["preserve_aspect_ratio"] = False
+                        self._scale_resizers[cache_key] = ResizeProcessor(
+                            name=f"resize_scale_{scale}", config=resize_config
+                        )
+                    scaled_image = self._scale_resizers[cache_key].process(image)
                 else:
-                    continue  # スケールが小さすぎる場合はスキップ
+                    continue
             else:
                 scaled_image = image
 
-            # 大津法二値化プロセッサを使用
-            binary_image = self.otsu_processor.process(scaled_image)
+            # 二値化プロセッサを使用
+            binary_image = self.binarizer.process(scaled_image)
             # HLACでは0と1の二値画像が必要なので255を1に正規化
-            binary_image = (binary_image / 255).astype(np.uint8)
+            binary_image = (binary_image > 0).astype(np.uint8)
 
-            # パディング（境界処理）
-            padded_image = np.pad(binary_image, pad_width=1, mode="constant")
-
-            # 各カーネルに対して畳み込み処理
+            # 各カーネルに対して相関計算 (パディングなしで境界を除外)
             for i, kernel in enumerate(self.kernels):
-                # 畳み込み計算
-                conv_result = convolve2d(padded_image, kernel[::-1, ::-1], mode="valid")
-                # パターンマッチング（カーネルの合計値と一致する画素数をカウント）
+                conv_result = correlate2d(binary_image, kernel, mode="valid")
                 total_features[i] += np.sum(conv_result == kernel.sum())
 
         # 正規化処理
@@ -267,7 +289,7 @@ class HLACTextureExtractor(BaseFeatureExtractor):
         num_features = (
             len(self.kernels)
             if hasattr(self, "kernels")
-            else (11 if self.rotate_invariant else 45)
+            else (11 if self.rotate_invariant else 37)
         )
         return {f"hlac_feature_{i:02d}": 0.0 for i in range(num_features)}
 
@@ -290,6 +312,11 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             "normalize": True,
             "scales": [1.0, 0.75, 0.5],
             "resize_shape": None,
+            "preserve_aspect_ratio": True,
+            "aspect_ratio_mode": "width",
+            "binarization_method": "adaptive",  # "otsu" or "adaptive"
+            "adaptive_block_size": 11,  # adaptive 時のブロックサイズ
+            "adaptive_c": 2,  # adaptive 時の定数 C
         }
 
     @staticmethod

@@ -25,7 +25,10 @@
         "homogeneity",
         "energy",
         "correlation",
-        "ASM"]
+        "ASM"],
+      "resize_shape": [512, 512],
+      "preserve_aspect_ratio": true,
+      "aspect_ratio_mode": "width"
     },
     "fft": {
       "frequency_bands": [
@@ -36,26 +39,39 @@
       "high_low_threshold": 0.2,
       "directional_tolerance": 10.0,
       "peak_threshold_ratio": 0.1,
-      "mm_per_pixel": 0.05
+      "mm_per_pixel": 0.05,
+      "resize_shape": [512, 512],
+      "preserve_aspect_ratio": true,
+      "aspect_ratio_mode": "width"
     },
     "swt": {
       "wavelet": "db4",
       "max_level": 1,
-      "multiscale": true
+      "multiscale": true,
+      "resize_shape": [512, 512],
+      "preserve_aspect_ratio": true,
+      "aspect_ratio_mode": "width"
     },
     "lbp": {
       "P": 8,
       "R": 1,
       "method": "uniform",
       "resize_shape": [512, 512],
-      "include_histogram": true
+      "include_histogram": true,
+      "preserve_aspect_ratio": true,
+      "aspect_ratio_mode": "width"
     },
     "hlac": {
       "order": 2,
       "rotate_invariant": true,
       "normalize": true,
       "scales": [1.0, 0.75, 0.5],
-      "resize_shape": [512, 512]
+      "resize_shape": [512, 512],
+      "preserve_aspect_ratio": true,
+      "aspect_ratio_mode": "width",
+      "binarization_method": "adaptive",
+      "adaptive_block_size": 11,
+      "adaptive_c": 2
     },
     "circle_counter": {
       "min_radius": 5,
