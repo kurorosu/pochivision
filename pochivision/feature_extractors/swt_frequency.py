@@ -43,8 +43,8 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
     - std_hl: 垂直高周波成分の標準偏差 [coefficient]
     - std_hh: 対角高周波成分の標準偏差 [coefficient]
 
-    マルチスケール解析を行う場合、各レベルの特徴量が追加されます。
-    マルチスケールでない場合は、最高レベル（最も詳細な分解レベル）の特徴量のみが抽出されます。
+    マルチスケール解析を行う場合, L1 (高周波) から LN (低周波) の各レベルの特徴量が追加される.
+    マルチスケールでない場合は, level 1 (最細, 高周波詳細) の特徴量のみが抽出される.
     """
 
     def __init__(
@@ -342,9 +342,9 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
                     )
                     features.update(level_features)
             else:
-                # 単一スケール解析：最高レベル（最も詳細な分解レベル）のみ
-                highest_level_coeffs = coeffs[-1]
-                features = self._extract_single_level_features(highest_level_coeffs)
+                # 単一スケール解析: level 1 (最細, 高周波詳細) のみ
+                finest_level_coeffs = coeffs[-1]
+                features = self._extract_single_level_features(finest_level_coeffs)
 
             return features
 
