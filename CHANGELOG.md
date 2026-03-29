@@ -9,7 +9,8 @@
 - 無し
 
 ### Changed
-- 振る舞いテスト用ダミー画像を `tests/extractors/conftest.py` の `DummyImages` クラスに共通化. FFT/GLCM/HLAC/SWT の重複ヘルパーを削除. (NA.)
+- 振る舞いテスト用ダミー画像を `tests/extractors/conftest.py` の `DummyImages` クラスに共通化. FFT/GLCM/HLAC/SWT の重複ヘルパーを削除. ([#215](https://github.com/kurorosu/pochivision/pull/215))
+- Pydantic V2 非推奨 API を移行 (`min_items` → `min_length`, `class Config` → `ConfigDict`, `each_item_gt` を削除). (NA.)
 
 ### Fixed
 - 無し
@@ -20,7 +21,7 @@
 ## [0.1.4] - 2026-03-29
 
 ### Added
-- `docs/swt_features.md` を追加. SWT 特徴量抽出器の全特徴量・パラメータ・設計制約の解説. (NA.)
+- `docs/swt_features.md` を追加. SWT 特徴量抽出器の全特徴量・パラメータ・設計制約の解説. ([#209](https://github.com/kurorosu/pochivision/pull/209))
 - SWT の振る舞いテスト 18 件を追加. ([#208](https://github.com/kurorosu/pochivision/pull/208))
 
 ### Changed
