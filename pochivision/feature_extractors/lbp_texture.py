@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from skimage.feature import local_binary_pattern
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.processors.resize import ResizeProcessor
 
 from .base import BaseFeatureExtractor
@@ -172,8 +173,8 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             return results
 
         except Exception:
-            # エラーが発生した場合、デフォルト値で埋める
-            return self._get_default_results()
+            LogManager().get_logger().exception("LBP feature extraction failed")
+            raise
 
     def _calculate_statistics(
         self, hist: np.ndarray, lbp: np.ndarray
@@ -230,17 +231,8 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             results["lbp_energy"] = float(energy)
 
         except Exception:
-            # 統計量計算でエラーが発生した場合、0で埋める
-            results.update(
-                {
-                    "lbp_mean": 0.0,
-                    "lbp_std": 0.0,
-                    "lbp_skewness": 0.0,
-                    "lbp_kurtosis": 0.0,
-                    "lbp_entropy": 0.0,
-                    "lbp_energy": 0.0,
-                }
-            )
+            LogManager().get_logger().exception("LBP statistics calculation failed")
+            raise
 
         return results
 
