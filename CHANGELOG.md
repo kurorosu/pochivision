@@ -14,7 +14,8 @@
 - HLAC のゼロパディングを削除し, 境界の特徴量減衰を解消. 二値化方式に適応的二値化 (`adaptive`) を追加しデフォルトに設定. ([#175](https://github.com/kurorosu/pochivision/pull/175))
 - HLAC `_get_default_results` のフォールバック特徴量数を 45 → 37 に修正. ([#178](https://github.com/kurorosu/pochivision/pull/178))
 - HLAC のスケールリサイザーを初回呼び出し時にキャッシュし, 毎回のインスタンス化を解消. ([#179](https://github.com/kurorosu/pochivision/pull/179))
-- FFT と SWT に `resize_shape` を追加. 全抽出器 (GLCM, LBP, HLAC, FFT, SWT) に `preserve_aspect_ratio` / `aspect_ratio_mode` を追加しデフォルト `true` / `"width"` に設定. (NA.)
+- FFT と SWT に `resize_shape` を追加. 全抽出器 (GLCM, LBP, HLAC, FFT, SWT) に `preserve_aspect_ratio` / `aspect_ratio_mode` を追加しデフォルト `true` / `"width"` に設定. ([#180](https://github.com/kurorosu/pochivision/pull/180))
+- HLAC の振る舞いテスト 11 件を追加. 全白, チェッカーボード, ストライプ, ランダム画像で特徴量値を検証. (NA.)
 
 ### Changed
 - GLCM に `resize_shape` オプションを追加. ([#163](https://github.com/kurorosu/pochivision/pull/163))
