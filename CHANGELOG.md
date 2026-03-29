@@ -13,7 +13,7 @@
 - Pydantic V2 非推奨 API を移行 (`min_items` → `min_length`, `class Config` → `ConfigDict`, `each_item_gt` を削除). (NA.)
 
 ### Fixed
-- 無し
+- LBP ヒストグラム計算を `density=True` から手動正規化に変更. var メソッドの値域と nri_uniform のビン数を修正. (NA.)
 
 ### Removed
 - 無し
