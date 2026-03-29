@@ -10,10 +10,11 @@
 
 ### Changed
 - 振る舞いテスト用ダミー画像を `tests/extractors/conftest.py` の `DummyImages` クラスに共通化. FFT/GLCM/HLAC/SWT の重複ヘルパーを削除. ([#215](https://github.com/kurorosu/pochivision/pull/215))
-- Pydantic V2 非推奨 API を移行 (`min_items` → `min_length`, `class Config` → `ConfigDict`, `each_item_gt` を削除). (NA.)
+- Pydantic V2 非推奨 API を移行 (`min_items` → `min_length`, `class Config` → `ConfigDict`, `each_item_gt` を削除). ([#216](https://github.com/kurorosu/pochivision/pull/216))
 
 ### Fixed
-- LBP ヒストグラム計算を `density=True` から手動正規化に変更. var メソッドの値域と nri_uniform のビン数を修正. (NA.)
+- LBP ヒストグラム計算を `density=True` から手動正規化に変更. var メソッドの値域と nri_uniform のビン数を修正. ([#217](https://github.com/kurorosu/pochivision/pull/217))
+- LBP エントロピーを `log2(n_bins)` で正規化し [0, 1] 範囲に変更. 単位を `normalized` に統一. (NA.)
 
 ### Removed
 - 無し

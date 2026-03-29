@@ -39,7 +39,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         "lbp_std": "pattern_index",
         "lbp_skewness": "dimensionless",
         "lbp_kurtosis": "dimensionless",
-        "lbp_entropy": "bits",
+        "lbp_entropy": "normalized",
         "lbp_uniformity": "ratio",
     }
 
@@ -218,11 +218,12 @@ class LBPTextureExtractor(BaseFeatureExtractor):
                 kurtosis = 0.0
             results["lbp_kurtosis"] = float(kurtosis)
 
-            # エントロピー
-            # 0の値を除外してエントロピーを計算
+            # 正規化エントロピー [0, 1] (FFT/SWT と統一)
             hist_nonzero = hist[hist > 0]
-            if len(hist_nonzero) > 0:
-                entropy = -np.sum(hist_nonzero * np.log2(hist_nonzero))
+            if len(hist_nonzero) > 1:
+                raw_entropy = -np.sum(hist_nonzero * np.log2(hist_nonzero))
+                max_entropy = np.log2(len(hist))
+                entropy = raw_entropy / max_entropy if max_entropy > 0 else 0.0
             else:
                 entropy = 0.0
             results["lbp_entropy"] = float(entropy)
