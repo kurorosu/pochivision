@@ -17,7 +17,8 @@
 - SWT `multiscale=False` 時のレベル選択と docstring を明確化 (level 1, 高周波詳細). ([#195](https://github.com/kurorosu/pochivision/pull/195))
 - SWT の dtype 正規化を統一し, uint8 と float32 (0-255) で同じ特徴量が得られるよう修正. ([#196](https://github.com/kurorosu/pochivision/pull/196))
 - SWT の `except Exception` を `LogManager` ログ出力 + `raise` に変更し, FFT/GLCM/HLAC と統一. ([#197](https://github.com/kurorosu/pochivision/pull/197))
-- SWT docstring の LH/HL 説明を標準ウェーブレット用語に修正. 極小画像 (4x4 未満) のガードを追加. `get_feature_names` の config 依存性を docstring に明記. (NA.)
+- SWT docstring の LH/HL 説明を標準ウェーブレット用語に修正. 極小画像 (4x4 未満) のガードを追加. `get_feature_names` の config 依存性を docstring に明記. ([#198](https://github.com/kurorosu/pochivision/pull/198))
+- SWT の振る舞いテスト 18 件を追加. 均一画像, ストライプ, ランダム, dtype 一致, 極小画像ガード, 方向対称性を検証. (NA.)
 
 ### Removed
 - 無し
