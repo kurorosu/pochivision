@@ -24,24 +24,24 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
 
     抽出する特徴量:
     - mean_ll: 低周波成分（LL）の平均値 [coefficient]
-    - mean_lh: 水平高周波成分（LH）の平均値 [coefficient]
-    - mean_hl: 垂直高周波成分（HL）の平均値 [coefficient]
+    - mean_lh: LH サブバンド (垂直エッジ検出) の平均値 [coefficient]
+    - mean_hl: HL サブバンド (水平エッジ検出) の平均値 [coefficient]
     - mean_hh: 対角高周波成分（HH）の平均値 [coefficient]
     - energy_ll: 低周波成分（LL）のエネルギー [coefficient_squared]
-    - energy_lh: 水平高周波成分（LH）のエネルギー [coefficient_squared]
-    - energy_hl: 垂直高周波成分（HL）のエネルギー [coefficient_squared]
+    - energy_lh: LH サブバンド (垂直エッジ検出) のエネルギー [coefficient_squared]
+    - energy_hl: HL サブバンド (水平エッジ検出) のエネルギー [coefficient_squared]
     - energy_hh: 対角高周波成分（HH）のエネルギー [coefficient_squared]
     - energy_ratio_h: 水平方向エネルギー比 [ratio]
     - energy_ratio_v: 垂直方向エネルギー比 [ratio]
     - energy_ratio_d: 対角方向エネルギー比 [ratio]
     - total_energy: 全エネルギー [coefficient_squared]
     - entropy_ll: 低周波成分のエントロピー [bits]
-    - entropy_lh: 水平高周波成分のエントロピー [bits]
-    - entropy_hl: 垂直高周波成分のエントロピー [bits]
+    - entropy_lh: LH サブバンド (垂直エッジ検出) のエントロピー [bits]
+    - entropy_hl: HL サブバンド (水平エッジ検出) のエントロピー [bits]
     - entropy_hh: 対角高周波成分のエントロピー [bits]
     - std_ll: 低周波成分の標準偏差 [coefficient]
-    - std_lh: 水平高周波成分の標準偏差 [coefficient]
-    - std_hl: 垂直高周波成分の標準偏差 [coefficient]
+    - std_lh: LH サブバンド (垂直エッジ検出) の標準偏差 [coefficient]
+    - std_hl: HL サブバンド (水平エッジ検出) の標準偏差 [coefficient]
     - std_hh: 対角高周波成分の標準偏差 [coefficient]
 
     マルチスケール解析を行う場合, L1 (高周波) から LN (低周波) の各レベルの特徴量が追加される.
@@ -308,11 +308,24 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             ValueError: 画像の次元が不正な場合
             RuntimeError: SWT変換に失敗した場合
         """
+        _MIN_SWT_SIZE = 4
+        if image is None or image.size == 0:
+            raise ValueError("Input image is empty or None")
+
         try:
             gray_image = to_grayscale(image)
 
             if self.resize_processor is not None:
                 gray_image = self.resize_processor.process(gray_image)
+
+            if (
+                gray_image.shape[0] < _MIN_SWT_SIZE
+                or gray_image.shape[1] < _MIN_SWT_SIZE
+            ):
+                raise ValueError(
+                    f"Image too small for SWT: {gray_image.shape}. "
+                    f"Minimum size is {_MIN_SWT_SIZE}x{_MIN_SWT_SIZE}."
+                )
 
             # SWT変換のために画像サイズを調整（奇数サイズを偶数サイズに）
             gray_image = self._adjust_image_size_for_swt(gray_image)
@@ -373,13 +386,17 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
     @staticmethod
     def get_feature_names(config: Optional[Dict[str, Any]] = None) -> List[str]:
         """
-        抽出される特徴量名のリストを取得する（単位付き）.
+        抽出される特徴量名のリストを取得する (単位付き).
+
+        特徴量名は `multiscale` と `max_level` に依存するため,
+        実際のインスタンス設定と一致させるには config を渡す必要がある.
+        config=None の場合はデフォルト設定 (multiscale=True, max_level=1) を使用.
 
         Args:
-            config (Optional[Dict[str, Any]]): 設定辞書。Noneの場合はデフォルト設定を使用。
+            config (Optional[Dict[str, Any]]): 設定辞書.
 
         Returns:
-            List[str]: 特徴量名のリスト（単位付き）.
+            List[str]: 特徴量名のリスト (単位付き).
         """
         base_names = SWTFrequencyExtractor.get_base_feature_names(config)
         return [
