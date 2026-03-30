@@ -9,7 +9,7 @@
 - 無し
 
 ### Changed
-- 無し
+- 全 9 抽出器のエラーハンドリングを `LogManager` + `raise` パターンに統一. brightness, rgb, hsv, circle_counter に try-except を追加. (NA.)
 
 ### Fixed
 - 無し
