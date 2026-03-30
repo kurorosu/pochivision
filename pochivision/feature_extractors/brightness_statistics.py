@@ -26,7 +26,10 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
     - std_dev: 輝度標準偏差 [0-255]
     - cv: 変動係数（標準偏差/平均値） [ratio]
 
-    設定により、輝度値が0のピクセルを計算から除外することができます。
+    exclude_zero_pixels の動作:
+    - True: 輝度値が 0 のピクセルを統計から除外する.
+    - False: 全ピクセルを統計に含む.
+    - 用途: 背景が真っ黒の画像で, 背景領域を統計から除外したい場合に使用.
     """
 
     # 特徴量の単位定義
@@ -85,7 +88,7 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
             brightness_image = self._get_brightness_image(image)
             pixels = brightness_image.flatten().astype(np.float64)
 
-            # ゼロピクセル除外の処理
+            # 輝度値 0 のピクセルを除外 (背景の真っ黒部分を統計から除く)
             if self.exclude_zero_pixels:
                 non_zero_pixels = pixels[pixels > 0]
                 calculation_pixels = non_zero_pixels
