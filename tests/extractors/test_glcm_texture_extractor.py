@@ -651,3 +651,16 @@ class TestGLCMBehavior:
         """ランダム画像の contrast は > 1000."""
         f = self.ext.extract(DummyImages.random())
         assert f["contrast_1_0"] > 1000
+
+
+def test_schema_validation_rejects_invalid_config():
+    """スキーマバリデーションが無効な設定を拒否することを確認."""
+    from pochivision.feature_extractors import get_feature_extractor
+
+    # levels が範囲外
+    with pytest.raises(ValueError, match="Invalid config"):
+        get_feature_extractor("glcm", {"levels": 1})
+
+    # levels が範囲外 (上限)
+    with pytest.raises(ValueError, match="Invalid config"):
+        get_feature_extractor("glcm", {"levels": 999})
