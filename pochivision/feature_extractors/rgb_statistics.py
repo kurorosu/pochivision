@@ -78,6 +78,10 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
             raise ValueError("Input image is empty or None")
 
         try:
+            # float (0-1) 入力を uint8 スケールに変換
+            if np.issubdtype(image.dtype, np.floating) and image.max() <= 1.0:
+                image = (image * 255).astype(np.uint8)
+
             rgb_image = to_rgb(image)
 
             results = {}
