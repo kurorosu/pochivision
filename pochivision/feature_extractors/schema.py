@@ -15,6 +15,9 @@ class BrightnessStatisticsParams(BaseModel):
     color_mode: Optional[StrictStr] = Field(
         default="gray", pattern="^(gray|lab_l|hsv_v)$"
     )
+    exclude_zero_pixels: Optional[StrictBool] = Field(
+        default=True, description="輝度値0のピクセルを計算から除外するかどうか"
+    )
 
 
 class RGBStatisticsParams(BaseModel):
@@ -194,6 +197,17 @@ class HLACTextureParams(BaseModel):
     )
     aspect_ratio_mode: Optional[StrictStr] = Field(
         default="width", pattern="^(width|height)$", description="基準軸"
+    )
+    binarization_method: Optional[StrictStr] = Field(
+        default="adaptive",
+        pattern="^(otsu|adaptive)$",
+        description="二値化方式 (otsu or adaptive)",
+    )
+    adaptive_block_size: Optional[StrictInt] = Field(
+        default=11, ge=3, description="adaptive 二値化のブロックサイズ (奇数)"
+    )
+    adaptive_c: Optional[Union[StrictInt, StrictFloat]] = Field(
+        default=2, description="adaptive 二値化の定数 C"
     )
 
 

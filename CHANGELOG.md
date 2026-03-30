@@ -13,6 +13,7 @@
 
 ### Fixed
 - brightness, rgb, hsv, circle_counter に float (0-1) 入力の uint8 スケール変換を追加. dtype 一致テスト 4 件も追加. (NA.)
+- Brightness スキーマに `exclude_zero_pixels`, HLAC スキーマに `binarization_method` / `adaptive_block_size` / `adaptive_c` を追加. (NA.)
 
 ### Removed
 - 無し
