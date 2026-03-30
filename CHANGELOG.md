@@ -12,7 +12,7 @@
 - 全 9 抽出器のエラーハンドリングを `LogManager` + `raise` パターンに統一. brightness, rgb, hsv, circle_counter に try-except を追加. (NA.)
 
 ### Fixed
-- 無し
+- brightness, rgb, hsv, circle_counter に float (0-1) 入力の uint8 スケール変換を追加. dtype 一致テスト 4 件も追加. (NA.)
 
 ### Removed
 - 無し

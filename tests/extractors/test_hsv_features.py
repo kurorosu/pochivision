@@ -5,6 +5,7 @@ import numpy as np
 import pytest  # noqa: F401
 
 from pochivision.feature_extractors import HSVStatisticsExtractor, get_feature_extractor
+from tests.extractors.conftest import DummyImages
 
 
 def test_hsv_statistics():
@@ -466,3 +467,18 @@ if __name__ == "__main__":
     test_feature_names_and_units()
     test_unit_for_feature_method()
     print("\n=== HSV統計特徴量抽出テスト完了 ===")
+
+
+def test_dtype_float01_equals_uint8():
+    """float (0-1) と uint8 で同じ特徴量が返ることを確認."""
+    ext = HSVStatisticsExtractor()
+    img_uint8 = np.stack([DummyImages.random(seed=i) for i in range(3)], axis=2)
+    img_float = img_uint8.astype(np.float32) / 255.0
+
+    f_u = ext.extract(img_uint8)
+    f_f = ext.extract(img_float)
+
+    for key in f_u:
+        if f_u[key] == float("inf"):
+            continue
+        assert abs(f_u[key] - f_f[key]) < 0.5, f"{key}: {f_u[key]} vs {f_f[key]}"
