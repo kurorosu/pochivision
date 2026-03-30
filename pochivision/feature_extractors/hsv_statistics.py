@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from scipy.stats import circmean, circstd
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.utils.image import to_bgr
 
 from .base import BaseFeatureExtractor
@@ -91,65 +92,56 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
         if image is None or image.size == 0:
             raise ValueError("Input image is empty or None")
 
-        # 任意の形状の画像をBGR形式に変換（グレースケール対応）
-        bgr_image = to_bgr(image)
+        try:
+            bgr_image = to_bgr(image)
+            hsv_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2HSV)
 
-        hsv_image = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2HSV)
+            results = {}
 
-        results = {}
-
-        # 黒ピクセル除外の処理
-        if self.exclude_black_pixels:
-            # BGR画像ですべてのチャンネルが0でないピクセルのマスクを作成
-            non_black_mask = np.any(bgr_image > 0, axis=2)
-        else:
-            # すべてのピクセルを使用
-            non_black_mask = np.ones(bgr_image.shape[:2], dtype=bool)
-
-        # チャンネル名の定義
-        channel_names = ["hue", "saturation", "value"]
-
-        for i, channel_name in enumerate(channel_names):
-            channel_data = hsv_image[:, :, i]
-
-            # マスクを適用してピクセル値を取得
             if self.exclude_black_pixels:
-                pixels = channel_data[non_black_mask].astype(np.float64)
+                non_black_mask = np.any(bgr_image > 0, axis=2)
             else:
-                pixels = channel_data.flatten().astype(np.float64)
+                non_black_mask = np.ones(bgr_image.shape[:2], dtype=bool)
 
-            # 統計値の計算
-            if len(pixels) == 0:
-                # 有効なピクセルがない場合
-                mean_val = 0.0
-                median_val = 0.0
-                variance_val = 0.0
-                std_dev_val = 0.0
-                cv_val = float("inf")
-            elif channel_name == "hue":
-                # Hue は循環データのため循環統計を使用
-                mean_val, median_val, variance_val, std_dev_val, cv_val = (
-                    self._compute_circular_stats(pixels)
-                )
-            else:
-                mean_val = float(np.mean(pixels))
-                median_val = float(np.median(pixels))
-                variance_val = float(np.var(pixels))
-                std_dev_val = float(np.std(pixels))
+            channel_names = ["hue", "saturation", "value"]
 
-                # 変動係数の計算（平均値が0の場合は無限大になるため特別処理）
-                cv_val = (
-                    float(std_dev_val / mean_val) if mean_val != 0 else float("inf")
-                )
+            for i, channel_name in enumerate(channel_names):
+                channel_data = hsv_image[:, :, i]
 
-            # 結果に追加
-            results[f"{channel_name}_mean"] = mean_val
-            results[f"{channel_name}_median"] = median_val
-            results[f"{channel_name}_variance"] = variance_val
-            results[f"{channel_name}_std_dev"] = std_dev_val
-            results[f"{channel_name}_cv"] = cv_val
+                if self.exclude_black_pixels:
+                    pixels = channel_data[non_black_mask].astype(np.float64)
+                else:
+                    pixels = channel_data.flatten().astype(np.float64)
 
-        return results
+                if len(pixels) == 0:
+                    mean_val = 0.0
+                    median_val = 0.0
+                    variance_val = 0.0
+                    std_dev_val = 0.0
+                    cv_val = float("inf")
+                elif channel_name == "hue":
+                    mean_val, median_val, variance_val, std_dev_val, cv_val = (
+                        self._compute_circular_stats(pixels)
+                    )
+                else:
+                    mean_val = float(np.mean(pixels))
+                    median_val = float(np.median(pixels))
+                    variance_val = float(np.var(pixels))
+                    std_dev_val = float(np.std(pixels))
+                    cv_val = (
+                        float(std_dev_val / mean_val) if mean_val != 0 else float("inf")
+                    )
+
+                results[f"{channel_name}_mean"] = mean_val
+                results[f"{channel_name}_median"] = median_val
+                results[f"{channel_name}_variance"] = variance_val
+                results[f"{channel_name}_std_dev"] = std_dev_val
+                results[f"{channel_name}_cv"] = cv_val
+
+            return results
+        except Exception:
+            LogManager().get_logger().exception("HSV feature extraction failed")
+            raise
 
     def _compute_circular_stats(
         self, pixels: np.ndarray

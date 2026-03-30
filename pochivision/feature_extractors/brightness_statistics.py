@@ -5,6 +5,8 @@ from typing import Any, Dict, Optional, Union
 import cv2
 import numpy as np
 
+from pochivision.capturelib.log_manager import LogManager
+
 from .base import BaseFeatureExtractor
 from .registry import register_feature_extractor
 
@@ -75,41 +77,42 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
         if image is None or image.size == 0:
             raise ValueError("Input image is empty or None")
 
-        brightness_image = self._get_brightness_image(image)
-        pixels = brightness_image.flatten().astype(np.float64)
+        try:
+            brightness_image = self._get_brightness_image(image)
+            pixels = brightness_image.flatten().astype(np.float64)
 
-        # ゼロピクセル除外の処理
-        if self.exclude_zero_pixels:
-            # 輝度値0のピクセルを除外
-            non_zero_pixels = pixels[pixels > 0]
-            calculation_pixels = non_zero_pixels
-        else:
-            # すべてのピクセルを使用
-            calculation_pixels = pixels
+            # ゼロピクセル除外の処理
+            if self.exclude_zero_pixels:
+                non_zero_pixels = pixels[pixels > 0]
+                calculation_pixels = non_zero_pixels
+            else:
+                calculation_pixels = pixels
 
-        if len(calculation_pixels) == 0:
-            # 有効なピクセルがない場合
-            mean_val = 0.0
-            median_val = 0.0
-            variance_val = 0.0
-            std_dev_val = 0.0
-            cv_val = float("inf")
-        else:
-            mean_val = float(np.mean(calculation_pixels))
-            median_val = float(np.median(calculation_pixels))
-            variance_val = float(np.var(calculation_pixels))
-            std_dev_val = float(np.std(calculation_pixels))
+            if len(calculation_pixels) == 0:
+                mean_val = 0.0
+                median_val = 0.0
+                variance_val = 0.0
+                std_dev_val = 0.0
+                cv_val = float("inf")
+            else:
+                mean_val = float(np.mean(calculation_pixels))
+                median_val = float(np.median(calculation_pixels))
+                variance_val = float(np.var(calculation_pixels))
+                std_dev_val = float(np.std(calculation_pixels))
+                cv_val = (
+                    float(std_dev_val / mean_val) if mean_val != 0 else float("inf")
+                )
 
-            # 変動係数の計算（平均値が0の場合は無限大になるため特別処理）
-            cv_val = float(std_dev_val / mean_val) if mean_val != 0 else float("inf")
-
-        return {
-            "mean": mean_val,
-            "median": median_val,
-            "variance": variance_val,
-            "std_dev": std_dev_val,
-            "cv": cv_val,
-        }
+            return {
+                "mean": mean_val,
+                "median": median_val,
+                "variance": variance_val,
+                "std_dev": std_dev_val,
+                "cv": cv_val,
+            }
+        except Exception:
+            LogManager().get_logger().exception("Brightness feature extraction failed")
+            raise
 
     def _get_brightness_image(self, image: np.ndarray) -> np.ndarray:
         """

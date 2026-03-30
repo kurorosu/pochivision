@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Union
 import cv2
 import numpy as np
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.utils.image import to_grayscale
 
 from .base import BaseFeatureExtractor
@@ -91,53 +92,50 @@ class CircleCounterExtractor(BaseFeatureExtractor):
         if image is None or image.size == 0:
             raise ValueError("Input image is empty or None")
 
-        gray = to_grayscale(image)
+        try:
+            gray = to_grayscale(image)
 
-        # ガウシアンブラーでノイズ除去
-        if self.blur_kernel_size > 0:
-            gray = cv2.GaussianBlur(
-                gray, (self.blur_kernel_size, self.blur_kernel_size), 0
+            if self.blur_kernel_size > 0:
+                gray = cv2.GaussianBlur(
+                    gray, (self.blur_kernel_size, self.blur_kernel_size), 0
+                )
+
+            height, width = gray.shape
+            image_area = height * width
+
+            if self.max_radius > 0:
+                user_max_radius = self.max_radius
+                image_limit = min(height, width) // 2
+                max_radius = min(user_max_radius, image_limit)
+            else:
+                max_radius = min(height, width) // 4
+
+            min_dist = max(1, int(max_radius * self.min_dist_ratio))
+            circles = cv2.HoughCircles(
+                gray,
+                cv2.HOUGH_GRADIENT,
+                dp=1,
+                minDist=min_dist,
+                param1=self.param1,
+                param2=self.param2,
+                minRadius=self.min_radius,
+                maxRadius=max_radius,
             )
 
-        height, width = gray.shape
-        image_area = height * width
+            if circles is not None:
+                circles = np.round(circles[0, :]).astype("int")
 
-        # 最大半径の動的調整（画像サイズに応じて）
-        # ロジック:
-        # 1. max_radius > 0 の場合: ユーザー指定値を使用
-        # 2. max_radius = 0 の場合: 画像短辺の1/4を使用（自動計算）
-        # 3. ただし、画像短辺の1/2を上限とする（画像全体を占める円を防ぐ）
-        if self.max_radius > 0:
-            # ユーザー指定値を使用するが、画像サイズの制約を適用
-            user_max_radius = self.max_radius
-            image_limit = min(height, width) // 2  # 画像短辺の半分が上限
-            max_radius = min(user_max_radius, image_limit)
-        else:
-            # 自動計算: 画像短辺の1/4（一般的に適切なデフォルト値）
-            max_radius = min(height, width) // 4
+                if self.enable_circularity_filter:
+                    circles = self._filter_by_circularity(gray, circles)
+            else:
+                circles = np.array([])
 
-        min_dist = max(1, int(max_radius * self.min_dist_ratio))
-        circles = cv2.HoughCircles(
-            gray,
-            cv2.HOUGH_GRADIENT,
-            dp=1,
-            minDist=min_dist,
-            param1=self.param1,
-            param2=self.param2,
-            minRadius=self.min_radius,
-            maxRadius=max_radius,
-        )
-
-        if circles is not None:
-            circles = np.round(circles[0, :]).astype("int")
-
-            # 真円度フィルタリング
-            if self.enable_circularity_filter:
-                circles = self._filter_by_circularity(gray, circles)
-        else:
-            circles = np.array([])
-
-        return self._calculate_features(circles, image_area, max_radius)
+            return self._calculate_features(circles, image_area, max_radius)
+        except Exception:
+            LogManager().get_logger().exception(
+                "CircleCounter feature extraction failed"
+            )
+            raise
 
     def _filter_by_circularity(
         self, gray: np.ndarray, circles: np.ndarray
