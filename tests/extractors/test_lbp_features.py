@@ -611,3 +611,19 @@ class TestLBPBehavior:
         f = self.ext.extract(DummyImages.random())
         assert "lbp_bin_0" in f
         assert "lbp_bin_9" in f
+
+
+def test_schema_validation_rejects_invalid_method():
+    """スキーマバリデーションが無効な method を拒否することを確認."""
+    from pochivision.feature_extractors import get_feature_extractor
+
+    with pytest.raises(ValueError, match="Invalid config"):
+        get_feature_extractor("lbp", {"method": "invalid_method"})
+
+
+def test_schema_validation_rejects_invalid_P():
+    """スキーマバリデーションが範囲外の P を拒否することを確認."""
+    from pochivision.feature_extractors import get_feature_extractor
+
+    with pytest.raises(ValueError, match="Invalid config"):
+        get_feature_extractor("lbp", {"P": 2})

@@ -262,3 +262,17 @@ class CircleCounterParams(BaseModel):
     enable_circularity_filter: Optional[StrictBool] = Field(
         default=True, description="真円度フィルタリングを有効にするかどうか"
     )
+
+
+# 抽出器名とスキーマクラスのマッピング
+EXTRACTOR_SCHEMA_MAP: dict[str, type[BaseModel]] = {
+    "brightness": BrightnessStatisticsParams,
+    "rgb": RGBStatisticsParams,
+    "hsv": HSVStatisticsParams,
+    "glcm": GLCMTextureParams,
+    "fft": FFTFrequencyParams,
+    "swt": SWTFrequencyParams,
+    "lbp": LBPTextureParams,
+    "hlac": HLACTextureParams,
+    "circle_counter": CircleCounterParams,
+}

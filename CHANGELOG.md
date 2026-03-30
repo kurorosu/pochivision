@@ -16,6 +16,7 @@
 - Brightness スキーマに `exclude_zero_pixels`, HLAC スキーマに `binarization_method` / `adaptive_block_size` / `adaptive_c` を追加. ([#228](https://github.com/kurorosu/pochivision/pull/228))
 - circle_counter の `blur_kernel_size` に偶数バリデーションを追加. ([#230](https://github.com/kurorosu/pochivision/pull/230))
 - RGB/HSV/Brightness の `exclude_black_pixels` / `exclude_zero_pixels` の動作を docstring とコメントに明記. (NA.)
+- `get_feature_extractor` で Pydantic スキーマによる設定バリデーションを実行するよう変更. 無効な設定値で `ValueError` を送出. (NA.)
 
 ### Removed
 - 無し
