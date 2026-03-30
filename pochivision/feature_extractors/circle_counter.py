@@ -74,6 +74,10 @@ class CircleCounterExtractor(BaseFeatureExtractor):
         self.param2 = self.config["param2"]
         self.circularity_threshold = self.config["circularity_threshold"]
         self.blur_kernel_size = self.config["blur_kernel_size"]
+        if self.blur_kernel_size > 0 and self.blur_kernel_size % 2 == 0:
+            raise ValueError(
+                f"blur_kernel_size must be an odd number or 0, got {self.blur_kernel_size}"
+            )
         self.enable_circularity_filter = self.config["enable_circularity_filter"]
 
     def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
