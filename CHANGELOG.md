@@ -9,12 +9,13 @@
 - 無し
 
 ### Changed
-- 全 9 抽出器のエラーハンドリングを `LogManager` + `raise` パターンに統一. brightness, rgb, hsv, circle_counter に try-except を追加. (NA.)
+- 全 9 抽出器のエラーハンドリングを `LogManager` + `raise` パターンに統一. brightness, rgb, hsv, circle_counter に try-except を追加. ([#226](https://github.com/kurorosu/pochivision/pull/226))
 
 ### Fixed
-- brightness, rgb, hsv, circle_counter に float (0-1) 入力の uint8 スケール変換を追加. dtype 一致テスト 4 件も追加. (NA.)
-- Brightness スキーマに `exclude_zero_pixels`, HLAC スキーマに `binarization_method` / `adaptive_block_size` / `adaptive_c` を追加. (NA.)
-- circle_counter の `blur_kernel_size` に偶数バリデーションを追加. (NA.)
+- brightness, rgb, hsv, circle_counter に float (0-1) 入力の uint8 スケール変換を追加. dtype 一致テスト 4 件も追加. ([#227](https://github.com/kurorosu/pochivision/pull/227))
+- Brightness スキーマに `exclude_zero_pixels`, HLAC スキーマに `binarization_method` / `adaptive_block_size` / `adaptive_c` を追加. ([#228](https://github.com/kurorosu/pochivision/pull/228))
+- circle_counter の `blur_kernel_size` に偶数バリデーションを追加. ([#230](https://github.com/kurorosu/pochivision/pull/230))
+- RGB/HSV/Brightness の `exclude_black_pixels` / `exclude_zero_pixels` の動作を docstring とコメントに明記. (NA.)
 
 ### Removed
 - 無し

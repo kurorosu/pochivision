@@ -26,7 +26,11 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
     - std_dev: RGB標準偏差 [0-255]
     - cv: 変動係数（標準偏差/平均値） [ratio]
 
-    設定により、RGB値がすべて0のピクセルを計算から除外することができます。
+    exclude_black_pixels の動作:
+    - True: R=0, G=0, B=0 のピクセル (完全な黒) のみを統計から除外する.
+      R=200, G=0, B=0 のようなピクセルは除外されない (いずれかのチャンネルが非ゼロ).
+    - False: 全ピクセルを統計に含む.
+    - 用途: 背景が真っ黒の画像で, 背景領域を統計から除外したい場合に使用.
     """
 
     # 特徴量の単位定義
@@ -87,6 +91,7 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
             results = {}
 
             if self.exclude_black_pixels:
+                # R=0, G=0, B=0 の完全黒ピクセルを除外 (いずれかが非ゼロなら残す)
                 non_black_mask = np.any(rgb_image > 0, axis=2)
             else:
                 non_black_mask = np.ones(rgb_image.shape[:2], dtype=bool)
