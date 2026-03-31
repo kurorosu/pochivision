@@ -2,6 +2,17 @@
   "input_directory": "image_aggregated/20250603_0/pipeline",
   "output_directory": "extraction_results",
   "output_format": "csv",
+  "extractors": [
+    "brightness",
+    "rgb",
+    "hsv",
+    "glcm",
+    "fft",
+    "swt",
+    "lbp",
+    "hlac",
+    "circle_counter"
+  ],
   "feature_extractors": {
     "brightness": {
       "color_mode": "gray",
