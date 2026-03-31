@@ -129,13 +129,24 @@ class FeatureExtractionRunner:
         """
         設定に基づいて特徴量抽出器を初期化.
 
+        extractors リストが指定されている場合, そのリストの抽出器のみ初期化する.
+        未指定の場合は feature_extractors の全エントリを使用 (後方互換).
+
         Returns:
             Dict[str, Any]: 初期化された特徴量抽出器の辞書.
         """
         extractors = {}
         extractor_configs = self.config.get("feature_extractors", {})
+        extractor_list = self.config.get("extractors")
 
-        for name, config in extractor_configs.items():
+        # extractors リストが指定されていれば, そのリストの抽出器のみ初期化
+        if extractor_list is not None:
+            target_names = extractor_list
+        else:
+            target_names = list(extractor_configs.keys())
+
+        for name in target_names:
+            config = extractor_configs.get(name, {})
             try:
                 extractor = get_feature_extractor(name, config)
                 extractors[name] = extractor
