@@ -6,7 +6,7 @@ from typing import Any, Dict, Union
 import numpy as np
 
 
-class BaseFeatureExtractor:
+class BaseFeatureExtractor(abc.ABC):
     """
     すべての画像特徴量抽出器の基底クラス.
 
