@@ -15,8 +15,12 @@
 - brightness, rgb, hsv, circle_counter に float (0-1) 入力の uint8 スケール変換を追加. dtype 一致テスト 4 件も追加. ([#227](https://github.com/kurorosu/pochivision/pull/227))
 - Brightness スキーマに `exclude_zero_pixels`, HLAC スキーマに `binarization_method` / `adaptive_block_size` / `adaptive_c` を追加. ([#228](https://github.com/kurorosu/pochivision/pull/228))
 - circle_counter の `blur_kernel_size` に偶数バリデーションを追加. ([#230](https://github.com/kurorosu/pochivision/pull/230))
-- RGB/HSV/Brightness の `exclude_black_pixels` / `exclude_zero_pixels` の動作を docstring とコメントに明記. (NA.)
-- `get_feature_extractor` で Pydantic スキーマによる設定バリデーションを実行するよう変更. 無効な設定値で `ValueError` を送出. (NA.)
+- RGB/HSV/Brightness の `exclude_black_pixels` / `exclude_zero_pixels` の動作を docstring とコメントに明記. ([#231](https://github.com/kurorosu/pochivision/pull/231))
+- `get_feature_extractor` で Pydantic スキーマによる設定バリデーションを実行するよう変更. ([#232](https://github.com/kurorosu/pochivision/pull/232))
+- スキーマの関心分離, プロセッサバリデーション追加, 例外階層の統一. (NA.)
+  - プロセッサスキーマを `processors/schema.py` に分離し `config_schema.py` を `schema.py` にリネーム
+  - `get_processor` で Pydantic スキーマによる設定バリデーションを実行するよう変更
+  - `ConfigLoadError` / `CameraConfigError` を `exceptions/config.py` に移動し `VisionCaptureError` 階層に統一
 
 ### Removed
 - 無し

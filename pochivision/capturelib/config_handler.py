@@ -12,21 +12,13 @@ from typing import Any, Dict, List, Tuple
 from pydantic import ValidationError
 
 from pochivision.capturelib.schema import ConfigModel
-from pochivision.exceptions.config import ConfigValidationError
+from pochivision.exceptions.config import (
+    CameraConfigError,
+    ConfigLoadError,
+    ConfigValidationError,
+)
 
 from .log_manager import LogManager
-
-
-class ConfigLoadError(Exception):
-    """設定ファイルの読み込みエラーを表す例外クラス."""
-
-    pass
-
-
-class CameraConfigError(Exception):
-    """カメラ設定のエラーを表す例外クラス."""
-
-    pass
 
 
 class ConfigHandler:
