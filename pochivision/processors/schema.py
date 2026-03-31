@@ -131,3 +131,23 @@ class ContourParams(BaseModel):
     inside_color: Optional[List[StrictInt]] = Field(
         default=[255, 255, 255], min_length=3, max_length=3
     )
+
+
+# プロセッサ名とスキーマクラスのマッピング
+PROCESSOR_SCHEMA_MAP: dict[str, type[BaseModel]] = {
+    "gaussian_blur": GaussianBlurParams,
+    "average_blur": AverageBlurParams,
+    "median_blur": MedianBlurParams,
+    "grayscale": GrayscaleParams,
+    "std_bin": StandardBinarizationParams,
+    "otsu_bin": OtsuBinarizationParams,
+    "gauss_adapt_bin": GaussianAdaptiveBinarizationParams,
+    "mean_adapt_bin": MeanAdaptiveBinarizationParams,
+    "bilateral_filter": BilateralFilterParams,
+    "motion_blur": MotionBlurParams,
+    "resize": ResizeParams,
+    "equalize": EqualizeParams,
+    "clahe": CLAHEParams,
+    "canny_edge": CannyEdgeParams,
+    "contour": ContourParams,
+}
