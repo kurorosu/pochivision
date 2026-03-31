@@ -1,10 +1,10 @@
 """
-設定ファイルのスキーマ（pydanticモデル）を定義するモジュール.
+画像処理プロセッサの設定スキーマを定義するモジュール.
 
-各種画像処理パラメータやカメラプロファイル、全体設定の構造を型安全に管理します。
+各プロセッサのパラメータ構造を型安全に管理する.
 """
 
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, StrictFloat, StrictInt, StrictStr
 
@@ -29,9 +29,9 @@ class MedianBlurParams(BaseModel):
 
 
 class GrayscaleParams(BaseModel):
-    """グレースケール変換のパラメータスキーマ（パラメータなし）."""
+    """グレースケール変換のパラメータスキーマ."""
 
-    pass  # パラメータなし
+    pass
 
 
 class StandardBinarizationParams(BaseModel):
@@ -41,9 +41,9 @@ class StandardBinarizationParams(BaseModel):
 
 
 class OtsuBinarizationParams(BaseModel):
-    """大津の2値化のパラメータスキーマ（パラメータなし）."""
+    """大津の2値化のパラメータスキーマ."""
 
-    pass  # パラメータなし
+    pass
 
 
 class GaussianAdaptiveBinarizationParams(BaseModel):
@@ -95,7 +95,7 @@ class EqualizeParams(BaseModel):
 
 
 class CLAHEParams(BaseModel):
-    """CLAHE（適応的ヒストグラム平坦化）のパラメータスキーマ."""
+    """CLAHE のパラメータスキーマ."""
 
     color_mode: Optional[StrictStr] = Field(default="gray", pattern="^(gray|lab|bgr)$")
     clip_limit: Optional[StrictFloat] = Field(default=2.0, gt=0)
@@ -133,45 +133,21 @@ class ContourParams(BaseModel):
     )
 
 
-class CameraProfile(BaseModel):
-    """カメラプロファイルのスキーマ."""
-
-    width: StrictInt
-    height: StrictInt
-    fps: StrictInt
-    backend: StrictStr
-    processors: List[StrictStr]
-    mode: StrictStr
-    id_interval: Optional[StrictInt] = Field(default=None)
-
-    gaussian_blur: Optional[GaussianBlurParams] = None
-    average_blur: Optional[AverageBlurParams] = None
-    median_blur: Optional[MedianBlurParams] = None
-    grayscale: Optional[GrayscaleParams] = None
-    std_bin: Optional[StandardBinarizationParams] = None
-    otsu_bin: Optional[OtsuBinarizationParams] = None
-    gauss_adapt_bin: Optional[GaussianAdaptiveBinarizationParams] = None
-    mean_adapt_bin: Optional[MeanAdaptiveBinarizationParams] = None
-    bilateral_filter: Optional[BilateralFilterParams] = None
-    motion_blur: Optional[MotionBlurParams] = None
-    resize: Optional[ResizeParams] = None
-    equalize: Optional[EqualizeParams] = None
-    clahe: Optional[CLAHEParams] = None
-    canny_edge: Optional[CannyEdgeParams] = None
-    contour: Optional[ContourParams] = None
-
-
-class PreviewConfig(BaseModel):
-    """ライブプレビューウィンドウの表示設定スキーマ."""
-
-    width: StrictInt = Field(default=1280, gt=0)
-    height: StrictInt = Field(default=720, gt=0)
-
-
-class ConfigModel(BaseModel):
-    """全体設定（カメラ一覧・選択インデックス）のスキーマ."""
-
-    cameras: Dict[str, CameraProfile]
-    selected_camera_index: StrictInt
-    id_interval: Optional[StrictInt] = Field(default=None)
-    preview: Optional[PreviewConfig] = Field(default=None)
+# プロセッサ名とスキーマクラスのマッピング
+PROCESSOR_SCHEMA_MAP: dict[str, type[BaseModel]] = {
+    "gaussian_blur": GaussianBlurParams,
+    "average_blur": AverageBlurParams,
+    "median_blur": MedianBlurParams,
+    "grayscale": GrayscaleParams,
+    "std_bin": StandardBinarizationParams,
+    "otsu_bin": OtsuBinarizationParams,
+    "gauss_adapt_bin": GaussianAdaptiveBinarizationParams,
+    "mean_adapt_bin": MeanAdaptiveBinarizationParams,
+    "bilateral_filter": BilateralFilterParams,
+    "motion_blur": MotionBlurParams,
+    "resize": ResizeParams,
+    "equalize": EqualizeParams,
+    "clahe": CLAHEParams,
+    "canny_edge": CannyEdgeParams,
+    "contour": ContourParams,
+}

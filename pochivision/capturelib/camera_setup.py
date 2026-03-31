@@ -4,7 +4,8 @@ from typing import Any, Dict
 
 import cv2
 
-from pochivision.capturelib.config_handler import CameraConfigError, LogManager
+from pochivision.capturelib.log_manager import LogManager
+from pochivision.exceptions.config import CameraConfigError
 
 
 class CameraSetup:

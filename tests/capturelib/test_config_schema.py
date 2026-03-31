@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from pochivision.capturelib.config_schema import PreviewConfig
+from pochivision.capturelib.schema import PreviewConfig
 
 
 def test_preview_config_defaults():
