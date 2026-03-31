@@ -36,6 +36,12 @@ def register_feature_extractor(
     """
 
     def decorator(cls: Type[BaseFeatureExtractor]) -> Type[BaseFeatureExtractor]:
+        if name in FEATURE_EXTRACTOR_REGISTRY:
+            logger.warning(
+                f"Feature extractor '{name}' is already registered "
+                f"({FEATURE_EXTRACTOR_REGISTRY[name].__name__}), "
+                f"overwriting with {cls.__name__}"
+            )
         FEATURE_EXTRACTOR_REGISTRY[name] = cls
         return cls
 

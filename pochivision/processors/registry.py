@@ -10,7 +10,10 @@
         ...
 """
 
+import logging
 from typing import Any, Callable, Dict, Type
+
+logger = logging.getLogger(__name__)
 
 from .base import BaseProcessor
 from .schema import PROCESSOR_SCHEMA_MAP
@@ -33,6 +36,12 @@ def register_processor(
     """
 
     def decorator(cls: Type[BaseProcessor]) -> Type[BaseProcessor]:
+        if name in PROCESSOR_REGISTRY:
+            logger.warning(
+                f"Processor '{name}' is already registered "
+                f"({PROCESSOR_REGISTRY[name].__name__}), "
+                f"overwriting with {cls.__name__}"
+            )
         PROCESSOR_REGISTRY[name] = cls
         return cls
 
