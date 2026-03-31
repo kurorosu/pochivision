@@ -4,16 +4,26 @@
 各プロセッサのパラメータ構造を型安全に管理する.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field, StrictFloat, StrictInt, StrictStr
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    StrictStr,
+    field_validator,
+    model_validator,
+)
 
 
 class GaussianBlurParams(BaseModel):
     """ガウシアンブラーのパラメータスキーマ."""
 
     kernel_size: List[StrictInt]
-    sigma: StrictFloat
+    sigma: StrictFloat = Field(ge=0)
 
 
 class AverageBlurParams(BaseModel):
@@ -37,7 +47,7 @@ class GrayscaleParams(BaseModel):
 class StandardBinarizationParams(BaseModel):
     """標準2値化のパラメータスキーマ."""
 
-    threshold: StrictInt
+    threshold: StrictInt = Field(ge=0, le=255)
 
 
 class OtsuBinarizationParams(BaseModel):
@@ -49,15 +59,31 @@ class OtsuBinarizationParams(BaseModel):
 class GaussianAdaptiveBinarizationParams(BaseModel):
     """ガウシアン適応的2値化のパラメータスキーマ."""
 
-    block_size: StrictInt
-    c: StrictFloat
+    block_size: StrictInt = Field(ge=3)
+    c: Union[StrictInt, StrictFloat]
+
+    @field_validator("block_size")
+    @classmethod
+    def block_size_must_be_odd(cls, v: int) -> int:
+        """block_size は奇数でなければならない."""
+        if v % 2 == 0:
+            raise ValueError(f"block_size must be odd, got {v}")
+        return v
 
 
 class MeanAdaptiveBinarizationParams(BaseModel):
     """平均適応的2値化のパラメータスキーマ."""
 
-    block_size: StrictInt
-    c: StrictFloat
+    block_size: StrictInt = Field(ge=3)
+    c: Union[StrictInt, StrictFloat]
+
+    @field_validator("block_size")
+    @classmethod
+    def block_size_must_be_odd(cls, v: int) -> int:
+        """block_size は奇数でなければならない."""
+        if v % 2 == 0:
+            raise ValueError(f"block_size must be odd, got {v}")
+        return v
 
 
 class BilateralFilterParams(BaseModel):
@@ -80,9 +106,9 @@ class MotionBlurParams(BaseModel):
 class ResizeParams(BaseModel):
     """リサイズプロセッサーのパラメータスキーマ."""
 
-    width: Optional[StrictInt] = None
-    height: Optional[StrictInt] = None
-    preserve_aspect_ratio: Optional[bool] = Field(default=False)
+    width: Optional[StrictInt] = Field(default=None, gt=0)
+    height: Optional[StrictInt] = Field(default=None, gt=0)
+    preserve_aspect_ratio: Optional[StrictBool] = Field(default=False)
     aspect_ratio_mode: Optional[StrictStr] = Field(
         default="width", pattern="^(width|height)$"
     )
@@ -107,10 +133,28 @@ class CLAHEParams(BaseModel):
 class CannyEdgeParams(BaseModel):
     """Cannyエッジ検出のパラメータスキーマ."""
 
-    threshold1: StrictFloat
-    threshold2: StrictFloat
+    threshold1: StrictFloat = Field(ge=0)
+    threshold2: StrictFloat = Field(ge=0)
     aperture_size: Optional[StrictInt] = Field(default=3, ge=3, le=7)
-    l2_gradient: Optional[bool] = Field(default=False)
+    l2_gradient: Optional[StrictBool] = Field(default=False)
+
+    @field_validator("aperture_size")
+    @classmethod
+    def aperture_size_must_be_odd(cls, v: int) -> int:
+        """aperture_size は奇数でなければならない."""
+        if v is not None and v % 2 == 0:
+            raise ValueError(f"aperture_size must be odd, got {v}")
+        return v
+
+    @model_validator(mode="after")
+    def threshold1_le_threshold2(self) -> "CannyEdgeParams":
+        """threshold1 <= threshold2 でなければならない."""
+        if self.threshold1 > self.threshold2:
+            raise ValueError(
+                f"threshold1 ({self.threshold1}) must be <= "
+                f"threshold2 ({self.threshold2})"
+            )
+        return self
 
 
 class ContourParams(BaseModel):
@@ -133,6 +177,15 @@ class ContourParams(BaseModel):
     )
 
 
+class MaskCompositionParams(BaseModel):
+    """マスク合成プロセッサのパラメータスキーマ."""
+
+    target_image: Optional[StrictStr] = Field(default="original")
+    use_white_pixels: Optional[StrictBool] = Field(default=True)
+    enable_cropping: Optional[StrictBool] = Field(default=False)
+    crop_margin: Optional[StrictInt] = Field(default=0, ge=0)
+
+
 # プロセッサ名とスキーマクラスのマッピング
 PROCESSOR_SCHEMA_MAP: dict[str, type[BaseModel]] = {
     "gaussian_blur": GaussianBlurParams,
@@ -150,4 +203,5 @@ PROCESSOR_SCHEMA_MAP: dict[str, type[BaseModel]] = {
     "clahe": CLAHEParams,
     "canny_edge": CannyEdgeParams,
     "contour": ContourParams,
+    "mask_composition": MaskCompositionParams,
 }
