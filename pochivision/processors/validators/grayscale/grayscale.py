@@ -20,14 +20,6 @@ class GrayscaleValidator(BaseValidator):
         """
         self.config = config
 
-    def validate_config(self) -> None:
-        """
-        設定値のバリデーションを実行する.
-
-        グレースケール変換は設定パラメータを持たないため、このメソッドは何も行いません.
-        """
-        pass  # 設定パラメータに関するバリデーションは無い
-
     def validate_image(self, image: np.ndarray) -> None:
         """
         入力画像のバリデーションを実行する.

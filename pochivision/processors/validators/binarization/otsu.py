@@ -1,6 +1,6 @@
 """大津の2値化バリデータの実装モジュール."""
 
-from typing import Any, Dict
+from typing import Dict
 
 import numpy as np
 
@@ -13,28 +13,20 @@ class OtsuBinarizationValidator(BaseValidator):
     大津の2値化用のバリデータ.
 
     Args:
-        config (Dict[str, Any]): バリデーション対象の設定辞書.
+        config (Dict[str, int]): バリデーション対象の設定辞書.
 
     Raises:
         ProcessorValidationError: 不正なパラメータが検出された場合.
     """
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: Dict[str, int]) -> None:
         """
         OtsuBinarizationValidatorのコンストラクタ.
 
         Args:
-            config (Dict[str, Any]): バリデーション対象の設定辞書.
+            config (Dict[str, int]): バリデーション対象の設定辞書.
         """
         self.config = config
-
-    def validate_config(self) -> None:
-        """
-        設定値のバリデーションを実行する.
-
-        大津の2値化は設定パラメータを持たないため、このメソッドは何も行いません.
-        """
-        pass  # 設定パラメータに関するバリデーションは無い
 
     def validate_image(self, image: np.ndarray) -> None:
         """

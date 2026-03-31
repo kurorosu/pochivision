@@ -44,10 +44,12 @@ class GaussianBlurProcessor(BaseProcessor):
         """
         super().__init__(name, config)
         self.validator = GaussianBlurValidator(config)
-        self.validator.validate_config()
-        self.kernel_size = (self.validator.kernel_width, self.validator.kernel_height)
-        self.sigma_x = self.validator.sigma_x
-        self.sigma_y = self.validator.sigma_y
+        default = self.get_default_config()
+        ks = config.get("kernel_size", default["kernel_size"])
+        self.kernel_size = (ks[0], ks[1])
+        sigma = config.get("sigma", default.get("sigma", 0))
+        self.sigma_x = float(sigma)
+        self.sigma_y = float(config.get("sigmaY", sigma))
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -116,8 +118,9 @@ class AverageBlurProcessor(BaseProcessor):
         """
         super().__init__(name, config)
         self.validator = AverageBlurValidator(config)
-        self.validator.validate_config()
-        self.kernel_size = (self.validator.kernel_width, self.validator.kernel_height)
+        default = self.get_default_config()
+        ks = config.get("kernel_size", default["kernel_size"])
+        self.kernel_size = (ks[0], ks[1])
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -185,8 +188,8 @@ class MedianBlurProcessor(BaseProcessor):
         """
         super().__init__(name, config)
         self.validator = MedianBlurValidator(config)
-        self.validator.validate_config()
-        self.kernel_size = self.validator.kernel_size
+        default = self.get_default_config()
+        self.kernel_size = config.get("kernel_size", default["kernel_size"])
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -255,10 +258,10 @@ class BilateralFilterProcessor(BaseProcessor):
         """
         super().__init__(name, config)
         self.validator = BilateralFilterValidator(config)
-        self.validator.validate_config()
-        self.d = self.validator.d
-        self.sigma_color = self.validator.sigma_color
-        self.sigma_space = self.validator.sigma_space
+        default = self.get_default_config()
+        self.d = int(config.get("d", default["d"]))
+        self.sigma_color = float(config.get("sigmaColor", default["sigmaColor"]))
+        self.sigma_space = float(config.get("sigmaSpace", default["sigmaSpace"]))
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -277,19 +280,9 @@ class BilateralFilterProcessor(BaseProcessor):
         self.validator.validate_image(image)
 
         try:
-            # パラメータを確実に利用可能にする（バリデーションが成功していれば通常はNoneではない）
-            d = self.d
-            sigma_color = self.sigma_color
-            sigma_space = self.sigma_space
-
-            if d is None or sigma_color is None or sigma_space is None:
-                error_msg = (
-                    f"Bilateral filter parameters were not properly validated: d={d}, "
-                    f"sigma_color={sigma_color}, sigma_space={sigma_space}"
-                )
-                raise ProcessorRuntimeError(error_msg)
-
-            return cv2.bilateralFilter(image, d, sigma_color, sigma_space)
+            return cv2.bilateralFilter(
+                image, self.d, self.sigma_color, self.sigma_space
+            )
         except cv2.error as e:
             error_msg = f"Error during Bilateral Filter processing: {e}"
             # ログ出力など必要に応じて追加
@@ -337,9 +330,9 @@ class MotionBlurProcessor(BaseProcessor):
         """
         super().__init__(name, config)
         self.validator = MotionBlurValidator(config)
-        self.validator.validate_config()
-        self.kernel_size = self.validator.kernel_size
-        self.angle = self.validator.angle
+        default = self.get_default_config()
+        self.kernel_size = config.get("kernel_size", default["kernel_size"])
+        self.angle = float(config.get("angle", default["angle"]))
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -358,21 +351,10 @@ class MotionBlurProcessor(BaseProcessor):
         self.validator.validate_image(image)
 
         try:
-            # パラメータを確実に利用可能にする（バリデーションが成功していれば通常はNoneではない）
-            kernel_size = self.kernel_size
-            angle = self.angle
-
-            if kernel_size is None or angle is None:
-                error_msg = (
-                    f"Motion blur parameters were not properly "
-                    f"validated: kernel_size={kernel_size}, angle={angle}"
-                )
-                raise ProcessorRuntimeError(error_msg)
-
-            kernel = np.zeros((kernel_size, kernel_size), dtype=np.float32)
-            center = kernel_size // 2
-            rad = np.deg2rad(angle)
-            half = (kernel_size - 1) / 2.0
+            kernel = np.zeros((self.kernel_size, self.kernel_size), dtype=np.float32)
+            center = self.kernel_size // 2
+            rad = np.deg2rad(self.angle)
+            half = (self.kernel_size - 1) / 2.0
             dx = np.cos(rad) * half
             dy = np.sin(rad) * half
             pt1 = (int(np.round(center - dx)), int(np.round(center - dy)))

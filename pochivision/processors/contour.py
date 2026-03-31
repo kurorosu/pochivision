@@ -27,10 +27,10 @@ class ContourProcessor(BaseProcessor):
         """
         super().__init__(name, config)
         self.validator = ContourValidator(self.config)
-        self.validator.validate_config()  # 設定のバリデーションを実行
 
         default_vals = self.get_default_config()
 
+        # パラメータ解析
         retrieval_mode_str = self.config.get(
             "retrieval_mode", default_vals["retrieval_mode"]
         )

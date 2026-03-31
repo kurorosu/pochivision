@@ -20,21 +20,6 @@ class EqualizeInputValidator(BaseValidator):
         """
         self.config = config or {}
 
-    def validate_config(self) -> None:
-        """
-        パラメータのバリデーションを実行する.
-
-        Raises:
-            ProcessorValidationError: 不正なパラメータが渡された場合.
-        """
-        # color_modeのチェック
-        color_mode = self.config.get("color_mode", "gray")
-        if color_mode not in ["gray", "lab", "bgr"]:
-            raise ProcessorValidationError(
-                f"Invalid color_mode '{color_mode}'. "
-                "Must be one of: 'gray', 'lab', 'bgr'."
-            )
-
     def validate_image(self, image: np.ndarray) -> None:
         """
         入力画像のバリデーションを実行する.

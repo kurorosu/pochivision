@@ -19,38 +19,6 @@ class BilateralFilterValidator(BaseValidator):
             config (dict): バリデーション対象の設定辞書.
         """
         self.config = config
-        self.d: int | None = None
-        self.sigma_color: float | None = None
-        self.sigma_space: float | None = None
-
-    def validate_config(self) -> None:
-        """
-        設定値のバリデーションを実行する.
-
-        Raises:
-            ProcessorValidationError: 不正なパラメータが検出された場合.
-        """
-        d = self.config.get("d", 9)
-        sigma_color = self.config.get("sigmaColor", 75)
-        sigma_space = self.config.get("sigmaSpace", 75)
-
-        if not (isinstance(d, int) and d > 0):
-            raise ProcessorValidationError("d must be a positive integer. Example: 9")
-
-        if not (isinstance(sigma_color, (int, float)) and sigma_color > 0):
-            raise ProcessorValidationError(
-                "sigmaColor must be a positive number. Example: 75"
-            )
-
-        if not (isinstance(sigma_space, (int, float)) and sigma_space > 0):
-            raise ProcessorValidationError(
-                "sigmaSpace must be a positive number. Example: 75"
-            )
-
-        # バリデーション後に値を保持
-        self.d = d
-        self.sigma_color = float(sigma_color)
-        self.sigma_space = float(sigma_space)
 
     def validate_image(self, image: np.ndarray) -> None:
         """

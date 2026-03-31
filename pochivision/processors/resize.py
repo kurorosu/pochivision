@@ -32,7 +32,8 @@ class ResizeProcessor(BaseProcessor):
         """
         super().__init__(name, config)
         self.validator = ResizeConfigValidator(config)
-        self.validator.validate_config()
+
+        # パラメータ解析
         default_config = self.get_default_config()
         self.width = config.get("width", default_config["width"])
         self.height = config.get("height", default_config["height"])

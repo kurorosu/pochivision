@@ -19,25 +19,6 @@ class MedianBlurValidator(BaseValidator):
             config (dict): バリデーション対象の設定辞書.
         """
         self.config = config
-        self.kernel_size: int | None = None
-
-    def validate_config(self) -> None:
-        """
-        設定値のバリデーションを実行する.
-
-        Raises:
-            ProcessorValidationError: 不正なパラメータが検出された場合.
-        """
-        kernel_size = self.config.get("kernel_size", 5)
-        if not (
-            isinstance(kernel_size, int) and kernel_size > 0 and kernel_size % 2 == 1
-        ):
-            raise ProcessorValidationError(
-                "kernel_size must be a positive odd integer. Example: 5"
-            )
-
-        # バリデーション後に値を保持
-        self.kernel_size = kernel_size
 
     def validate_image(self, image: np.ndarray) -> None:
         """

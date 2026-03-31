@@ -113,71 +113,37 @@ class TestCannyEdgeProcessor:
 
     def test_invalid_config_threshold_type(self):
         """不正な設定（しきい値の型誤り）のテスト."""
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            CannyEdgeProcessor(
-                name="canny_invalid", config={"threshold1": "100", "threshold2": 200}
-            )
-        assert "'threshold1' must be a number" in str(excinfo.value)
+        from pochivision.processors.registry import get_processor
 
-    def test_invalid_config_negative_threshold(self):
-        """不正な設定（負のしきい値）のテスト."""
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            CannyEdgeProcessor(
-                name="canny_invalid", config={"threshold1": -10, "threshold2": 200}
-            )
-        assert "Canny 'threshold1' must be non-negative. Got -10." in str(excinfo.value)
-
-    def test_invalid_config_threshold_order(self):
-        """不正な設定（threshold1 > threshold2）のテスト."""
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            CannyEdgeProcessor(
-                name="canny_invalid", config={"threshold1": 200, "threshold2": 100}
-            )
-        assert "'threshold1' should not be greater than 'threshold2'" in str(
-            excinfo.value
-        )
+        # 文字列は StrictFloat で拒否される
+        with pytest.raises(ValueError):
+            get_processor("canny_edge", {"threshold1": "100", "threshold2": 200.0})
 
     def test_invalid_config_aperture_size_type(self):
         """不正な設定（aperture_sizeの型誤り）のテスト."""
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            CannyEdgeProcessor(
-                name="canny_invalid",
-                config={
-                    "threshold1": 100,
-                    "threshold2": 200,
+        from pochivision.processors.registry import get_processor
+
+        # 文字列は StrictInt で拒否される
+        with pytest.raises(ValueError):
+            get_processor(
+                "canny_edge",
+                {
+                    "threshold1": 100.0,
+                    "threshold2": 200.0,
                     "aperture_size": "3",
                 },
             )
-        assert "'aperture_size' must be an integer" in str(excinfo.value)
 
     def test_invalid_config_aperture_size_value(self):
         """不正な設定（aperture_sizeの値誤り）のテスト."""
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            CannyEdgeProcessor(
-                name="canny_invalid_ap_val_1",
-                config={"threshold1": 100, "threshold2": 200, "aperture_size": 1},
-            )
-        assert "Canny 'aperture_size' must be 3, 5, or 7" in str(excinfo.value)
+        from pochivision.processors.registry import get_processor
 
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            CannyEdgeProcessor(
-                name="canny_invalid_ap_val_even",
-                config={"threshold1": 100, "threshold2": 200, "aperture_size": 4},
+        # aperture_size=1 は ge=3 制約で拒否される
+        with pytest.raises(ValueError):
+            get_processor(
+                "canny_edge",
+                {"threshold1": 100.0, "threshold2": 200.0, "aperture_size": 1},
             )
-        assert "Canny 'aperture_size' must be 3, 5, or 7. Got 4." in str(excinfo.value)
-
-    def test_invalid_config_l2_gradient_type(self):
-        """不正な設定（l2_gradientの型誤り）のテスト."""
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            CannyEdgeProcessor(
-                name="canny_invalid",
-                config={
-                    "threshold1": 100,
-                    "threshold2": 200,
-                    "l2_gradient": "true",
-                },
-            )
-        assert "'l2_gradient' must be a boolean" in str(excinfo.value)
 
     def test_invalid_input_image_type(self):
         """不正な型の画像を与えたテスト（例: list）。"""

@@ -28,26 +28,6 @@ class GaussianAdaptiveBinarizationValidator(BaseValidator):
         """
         self.config = config
 
-    def validate_config(self) -> None:
-        """
-        設定値のバリデーションを実行する.
-
-        Raises:
-            ProcessorValidationError: 不正なパラメータが検出された場合.
-        """
-        block_size = self.config.get("block_size", 11)
-        if not isinstance(block_size, int):
-            raise ProcessorValidationError("block_size must be an integer. Example: 11")
-        if block_size < 3 or block_size % 2 == 0:
-            raise ProcessorValidationError(
-                "block_size must be an odd integer greater than or equal to 3. "
-                "Example: 11"
-            )
-
-        c = self.config.get("c", 2)
-        if not isinstance(c, (int, float)):
-            raise ProcessorValidationError("c must be a number. Example: 2")
-
     def validate_image(self, image: np.ndarray) -> None:
         """
         入力画像を検証します.
@@ -86,26 +66,6 @@ class MeanAdaptiveBinarizationValidator(BaseValidator):
             config (Dict[str, Any]): バリデーション対象の設定辞書.
         """
         self.config = config
-
-    def validate_config(self) -> None:
-        """
-        設定値のバリデーションを実行する.
-
-        Raises:
-            ProcessorValidationError: 不正なパラメータが検出された場合.
-        """
-        block_size = self.config.get("block_size", 11)
-        if not isinstance(block_size, int):
-            raise ProcessorValidationError("block_size must be an integer. Example: 11")
-        if block_size < 3 or block_size % 2 == 0:
-            raise ProcessorValidationError(
-                "block_size must be an odd integer greater than or equal to 3. "
-                "Example: 11"
-            )
-
-        c = self.config.get("c", 2)
-        if not isinstance(c, (int, float)):
-            raise ProcessorValidationError("c must be a number. Example: 2")
 
     def validate_image(self, image: np.ndarray) -> None:
         """

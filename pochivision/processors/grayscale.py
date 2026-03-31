@@ -38,7 +38,6 @@ class GrayscaleProcessor(BaseProcessor):
         """
         super().__init__(name, config)
         self.validator = GrayscaleValidator(config)
-        self.validator.validate_config()
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """

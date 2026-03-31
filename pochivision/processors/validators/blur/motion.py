@@ -19,35 +19,6 @@ class MotionBlurValidator(BaseValidator):
             config (dict): バリデーション対象の設定辞書.
         """
         self.config = config
-        self.kernel_size: int | None = None
-        self.angle: float | None = None
-
-    def validate_config(self) -> None:
-        """
-        設定値のバリデーションを実行する.
-
-        Raises:
-            ProcessorValidationError: 不正なパラメータが検出された場合.
-        """
-        # kernel_size: 正の奇数整数
-        kernel_size = self.config.get("kernel_size", 15)
-        if not (
-            isinstance(kernel_size, int) and kernel_size > 0 and kernel_size % 2 == 1
-        ):
-            raise ProcessorValidationError(
-                "kernel_size must be a positive odd integer. Example: 15"
-            )
-
-        # angle: 0-359の整数
-        angle = self.config.get("angle", 0)
-        if not (isinstance(angle, (int, float)) and 0 <= angle < 360):
-            raise ProcessorValidationError(
-                "angle must be a number between 0 and 359. Example: 0"
-            )
-
-        # バリデーション後に値を保持
-        self.kernel_size = kernel_size
-        self.angle = float(angle)
 
     def validate_image(self, image: np.ndarray) -> None:
         """
