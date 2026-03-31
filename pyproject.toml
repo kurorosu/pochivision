@@ -53,6 +53,8 @@ python_version = "3.12"
 mypy_path = "."
 warn_return_any = true
 warn_unused_configs = true
+exclude = ["tools/"]
+explicit_package_bases = true
 
 [[tool.mypy.overrides]]
 module = ["cv2", "dearpygui.*"]

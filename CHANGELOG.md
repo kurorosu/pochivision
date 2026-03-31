@@ -11,7 +11,8 @@
 - プロセッサ / 特徴量抽出器の両レジストリに重複登録時の警告ログを追加. ([#237](https://github.com/kurorosu/pochivision/pull/237))
 - バリデータの `validate_config` を削除しスキーマに一本化. パラメータ解析をプロセッサの `__init__` に移動. ([#238](https://github.com/kurorosu/pochivision/pull/238))
 - プロセッサスキーマの検証漏れを補完. `MaskCompositionParams` を新設. `@field_validator` / `@model_validator` で複合条件を追加. ([#240](https://github.com/kurorosu/pochivision/pull/240))
-- `extractor_config.json` に `extractors` リストを追加し, 選択した抽出器のみ実行する機能を追加. (NA.)
+- `extractor_config.json` に `extractors` リストを追加し, 選択した抽出器のみ実行する機能を追加. ([#241](https://github.com/kurorosu/pochivision/pull/241))
+- `pochi` CLI を click サブコマンド構成に変更. `pochi run` / `pochi extract` / `pochi process` / `pochi aggregate` / `pochi fft` を追加. (NA.)
 
 ### Changed
 - 全 9 抽出器のエラーハンドリングを `LogManager` + `raise` パターンに統一. brightness, rgb, hsv, circle_counter に try-except を追加. ([#226](https://github.com/kurorosu/pochivision/pull/226))
