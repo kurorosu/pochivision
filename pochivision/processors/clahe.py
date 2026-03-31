@@ -51,11 +51,11 @@ class CLAHEProcessor(BaseProcessor):
         super().__init__(name, config or {})
         self.logger = logging.getLogger(__name__)
         self.validator = CLAHEInputValidator(self.config)
-        self.validator.validate_config()
 
         self.color_mode = self.config.get("color_mode", "gray")
         self.clip_limit = float(self.config.get("clip_limit", 2.0))
-        self.tile_grid_size = tuple(self.config.get("tile_grid_size", [8, 8]))
+        tile_grid_size = self.config.get("tile_grid_size", [8, 8])
+        self.tile_grid_size = tuple(tile_grid_size)
         self.clahe = cv2.createCLAHE(
             clipLimit=self.clip_limit, tileGridSize=self.tile_grid_size
         )

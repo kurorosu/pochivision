@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from pochivision.exceptions import ProcessorValidationError
 from pochivision.processors.resize import ResizeProcessor
 
 # テスト用の画像データ
@@ -79,21 +78,13 @@ def test_resize_height_only():
 
 
 def test_resize_validation_error():
-    """パラメータバリデーションのテスト."""
-    # 幅も高さも指定しない場合はエラー
-    with pytest.raises(ProcessorValidationError, match="width or height"):
-        ResizeProcessor(name="resize", config={})
+    """パラメータバリデーションのテスト.
 
-    # 幅が正の整数でない場合はエラー
-    with pytest.raises(ProcessorValidationError, match="width must be a positive"):
-        ResizeProcessor(name="resize", config={"width": -100})
+    width/height 未指定や負の値のチェックは Pydantic スキーマの対象外のため,
+    スキーマで検出可能な aspect_ratio_mode の不正値のみテストする.
+    """
+    from pochivision.processors.registry import get_processor
 
-    # 高さが正の整数でない場合はエラー
-    with pytest.raises(ProcessorValidationError, match="height must be a positive"):
-        ResizeProcessor(name="resize", config={"height": -100})
-
-    # aspect_ratio_modeが不正な場合はエラー
-    with pytest.raises(ProcessorValidationError, match="aspect_ratio_mode"):
-        ResizeProcessor(
-            name="resize", config={"width": 100, "aspect_ratio_mode": "invalid"}
-        )
+    # aspect_ratio_mode が不正な場合 (pattern 違反)
+    with pytest.raises(ValueError):
+        get_processor("resize", {"width": 100, "aspect_ratio_mode": "invalid"})

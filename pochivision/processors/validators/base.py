@@ -18,18 +18,6 @@ class BaseValidator(ABC):
     """
 
     @abstractmethod
-    def validate_config(self) -> None:
-        """
-        設定値のバリデーションを実行する抽象メソッド.
-
-        各サブクラスでオーバーライドして実装してください.
-
-        Raises:
-            ProcessorValidationError: 設定値が不正な場合.
-        """
-        pass
-
-    @abstractmethod
     def validate_image(self, image: np.ndarray) -> None:
         """
         入力画像のバリデーションを実行する抽象メソッド.

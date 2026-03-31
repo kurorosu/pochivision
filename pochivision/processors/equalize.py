@@ -47,7 +47,7 @@ class EqualizeProcessor(BaseProcessor):
         super().__init__(name, config or {})
         self.logger = logging.getLogger(__name__)
         self.validator = EqualizeInputValidator(self.config)
-        self.validator.validate_config()
+
         self.color_mode = self.config.get("color_mode", "gray")
 
     def process(self, image: np.ndarray) -> np.ndarray:

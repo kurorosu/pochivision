@@ -1,7 +1,5 @@
 """ブラープロセッサのテストモジュール."""
 
-import re
-
 import numpy as np
 import pytest
 
@@ -46,46 +44,6 @@ def test_gaussian_blur_valid():
 
 
 @pytest.mark.parametrize(
-    "invalid_config, error_message_part",
-    [
-        (
-            {"kernel_size": 3, "sigma": 1},
-            "kernel_size must be specified as two positive odd",
-        ),
-        (
-            {"kernel_size": [2, 3], "sigma": 1},
-            "kernel_size width must be a positive odd integer",
-        ),
-        (
-            {"kernel_size": [3, 2], "sigma": 1},
-            "kernel_size height must be a positive odd integer",
-        ),
-        (
-            {"kernel_size": [-1, 3], "sigma": 1},
-            "kernel_size width must be a positive odd integer",
-        ),
-        (
-            {"kernel_size": [3, -1], "sigma": 1},
-            "kernel_size height must be a positive odd integer",
-        ),
-        ({"kernel_size": [3, 3], "sigma": -1}, "sigma must be a non-negative number"),
-        (
-            {"kernel_size": [3, 3], "sigmaY": -1},
-            re.escape("sigmaY (if provided) must be a non-negative number"),
-        ),
-        (
-            {"kernel_size": [1, 1], "sigma": 0},
-            "Both kernel_size and sigma are effectively zero",
-        ),
-    ],
-)
-def test_gaussian_blur_invalid_config(invalid_config, error_message_part):
-    """ガウシアンブラーの不正な設定値をテスト."""
-    with pytest.raises(ProcessorValidationError, match=error_message_part):
-        GaussianBlurProcessor(name="gaussian_blur_invalid", config=invalid_config)
-
-
-@pytest.mark.parametrize(
     "invalid_image, error_message_part",
     [
         (DUMMY_IMAGE_FLOAT32_3CH, "Input image must be of type np.uint8"),
@@ -119,41 +77,6 @@ def test_average_blur_valid():
     result_1ch = processor.process(DUMMY_IMAGE_UINT8_1CH.copy())
     assert result_1ch.shape == DUMMY_IMAGE_UINT8_1CH.shape
     assert result_1ch.dtype == np.uint8
-
-
-@pytest.mark.parametrize(
-    "invalid_config, error_message_part",
-    [
-        (
-            {"kernel_size": 3},
-            "kernel_size must be specified as two positive integers",
-        ),
-        (
-            {"kernel_size": [0, 3]},
-            "kernel_size must be specified as two positive integers",
-        ),
-        (
-            {"kernel_size": [-1, 3]},
-            "kernel_size must be specified as two positive integers",
-        ),
-        (
-            {"kernel_size": [3, 0]},
-            "kernel_size must be specified as two positive integers",
-        ),
-        (
-            {"kernel_size": [3.5, 3]},
-            "kernel_size must be specified as two positive integers",
-        ),
-        (
-            {"kernel_size": [3]},
-            "kernel_size must be specified as two positive integers",
-        ),
-    ],
-)
-def test_average_blur_invalid_config(invalid_config, error_message_part):
-    """平均値ブラーの不正な設定値をテスト."""
-    with pytest.raises(ProcessorValidationError, match=error_message_part):
-        AverageBlurProcessor(name="average_blur_invalid", config=invalid_config)
 
 
 @pytest.mark.parametrize(

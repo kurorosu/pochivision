@@ -26,12 +26,10 @@ class CannyEdgeProcessor(BaseProcessor):
             config (Dict[str, Any]): Cannyエッジ検出の設定辞書.
         """
         super().__init__(name, config)
-        self.validator = CannyEdgeValidator(
-            self.config
-        )  # バリデータのインスタンス化とconfigの引き渡し
-        self.validator.validate_config()  # 設定のバリデーションを実行
+        self.validator = CannyEdgeValidator(self.config)
 
         default_vals = self.get_default_config()
+
         self._threshold1 = self.config.get("threshold1", default_vals["threshold1"])
         self._threshold2 = self.config.get("threshold2", default_vals["threshold2"])
         self._aperture_size = self.config.get(
