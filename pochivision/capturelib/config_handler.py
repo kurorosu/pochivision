@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Tuple
 
 from pydantic import ValidationError
 
-from pochivision.capturelib.config_schema import ConfigModel
+from pochivision.capturelib.schema import ConfigModel
 from pochivision.exceptions.config import ConfigValidationError
 
 from .log_manager import LogManager
