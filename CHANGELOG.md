@@ -6,7 +6,8 @@
 ## [Unreleased]
 
 ### Added
-- `exceptions/extractor.py` を新設し `ExtractorValidationError` / `ExtractorRuntimeError` を追加. 全 9 抽出器の `ValueError` を `ExtractorValidationError` に置換. (NA.)
+- `exceptions/extractor.py` を新設し `ExtractorValidationError` / `ExtractorRuntimeError` を追加. 全例外に標準例外の多重継承を適用. ([#235](https://github.com/kurorosu/pochivision/pull/235))
+- `BaseProcessor` / `BaseFeatureExtractor` に `abc.ABC` 継承を追加し抽象メソッドを強制. (NA.)
 
 ### Changed
 - 全 9 抽出器のエラーハンドリングを `LogManager` + `raise` パターンに統一. brightness, rgb, hsv, circle_counter に try-except を追加. ([#226](https://github.com/kurorosu/pochivision/pull/226))

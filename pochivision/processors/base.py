@@ -6,7 +6,7 @@ from typing import Any, Dict
 import numpy as np
 
 
-class BaseProcessor:
+class BaseProcessor(abc.ABC):
     """
     すべての画像処理プロセッサの基底クラス.
 
