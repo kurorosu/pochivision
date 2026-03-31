@@ -6,6 +6,7 @@ import numpy as np
 import pywt
 
 from pochivision.capturelib.log_manager import LogManager
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.processors.resize import ResizeProcessor
 from pochivision.utils.image import to_grayscale
 
@@ -310,7 +311,7 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
         """
         _MIN_SWT_SIZE = 4
         if image is None or image.size == 0:
-            raise ValueError("Input image is empty or None")
+            raise ExtractorValidationError("Input image is empty or None")
 
         try:
             gray_image = to_grayscale(image)
@@ -322,7 +323,7 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
                 gray_image.shape[0] < _MIN_SWT_SIZE
                 or gray_image.shape[1] < _MIN_SWT_SIZE
             ):
-                raise ValueError(
+                raise ExtractorValidationError(
                     f"Image too small for SWT: {gray_image.shape}. "
                     f"Minimum size is {_MIN_SWT_SIZE}x{_MIN_SWT_SIZE}."
                 )

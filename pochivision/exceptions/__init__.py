@@ -2,6 +2,7 @@
 
 from .base import VisionCaptureError
 from .config import CameraConfigError, ConfigLoadError, ConfigValidationError
+from .extractor import ExtractorRuntimeError, ExtractorValidationError
 from .processor import ProcessorRuntimeError, ProcessorValidationError
 
 __all__ = [
@@ -11,4 +12,6 @@ __all__ = [
     "ConfigValidationError",
     "ConfigLoadError",
     "CameraConfigError",
+    "ExtractorValidationError",
+    "ExtractorRuntimeError",
 ]

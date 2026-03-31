@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import pytest  # noqa: F401
 
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.feature_extractors import CircleCounterExtractor, get_feature_extractor
 from tests.extractors.conftest import DummyImages
 
@@ -293,11 +294,11 @@ def test_edge_cases():
     extractor = CircleCounterExtractor()
 
     # 空の画像で ValueError
-    with pytest.raises(ValueError, match="empty or None"):
+    with pytest.raises((ValueError, ExtractorValidationError), match="empty or None"):
         extractor.extract(np.array([]))
 
     # None画像で ValueError
-    with pytest.raises(ValueError, match="empty or None"):
+    with pytest.raises((ValueError, ExtractorValidationError), match="empty or None"):
         extractor.extract(None)
 
     # 非常に小さい画像でも処理できる
