@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import pytest  # noqa: F401
 
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.feature_extractors import HSVStatisticsExtractor, get_feature_extractor
 from tests.extractors.conftest import DummyImages
 
@@ -231,7 +232,7 @@ def test_edge_cases():
         empty_image = np.array([])
         extractor.extract(empty_image)
         print("エラー: 空の画像が受け入れられました")
-    except ValueError as e:
+    except (ValueError, ExtractorValidationError) as e:
         print(f"正常: 空の画像でエラー発生 - {e}")
 
 

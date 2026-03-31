@@ -3,6 +3,7 @@
 import numpy as np
 import pytest  # noqa: F401
 
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.feature_extractors import LBPTextureExtractor, get_feature_extractor
 
 
@@ -255,11 +256,11 @@ def test_lbp_error_handling():
     extractor = LBPTextureExtractor()
 
     # 空の画像で ValueError
-    with pytest.raises(ValueError, match="empty or None"):
+    with pytest.raises((ValueError, ExtractorValidationError), match="empty or None"):
         extractor.extract(np.array([]))
 
     # None画像で ValueError
-    with pytest.raises(ValueError, match="empty or None"):
+    with pytest.raises((ValueError, ExtractorValidationError), match="empty or None"):
         extractor.extract(None)
 
 
@@ -617,7 +618,7 @@ def test_schema_validation_rejects_invalid_method():
     """スキーマバリデーションが無効な method を拒否することを確認."""
     from pochivision.feature_extractors import get_feature_extractor
 
-    with pytest.raises(ValueError, match="Invalid config"):
+    with pytest.raises((ValueError, ExtractorValidationError), match="Invalid config"):
         get_feature_extractor("lbp", {"method": "invalid_method"})
 
 
@@ -625,5 +626,5 @@ def test_schema_validation_rejects_invalid_P():
     """スキーマバリデーションが範囲外の P を拒否することを確認."""
     from pochivision.feature_extractors import get_feature_extractor
 
-    with pytest.raises(ValueError, match="Invalid config"):
+    with pytest.raises((ValueError, ExtractorValidationError), match="Invalid config"):
         get_feature_extractor("lbp", {"P": 2})

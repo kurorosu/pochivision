@@ -6,7 +6,7 @@
 ## [Unreleased]
 
 ### Added
-- 無し
+- `exceptions/extractor.py` を新設し `ExtractorValidationError` / `ExtractorRuntimeError` を追加. 全 9 抽出器の `ValueError` を `ExtractorValidationError` に置換. (NA.)
 
 ### Changed
 - 全 9 抽出器のエラーハンドリングを `LogManager` + `raise` パターンに統一. brightness, rgb, hsv, circle_counter に try-except を追加. ([#226](https://github.com/kurorosu/pochivision/pull/226))
@@ -17,7 +17,7 @@
 - circle_counter の `blur_kernel_size` に偶数バリデーションを追加. ([#230](https://github.com/kurorosu/pochivision/pull/230))
 - RGB/HSV/Brightness の `exclude_black_pixels` / `exclude_zero_pixels` の動作を docstring とコメントに明記. ([#231](https://github.com/kurorosu/pochivision/pull/231))
 - `get_feature_extractor` で Pydantic スキーマによる設定バリデーションを実行するよう変更. ([#232](https://github.com/kurorosu/pochivision/pull/232))
-- スキーマの関心分離, プロセッサバリデーション追加, 例外階層の統一. (NA.)
+- スキーマの関心分離, プロセッサバリデーション追加, 例外階層の統一. ([#233](https://github.com/kurorosu/pochivision/pull/233))
   - プロセッサスキーマを `processors/schema.py` に分離し `config_schema.py` を `schema.py` にリネーム
   - `get_processor` で Pydantic スキーマによる設定バリデーションを実行するよう変更
   - `ConfigLoadError` / `CameraConfigError` を `exceptions/config.py` に移動し `VisionCaptureError` 階層に統一

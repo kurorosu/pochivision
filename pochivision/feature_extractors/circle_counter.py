@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 
 from pochivision.capturelib.log_manager import LogManager
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.utils.image import to_grayscale
 
 from .base import BaseFeatureExtractor
@@ -75,7 +76,7 @@ class CircleCounterExtractor(BaseFeatureExtractor):
         self.circularity_threshold = self.config["circularity_threshold"]
         self.blur_kernel_size = self.config["blur_kernel_size"]
         if self.blur_kernel_size > 0 and self.blur_kernel_size % 2 == 0:
-            raise ValueError(
+            raise ExtractorValidationError(
                 f"blur_kernel_size must be an odd number or 0, got {self.blur_kernel_size}"
             )
         self.enable_circularity_filter = self.config["enable_circularity_filter"]
@@ -94,7 +95,7 @@ class CircleCounterExtractor(BaseFeatureExtractor):
             ValueError: 画像が空の場合や無効な形状の場合.
         """
         if image is None or image.size == 0:
-            raise ValueError("Input image is empty or None")
+            raise ExtractorValidationError("Input image is empty or None")
 
         try:
             # float (0-1) 入力を uint8 スケールに変換

@@ -7,6 +7,7 @@ import numpy as np
 from scipy.ndimage import maximum_filter
 
 from pochivision.capturelib.log_manager import LogManager
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.processors.resize import ResizeProcessor
 
 from .base import BaseFeatureExtractor
@@ -111,7 +112,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
             )
 
         if self.mm_per_pixel is not None and self.mm_per_pixel <= 0:
-            raise ValueError(
+            raise ExtractorValidationError(
                 f"mm_per_pixel must be a positive number, got {self.mm_per_pixel}"
             )
 
@@ -406,21 +407,23 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
             ValueError: 画像が空の場合や無効な形状の場合.
         """
         if image is None or image.size == 0:
-            raise ValueError("Input image is empty or None")
+            raise ExtractorValidationError("Input image is empty or None")
 
         if len(image.shape) == 3:
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         elif len(image.shape) == 2:
             gray_image = image.copy()
         else:
-            raise ValueError(f"Input image must be 2D or 3D, got shape: {image.shape}")
+            raise ExtractorValidationError(
+                f"Input image must be 2D or 3D, got shape: {image.shape}"
+            )
 
         if self.resize_processor is not None:
             gray_image = self.resize_processor.process(gray_image)
 
         _MIN_FFT_SIZE = 4
         if gray_image.shape[0] < _MIN_FFT_SIZE or gray_image.shape[1] < _MIN_FFT_SIZE:
-            raise ValueError(
+            raise ExtractorValidationError(
                 f"Image too small for FFT: {gray_image.shape}. "
                 f"Minimum size is {_MIN_FFT_SIZE}x{_MIN_FFT_SIZE}."
             )

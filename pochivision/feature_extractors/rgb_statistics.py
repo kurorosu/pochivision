@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Union
 import numpy as np
 
 from pochivision.capturelib.log_manager import LogManager
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.utils.image import to_rgb
 
 from .base import BaseFeatureExtractor
@@ -79,7 +80,7 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
             ValueError: 画像が空の場合や無効な形状の場合.
         """
         if image is None or image.size == 0:
-            raise ValueError("Input image is empty or None")
+            raise ExtractorValidationError("Input image is empty or None")
 
         try:
             # float (0-1) 入力を uint8 スケールに変換

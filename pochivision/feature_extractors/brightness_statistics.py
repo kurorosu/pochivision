@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 
 from pochivision.capturelib.log_manager import LogManager
+from pochivision.exceptions.extractor import ExtractorValidationError
 
 from .base import BaseFeatureExtractor
 from .registry import register_feature_extractor
@@ -78,7 +79,7 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
             ValueError: 画像が空の場合や無効な形状の場合.
         """
         if image is None or image.size == 0:
-            raise ValueError("Input image is empty or None")
+            raise ExtractorValidationError("Input image is empty or None")
 
         try:
             # float (0-1) 入力を uint8 スケールに変換
@@ -150,9 +151,11 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
                 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
                 return hsv[:, :, 2]  # V成分
             else:
-                raise ValueError(f"Unsupported color_mode: {self.color_mode}")
+                raise ExtractorValidationError(
+                    f"Unsupported color_mode: {self.color_mode}"
+                )
         else:
-            raise ValueError(f"Unsupported image shape: {image.shape}")
+            raise ExtractorValidationError(f"Unsupported image shape: {image.shape}")
 
     @staticmethod
     def get_default_config() -> Dict[str, Any]:
