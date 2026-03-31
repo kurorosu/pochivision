@@ -521,19 +521,24 @@ class FeatureExtractionRunner:
         print("=== 特徴量抽出が完了しました ===")
 
 
-def main() -> None:
-    """メイン関数."""
-    parser = argparse.ArgumentParser(description="画像から特徴量を抽出します")
-    parser.add_argument(
-        "--config",
-        default="extractor_config.json",
-        help="設定ファイルのパス (デフォルト: extractor_config.json)",
-    )
+def main(config_path: str | None = None) -> None:
+    """
+    メイン関数.
 
-    args = parser.parse_args()
+    Args:
+        config_path: 設定ファイルのパス. None の場合は argparse から取得.
+    """
+    if config_path is None:
+        parser = argparse.ArgumentParser(description="画像から特徴量を抽出します")
+        parser.add_argument(
+            "--config",
+            default="extractor_config.json",
+            help="設定ファイルのパス (デフォルト: extractor_config.json)",
+        )
+        args = parser.parse_args()
+        config_path = args.config
 
-    # 特徴量抽出の実行
-    runner = FeatureExtractionRunner(args.config)
+    runner = FeatureExtractionRunner(config_path)
     runner.run()
 
 
