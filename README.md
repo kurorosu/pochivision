@@ -21,26 +21,6 @@
 - コーデック選択可能な録画機能
 - 柔軟なコマンドラインインターフェース
 
-## ディレクトリ構成
-
-```
-pochivision/
-├── pochivision/
-│   ├── cli/                  # CLI エントリーポイント (pochi コマンド)
-│   ├── capture_runner/       # カメラキャプチャとプレビュー実行
-│   ├── capturelib/           # カメラセットアップ, 設定, ログ, 録画
-│   ├── core/                 # パイプラインエグゼキュータ
-│   ├── exceptions/           # カスタム例外クラス
-│   ├── feature_extractors/   # 特徴量抽出プラグイン
-│   ├── processors/           # 画像処理パイプライン
-│   └── utils/                # 共通ユーティリティ
-├── tools/                    # スタンドアロンユーティリティスクリプト
-├── docs/                     # 特徴量ガイド等のドキュメント
-├── tests/                    # テストスイート
-├── config.json               # アプリケーション設定
-└── pyproject.toml            # プロジェクトメタデータ・依存関係
-```
-
 ## インストール
 
 ```bash
@@ -65,34 +45,35 @@ uv sync --group dev
 デフォルト設定でアプリケーションを実行:
 
 ```bash
-uv run pochi
+uv run pochi run
 ```
 
 ## コマンドラインインターフェース
 
-pochivision は `pochi` コマンドによる柔軟な CLI を提供しています:
+pochivision は `pochi` コマンドによるサブコマンド構成の CLI を提供しています:
 
 ```bash
-# 特定のカメラデバイスを使用 (インデックスで指定)
-uv run pochi --camera 1
-
-# 設定から特定のカメラプロファイルを使用
-uv run pochi --profile "high_res"
-
-# 特定のカメラとプロファイルの両方を使用
-uv run pochi --camera 2 --profile "high_fps"
-
-# 利用可能な全てのカメラプロファイルを一覧表示
-uv run pochi --list-profiles
-
-# 代替設定ファイルを使用
-uv run pochi --config "my_config.json"
-
-# 録画機能を無効にして起動
-uv run pochi --no-recording
+# サブコマンド一覧を表示
+uv run pochi --help
 ```
 
-### CLI 引数
+### `pochi run` - ライブプレビュー起動
+
+カメラからのリアルタイムキャプチャとプレビューを起動します.
+
+```bash
+# デフォルト設定で起動
+uv run pochi run
+
+# 特定のカメラデバイスとプロファイルを指定
+uv run pochi run --camera 2 --profile "high_fps"
+
+# 利用可能な全てのカメラプロファイルを一覧表示
+uv run pochi run --list-profiles
+
+# 録画機能を無効にして起動
+uv run pochi run --no-recording
+```
 
 | 引数 | 短縮形 | 説明 |
 |----------|-------|-------------|
@@ -101,6 +82,75 @@ uv run pochi --no-recording
 | `--list-profiles` | `-l` | 利用可能な全てのカメラプロファイルを表示 |
 | `--config` | | 設定ファイルのパスを指定 (デフォルト: config.json) |
 | `--no-recording` | | 録画機能を無効にして起動 |
+
+### `pochi extract` - 特徴量抽出
+
+画像から特徴量を抽出し, CSV ファイルに出力します.
+
+```bash
+# デフォルト設定ファイルで実行
+uv run pochi extract
+
+# 設定ファイルを指定して実行
+uv run pochi extract --config my_extractor_config.json
+```
+
+| 引数 | 短縮形 | 説明 |
+|----------|-------|-------------|
+| `--config` | `-c` | 設定ファイルのパスを指定 (デフォルト: extractor_config.json) |
+
+### `pochi process` - プロファイル適用
+
+カメラプロファイルの処理パイプラインを画像に適用します.
+
+```bash
+# 入力ディレクトリの画像にプロファイルを適用
+uv run pochi process --input ./images --profile "high_res"
+
+# 出力先を指定し, 元画像の保存をスキップ
+uv run pochi process --input ./images --output ./processed --profile "high_res" --no-save-original
+
+# 利用可能なプロファイルを一覧表示
+uv run pochi process --list-profiles
+```
+
+| 引数 | 短縮形 | 説明 |
+|----------|-------|-------------|
+| `--config` | `-c` | 設定ファイルのパスを指定 (デフォルト: config.json) |
+| `--input` | `-i` | 入力画像ディレクトリ (必須) |
+| `--output` | `-o` | 出力ディレクトリ |
+| `--profile` | `-p` | 適用するカメラプロファイル名 (必須) |
+| `--no-save-original` | | 元画像の保存をスキップ |
+| `--list-profiles` | | 利用可能な全てのカメラプロファイルを表示 |
+
+### `pochi aggregate` - 画像集約
+
+複数ディレクトリから画像を1つのディレクトリに集約します.
+
+```bash
+# 画像をコピーして集約
+uv run pochi aggregate --input ./data
+
+# 画像を移動して集約
+uv run pochi aggregate --input ./data --mode move
+```
+
+| 引数 | 短縮形 | 説明 |
+|----------|-------|-------------|
+| `--input` | `-i` | 入力ディレクトリ (必須) |
+| `--mode` | `-m` | 集約モード: `copy` または `move` (デフォルト: copy) |
+
+### `pochi fft` - FFT ビジュアライザー
+
+画像の FFT (高速フーリエ変換) スペクトルを可視化します.
+
+```bash
+uv run pochi fft --input image.png
+```
+
+| 引数 | 短縮形 | 説明 |
+|----------|-------|-------------|
+| `--input` | `-i` | 入力画像パス (必須) |
 
 ## 設定
 
@@ -169,17 +219,6 @@ uv run pochi --no-recording
 - コマンドラインで `--camera` のみ指定した場合, プロファイル "0" を使用します
 - カメラプロファイルごとに異なるプロセッサと設定を指定できます
 - 登録されていないプロセッサを指定するとエラーになります
-
-## アーキテクチャ
-
-pochivision は SOLID 原則に従ったモジュール式アーキテクチャを採用しています:
-
-- **CLI**: コマンドラインエントリーポイント (`pochi` コマンド)
-- **Core**: パイプライン実行 (pipeline / parallel モード)
-- **CaptureLib**: カメラセットアップ, 設定管理, ログ, 録画
-- **Processors**: 画像処理モジュール (レジストリパターン)
-- **Feature Extractors**: 特徴量抽出プラグイン (レジストリパターン)
-- **Capture Runner**: ライブプレビューとアプリケーション制御
 
 ## 利用可能なプロセッサ
 

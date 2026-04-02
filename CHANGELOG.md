@@ -13,10 +13,11 @@
 - プロセッサスキーマの検証漏れを補完. `MaskCompositionParams` を新設. `@field_validator` / `@model_validator` で複合条件を追加. ([#240](https://github.com/kurorosu/pochivision/pull/240))
 - `extractor_config.json` に `extractors` リストを追加し, 選択した抽出器のみ実行する機能を追加. ([#241](https://github.com/kurorosu/pochivision/pull/241))
 - `pochi` CLI を click サブコマンド構成に変更. `pochi run` / `pochi extract` / `pochi process` / `pochi aggregate` / `pochi fft` を追加. ([#242](https://github.com/kurorosu/pochivision/pull/242))
-- CLI サブコマンドを `commands/` ディレクトリに分離. tools/ のスクリプト本体を移動し, `sys.argv` 操作を排除. `tqdm` を依存に追加. (NA.)
+- CLI サブコマンドを `commands/` ディレクトリに分離. tools/ のスクリプト本体を移動し, `sys.argv` 操作を排除. `tqdm` を依存に追加. ([#245](https://github.com/kurorosu/pochivision/pull/245))
 
 ### Changed
 - 全 9 抽出器のエラーハンドリングを `LogManager` + `raise` パターンに統一. brightness, rgb, hsv, circle_counter に try-except を追加. ([#226](https://github.com/kurorosu/pochivision/pull/226))
+- README.md / README.en.md を CLI サブコマンド構成に合わせて更新. ディレクトリ構成・アーキテクチャセクションを削除. CLAUDE.md の CLI・tools 記述を更新. (NA.)
 
 ### Fixed
 - brightness, rgb, hsv, circle_counter に float (0-1) 入力の uint8 スケール変換を追加. dtype 一致テスト 4 件も追加. ([#227](https://github.com/kurorosu/pochivision/pull/227))
