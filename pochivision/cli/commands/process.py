@@ -12,20 +12,29 @@ import cv2
 import numpy as np
 
 from pochivision.processors.registry import get_processor
+from pochivision.workspace import OutputManager
 
 
 class ProfileProcessor:
     """プロファイルベースの画像処理クラス."""
 
-    def __init__(self, config_path: str, profile_name: str) -> None:
+    def __init__(
+        self,
+        config_path: str,
+        profile_name: str,
+        output_manager: OutputManager | None = None,
+    ) -> None:
         """ProfileProcessorのコンストラクタ.
 
         Args:
             config_path: config.jsonファイルのパス.
             profile_name: 使用するカメラプロファイル名.
+            output_manager: 出力ディレクトリの統一管理クラス.
+                None の場合はデフォルトの OutputManager を使用.
         """
         self.config_path = config_path
         self.profile_name = profile_name
+        self.output_manager = output_manager or OutputManager()
         self.config = self._load_config(config_path)
         self.profile_config = self._get_profile_config(profile_name)
         self.processors = self._initialize_processors()
@@ -120,19 +129,13 @@ class ProfileProcessor:
 
         return image_files
 
-    def _create_output_directory(self, base_output_dir: Path) -> Path:
-        """タイムスタンプ付きの出力ディレクトリを作成する.
-
-        Args:
-            base_output_dir: ベース出力ディレクトリ.
+    def _create_output_directory(self) -> Path:
+        """出力ディレクトリを作成する.
 
         Returns:
             作成された出力ディレクトリのパス.
         """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = base_output_dir / f"profile_{self.profile_name}_{timestamp}"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        return output_dir
+        return self.output_manager.create_output_dir("processed")
 
     def _process_image(self, image_path: Path) -> Optional[np.ndarray]:
         """単一画像を処理する.
@@ -193,20 +196,16 @@ class ProfileProcessor:
             print(f"エラー: 画像処理中にエラーが発生しました ({image_path}): {e}")
             return None
 
-    def process_directory(
-        self, input_dir: str, output_dir: str, save_original: bool = True
-    ) -> None:
+    def process_directory(self, input_dir: str, save_original: bool = True) -> None:
         """ディレクトリ内のすべての画像を処理する.
 
         Args:
             input_dir: 入力ディレクトリのパス.
-            output_dir: 出力ディレクトリのパス.
             save_original: 元画像も保存するかどうか.
         """
         input_path = Path(input_dir)
-        base_output_path = Path(output_dir)
 
-        output_path = self._create_output_directory(base_output_path)
+        output_path = self._create_output_directory()
 
         image_files = self._get_image_files(input_path)
 
@@ -301,26 +300,21 @@ class ProfileProcessor:
 @click.option(
     "--input", "-i", "input_dir", type=str, required=True, help="入力ディレクトリ"
 )
-@click.option(
-    "--output",
-    "-o",
-    "output_dir",
-    type=str,
-    default="profile_results",
-    help="出力ディレクトリ",
-)
 @click.option("--profile", "-p", type=str, required=True, help="カメラプロファイル名")
 @click.option("--no-save-original", is_flag=True, help="元画像を保存しない")
 @click.option("--list-profiles", is_flag=True, help="利用可能なプロファイルを一覧表示")
+@click.pass_context
 def process(
+    ctx: click.Context,
     config: str,
     input_dir: str,
-    output_dir: str,
     profile: str,
     no_save_original: bool,
     list_profiles: bool,
 ) -> None:
     """カメラプロファイルを画像に適用する."""
+    output_manager = ctx.obj.get("output_manager") if ctx.obj else None
+
     if list_profiles:
         try:
             with open(config, "r", encoding="utf-8") as f:
@@ -328,7 +322,7 @@ def process(
             cameras = config_data.get("cameras", {})
             if cameras:
                 first_profile = list(cameras.keys())[0]
-                proc = ProfileProcessor(config, first_profile)
+                proc = ProfileProcessor(config, first_profile, output_manager)
                 proc.list_available_profiles()
             else:
                 click.echo("利用可能なプロファイルがありません")
@@ -336,7 +330,5 @@ def process(
             click.echo(f"エラー: プロファイル一覧の表示に失敗しました: {e}")
         return
 
-    processor = ProfileProcessor(config, profile)
-    processor.process_directory(
-        input_dir, output_dir, save_original=not no_save_original
-    )
+    processor = ProfileProcessor(config, profile, output_manager)
+    processor.process_directory(input_dir, save_original=not no_save_original)

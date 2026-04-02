@@ -1,12 +1,13 @@
 """画像処理パイプラインの実行・管理を行うモジュール."""
 
 import time
+from pathlib import Path
 from typing import Any, Dict, List
 
 import cv2
 import numpy as np
 
-from pochivision.capturelib import CaptureManager, LogManager
+from pochivision.capturelib import LogManager
 from pochivision.capturelib.config_handler import CameraConfigHandler
 from pochivision.processors import BaseProcessor
 from pochivision.processors.registry import PROCESSOR_REGISTRY
@@ -14,37 +15,35 @@ from pochivision.utils.file_naming import get_file_naming_manager
 
 
 class PipelineExecutor:
-    """
-    画像処理プロセッサ群を管理し、処理と保存を行うパイプライン実行クラス.
+    """画像処理プロセッサ群を管理し, 処理と保存を行うパイプライン実行クラス.
 
     Attributes:
-        processors (list): 実行対象の画像処理プロセッサのリスト.
-        capture_manager (CaptureManager): 処理結果の保存先ディレクトリを管理するオブジェクト.
-        mode (str): 実行モード. "parallel" または "pipeline".
-        camera_index (int): このパイプラインが対応するカメラのインデックス.
-        id_interval (int): ID値が増加する画像数の間隔.
-        config_fps (float): 設定ファイルから取得したFPS値.
+        processors: 実行対象の画像処理プロセッサのリスト.
+        output_dir: 処理結果の保存先ディレクトリ.
+        mode: 実行モード. "parallel" または "pipeline".
+        camera_index: このパイプラインが対応するカメラのインデックス.
+        id_interval: ID値が増加する画像数の間隔.
+        config_fps: 設定ファイルから取得したFPS値.
     """
 
     def __init__(
         self,
         processors: List[BaseProcessor],
-        capture_manager: CaptureManager,
+        output_dir: Path,
         mode: str = "parallel",
         camera_index: int = 0,
         id_interval: int = 1,
         config_fps: float = 30.0,
     ) -> None:
-        """
-        PipelineExecutorのコンストラクタ.
+        """PipelineExecutorのコンストラクタ.
 
         Args:
-            processors (list): 画像処理プロセッサのインスタンス群.
-            capture_manager (CaptureManager): 保存先ディレクトリ管理.
-            mode (str): 実行モード（"parallel" または "pipeline"）. デフォルトは "parallel".
-            camera_index (int): このパイプラインが対応するカメラのインデックス.
-            id_interval (int): ID値が増加する画像数の間隔 デフォルトは1.
-            config_fps (float): 設定ファイルから取得したFPS値. デフォルトは30.0.
+            processors: 画像処理プロセッサのインスタンス群.
+            output_dir: 処理結果の保存先ディレクトリ.
+            mode: 実行モード ("parallel" または "pipeline"). デフォルトは "parallel".
+            camera_index: このパイプラインが対応するカメラのインデックス.
+            id_interval: ID値が増加する画像数の間隔. デフォルトは1.
+            config_fps: 設定ファイルから取得したFPS値. デフォルトは30.0.
         """
         valid_modes = ("parallel", "pipeline")
         if mode not in valid_modes:
@@ -53,7 +52,7 @@ class PipelineExecutor:
             )
 
         self.processors = processors
-        self.capture_manager = capture_manager
+        self.output_dir = output_dir
         self.mode = mode
         self.camera_index = camera_index
         self.id_interval = id_interval
@@ -82,26 +81,20 @@ class PipelineExecutor:
     def from_config(
         cls,
         config: Dict[str, Any],
-        capture_manager: CaptureManager,
+        output_dir: Path,
         camera_index: int = 0,
         profile_name: str = "0",
     ) -> "PipelineExecutor":
-        """
-        設定ファイル（辞書）からインスタンスを生成.
-
-        カメラプロファイルごとの画像処理設定を使用します.
+        """設定ファイル (辞書) からインスタンスを生成する.
 
         Args:
-            config (dict): JSON等から読み込んだ設定辞書.
-            capture_manager (CaptureManager): 保存用のディレクトリ管理インスタンス.
-            camera_index (int): このパイプラインが対応するカメラのインデックス.
-            profile_name (str): 使用するカメラプロファイル名.
+            config: JSON等から読み込んだ設定辞書.
+            output_dir: 処理結果の保存先ディレクトリ.
+            camera_index: このパイプラインが対応するカメラのインデックス.
+            profile_name: 使用するカメラプロファイル名.
 
         Returns:
-            PipelineExecutor: 構成済みの PipelineExecutor インスタンス.
-
-        Raises:
-            Exception: カメラプロファイルのプロセッサ設定が取得できない場合.
+            構成済みの PipelineExecutor インスタンス.
         """
         try:
             processor_names, processor_configs, mode = (
@@ -129,7 +122,7 @@ class PipelineExecutor:
 
             return cls(
                 processors=processors,
-                capture_manager=capture_manager,
+                output_dir=output_dir,
                 mode=mode,
                 camera_index=camera_index,
                 id_interval=id_interval,
@@ -140,18 +133,28 @@ class PipelineExecutor:
             logger.error(f"Failed to create pipeline from config: {e}")
             raise
 
-    def run(self, image: np.ndarray) -> None:
-        """
-        指定された画像に対してプロセッサを適用し、処理結果を保存する.
+    def _get_processing_dir(self, process_name: str) -> Path:
+        """処理結果保存用のサブディレクトリを取得する.
 
         Args:
-            image (np.ndarray): 入力画像.
+            process_name: 処理の名前. 例: 'grayscale', 'gaussian_blur'.
+
+        Returns:
+            処理結果保存用ディレクトリのパス.
+        """
+        path = self.output_dir / process_name
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def run(self, image: np.ndarray) -> None:
+        """指定された画像に対してプロセッサを適用し, 処理結果を保存する.
+
+        Args:
+            image: 入力画像.
         """
         start_time = time.time()
 
-        original_dir = self.capture_manager.get_processing_dir(
-            "original", self.camera_index
-        )
+        original_dir = self._get_processing_dir("original")
         filename, id_index, image_index = get_file_naming_manager().get_filename(
             "original", self.camera_index
         )
@@ -190,7 +193,6 @@ class PipelineExecutor:
                 try:
                     proc_start = time.time()
 
-                    # マスク合成プロセッサの場合、ターゲット画像を設定
                     if hasattr(processor, "target_image_name") and hasattr(
                         processor, "set_target_image"
                     ):
@@ -204,7 +206,6 @@ class PipelineExecutor:
                                 f"Target image '{target_name}' not found "
                                 f"for {processor.name}"
                             )
-                            # fallback to original
                             processor.set_target_image(
                                 processed_images["original"]
                             )  # type: ignore
@@ -226,20 +227,16 @@ class PipelineExecutor:
         self.logger.info(f"Total processing time: {total_time:.3f} sec")
 
     def _save(self, image: np.ndarray, processor_name: str) -> None:
-        """
-        処理された画像を保存する内部メソッド.
+        """処理された画像を保存する.
 
         Args:
-            image (np.ndarray): 処理済み画像.
-            processor_name (str): 処理に使われたプロセッサの名前.
+            image: 処理済み画像.
+            processor_name: 処理に使われたプロセッサの名前.
         """
-        save_dir_name = processor_name
-        save_dir = self.capture_manager.get_processing_dir(
-            save_dir_name, self.camera_index
-        )
+        save_dir = self._get_processing_dir(processor_name)
 
         filename, id_index, image_index = get_file_naming_manager().get_filename(
-            save_dir_name, self.camera_index
+            processor_name, self.camera_index
         )
         path = save_dir / filename
 
@@ -248,9 +245,9 @@ class PipelineExecutor:
             cv2.imwrite(str(path), image)
             save_time = time.time() - save_start
             self.logger.info(
-                f"Image saved ({save_dir_name}): {path} "
+                f"Image saved ({processor_name}): {path} "
                 f"({image.shape[1]}x{image.shape[0]}, "
                 f"id={id_index}, image={image_index}, {save_time:.3f} sec)"
             )
         except Exception as e:
-            self.logger.error(f"Failed to save image ({save_dir_name}): {e}")
+            self.logger.error(f"Failed to save image ({processor_name}): {e}")
