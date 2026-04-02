@@ -4,6 +4,8 @@ from typing import Any, Dict, Optional, Union
 
 import numpy as np
 
+from pochivision.capturelib.log_manager import LogManager
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.utils.image import to_rgb
 
 from .base import BaseFeatureExtractor
@@ -25,7 +27,11 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
     - std_dev: RGB標準偏差 [0-255]
     - cv: 変動係数（標準偏差/平均値） [ratio]
 
-    設定により、RGB値がすべて0のピクセルを計算から除外することができます。
+    exclude_black_pixels の動作:
+    - True: R=0, G=0, B=0 のピクセル (完全な黒) のみを統計から除外する.
+      R=200, G=0, B=0 のようなピクセルは除外されない (いずれかのチャンネルが非ゼロ).
+    - False: 全ピクセルを統計に含む.
+    - 用途: 背景が真っ黒の画像で, 背景領域を統計から除外したい場合に使用.
     """
 
     # 特徴量の単位定義
@@ -74,60 +80,58 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
             ValueError: 画像が空の場合や無効な形状の場合.
         """
         if image is None or image.size == 0:
-            raise ValueError("Input image is empty or None")
+            raise ExtractorValidationError("Input image is empty or None")
 
-        # 任意の形状の画像をRGB形式に変換（グレースケール対応）
-        rgb_image = to_rgb(image)
+        try:
+            # float (0-1) 入力を uint8 スケールに変換
+            if np.issubdtype(image.dtype, np.floating) and image.max() <= 1.0:
+                image = (image * 255).astype(np.uint8)
 
-        results = {}
+            rgb_image = to_rgb(image)
 
-        # 黒ピクセル除外の処理
-        if self.exclude_black_pixels:
-            # すべてのチャンネルが0でないピクセルのマスクを作成
-            non_black_mask = np.any(rgb_image > 0, axis=2)
-        else:
-            # すべてのピクセルを使用
-            non_black_mask = np.ones(rgb_image.shape[:2], dtype=bool)
+            results = {}
 
-        # チャンネル名の定義
-        channel_names = ["red", "green", "blue"]
-
-        for i, channel_name in enumerate(channel_names):
-            channel_data = rgb_image[:, :, i]
-
-            # マスクを適用してピクセル値を取得
             if self.exclude_black_pixels:
-                pixels = channel_data[non_black_mask].astype(np.float64)
+                # R=0, G=0, B=0 の完全黒ピクセルを除外 (いずれかが非ゼロなら残す)
+                non_black_mask = np.any(rgb_image > 0, axis=2)
             else:
-                pixels = channel_data.flatten().astype(np.float64)
+                non_black_mask = np.ones(rgb_image.shape[:2], dtype=bool)
 
-            # 統計値の計算
-            if len(pixels) == 0:
-                # 有効なピクセルがない場合
-                mean_val = 0.0
-                median_val = 0.0
-                variance_val = 0.0
-                std_dev_val = 0.0
-                cv_val = float("inf")
-            else:
-                mean_val = float(np.mean(pixels))
-                median_val = float(np.median(pixels))
-                variance_val = float(np.var(pixels))
-                std_dev_val = float(np.std(pixels))
+            channel_names = ["red", "green", "blue"]
 
-                # 変動係数の計算（平均値が0の場合は無限大になるため特別処理）
-                cv_val = (
-                    float(std_dev_val / mean_val) if mean_val != 0 else float("inf")
-                )
+            for i, channel_name in enumerate(channel_names):
+                channel_data = rgb_image[:, :, i]
 
-            # 結果に追加
-            results[f"{channel_name}_mean"] = mean_val
-            results[f"{channel_name}_median"] = median_val
-            results[f"{channel_name}_variance"] = variance_val
-            results[f"{channel_name}_std_dev"] = std_dev_val
-            results[f"{channel_name}_cv"] = cv_val
+                if self.exclude_black_pixels:
+                    pixels = channel_data[non_black_mask].astype(np.float64)
+                else:
+                    pixels = channel_data.flatten().astype(np.float64)
 
-        return results
+                if len(pixels) == 0:
+                    mean_val = 0.0
+                    median_val = 0.0
+                    variance_val = 0.0
+                    std_dev_val = 0.0
+                    cv_val = float("inf")
+                else:
+                    mean_val = float(np.mean(pixels))
+                    median_val = float(np.median(pixels))
+                    variance_val = float(np.var(pixels))
+                    std_dev_val = float(np.std(pixels))
+                    cv_val = (
+                        float(std_dev_val / mean_val) if mean_val != 0 else float("inf")
+                    )
+
+                results[f"{channel_name}_mean"] = mean_val
+                results[f"{channel_name}_median"] = median_val
+                results[f"{channel_name}_variance"] = variance_val
+                results[f"{channel_name}_std_dev"] = std_dev_val
+                results[f"{channel_name}_cv"] = cv_val
+
+            return results
+        except Exception:
+            LogManager().get_logger().exception("RGB feature extraction failed")
+            raise
 
     @staticmethod
     def get_default_config() -> Dict[str, Any]:

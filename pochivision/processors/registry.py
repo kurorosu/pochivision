@@ -10,9 +10,13 @@
         ...
 """
 
+import logging
 from typing import Any, Callable, Dict, Type
 
+logger = logging.getLogger(__name__)
+
 from .base import BaseProcessor
+from .schema import PROCESSOR_SCHEMA_MAP
 
 # 名前とクラスのマッピングを保持する辞書
 PROCESSOR_REGISTRY: Dict[str, Type[BaseProcessor]] = {}
@@ -32,6 +36,12 @@ def register_processor(
     """
 
     def decorator(cls: Type[BaseProcessor]) -> Type[BaseProcessor]:
+        if name in PROCESSOR_REGISTRY:
+            logger.warning(
+                f"Processor '{name}' is already registered "
+                f"({PROCESSOR_REGISTRY[name].__name__}), "
+                f"overwriting with {cls.__name__}"
+            )
         PROCESSOR_REGISTRY[name] = cls
         return cls
 
@@ -55,4 +65,14 @@ def get_processor(name: str, config: Dict[str, Any]) -> BaseProcessor:
     processor_class = PROCESSOR_REGISTRY.get(name)
     if not processor_class:
         raise ValueError(f"Processor not found: {name}")
+
+    # スキーマによる設定バリデーション
+    if config:
+        schema_class = PROCESSOR_SCHEMA_MAP.get(name)
+        if schema_class:
+            try:
+                schema_class(**config)
+            except Exception as e:
+                raise ValueError(f"Invalid config for processor '{name}': {e}") from e
+
     return processor_class(name=name, config=config)

@@ -5,12 +5,14 @@ import json
 import pytest
 
 from pochivision.capturelib.config_handler import (
-    CameraConfigError,
     CameraConfigHandler,
     ConfigHandler,
-    ConfigLoadError,
 )
-from pochivision.exceptions.config import ConfigValidationError
+from pochivision.exceptions.config import (
+    CameraConfigError,
+    ConfigLoadError,
+    ConfigValidationError,
+)
 
 
 def _minimal_config() -> dict:

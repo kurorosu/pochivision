@@ -20,50 +20,6 @@ class CLAHEInputValidator(BaseValidator):
         """
         self.config = config or {}
 
-    def validate_config(self) -> None:
-        """
-        パラメータのバリデーションを実行する.
-
-        Raises:
-            ProcessorValidationError: 不正なパラメータが渡された場合.
-        """
-        # color_modeのチェック
-        color_mode = self.config.get("color_mode", "gray")
-        if color_mode not in ["gray", "lab", "bgr"]:
-            raise ProcessorValidationError(
-                f"Invalid color_mode '{color_mode}'. "
-                "Must be one of: 'gray', 'lab', 'bgr'."
-            )
-
-        # clip_limitのチェック
-        clip_limit = self.config.get("clip_limit", 2.0)
-        try:
-            clip_limit = float(clip_limit)
-            if clip_limit <= 0:
-                raise ValueError("clip_limit must be a positive number")
-        except (TypeError, ValueError):
-            raise ProcessorValidationError(
-                f"Invalid clip_limit '{clip_limit}'. " "Must be a positive number."
-            )
-
-        # tile_grid_sizeのチェック
-        tile_grid_size = self.config.get("tile_grid_size", [8, 8])
-        if not isinstance(tile_grid_size, (list, tuple)) or len(tile_grid_size) != 2:
-            raise ProcessorValidationError(
-                f"Invalid tile_grid_size '{tile_grid_size}'. "
-                "Must be a list of 2 positive integers."
-            )
-
-        try:
-            tile_grid_size = [int(x) for x in tile_grid_size]
-            if any(x <= 0 for x in tile_grid_size):
-                raise ValueError("tile_grid_size must contain positive integers")
-        except (TypeError, ValueError):
-            raise ProcessorValidationError(
-                f"Invalid tile_grid_size '{tile_grid_size}'. "
-                "Must be a list of 2 positive integers."
-            )
-
     def validate_image(self, image: np.ndarray) -> None:
         """
         入力画像のバリデーションを実行する.

@@ -193,10 +193,8 @@ class LivePreviewRunner:
         recording_fps = measured_fps
         self.logger.info(f"Using measured FPS for recording: {recording_fps:.2f}")
 
-        # 出力ディレクトリを取得（pipelineから）
-        output_dir = self.pipeline.capture_manager.get_output_dir(
-            self.pipeline.camera_index
-        )
+        # 出力ディレクトリを取得 (pipeline から)
+        output_dir = self.pipeline.output_dir
 
         # 録画開始
         success = self.recording_manager.start_recording(

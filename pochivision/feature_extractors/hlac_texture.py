@@ -7,6 +7,7 @@ import numpy as np
 from scipy.signal import correlate2d
 
 from pochivision.capturelib.log_manager import LogManager
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.processors.base import BaseProcessor
 from pochivision.processors.binarization import (
     GaussianAdaptiveBinarizationProcessor,
@@ -124,7 +125,7 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             ValueError: 画像が空の場合や無効な形状の場合.
         """
         if image is None or image.size == 0:
-            raise ValueError("Input image is empty or None")
+            raise ExtractorValidationError("Input image is empty or None")
 
         try:
             # 画像の型を適切に変換
@@ -146,7 +147,7 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             elif len(image.shape) == 2:
                 gray_image = image.copy()
             else:
-                raise ValueError(
+                raise ExtractorValidationError(
                     f"Input image must be 2D or 3D, got shape: {image.shape}"
                 )
 

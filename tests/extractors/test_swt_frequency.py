@@ -3,6 +3,7 @@
 import numpy as np
 import pytest  # noqa: F401
 
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.feature_extractors.swt_frequency import SWTFrequencyExtractor
 from tests.extractors.conftest import DummyImages
 
@@ -527,7 +528,9 @@ class TestSWTBehavior:
         """4x4 未満の画像で ValueError が発生."""
         for size in [(1, 1), (2, 2), (3, 3), (3, 64), (64, 3)]:
             small = np.ones(size, dtype=np.uint8) * 128
-            with pytest.raises(ValueError, match="Image too small for SWT"):
+            with pytest.raises(
+                (ValueError, ExtractorValidationError), match="Image too small for SWT"
+            ):
                 self.ext.extract(small)
 
     def test_minimum_size_works(self):

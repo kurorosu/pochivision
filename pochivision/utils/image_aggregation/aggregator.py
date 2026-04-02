@@ -1,7 +1,6 @@
 """画像集約の中心となるクラスを提供するモジュール."""
 
 import shutil
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -9,6 +8,7 @@ from tqdm import tqdm
 
 from pochivision.utils.image_aggregation.folder_finder import ProcessorFolderFinder
 from pochivision.utils.image_aggregation.operations import OperationMode
+from pochivision.workspace import OutputManager
 
 
 class ImageAggregator:
@@ -26,52 +26,20 @@ class ImageAggregator:
     def __init__(
         self,
         input_dir: str,
-        output_dir: str,
         mode: OperationMode = OperationMode.COPY,
+        output_manager: OutputManager | None = None,
     ) -> None:
-        """
-        ImageAggregatorを初期化する.
+        """ImageAggregatorを初期化する.
 
         Args:
-            input_dir: カメラディレクトリのパス
-            output_dir: 集約画像の出力先ベースフォルダパス
-            mode: ファイル操作モード
+            input_dir: カメラディレクトリのパス.
+            mode: ファイル操作モード.
+            output_manager: 出力ディレクトリの統一管理クラス.
+                None の場合はデフォルトの OutputManager を使用.
         """
         self.input_dir = Path(input_dir)
-
-        # 出力先は常にimage_aggregatedとする
-        self.output_base_dir = Path("image_aggregated")
-
+        self.output_manager = output_manager or OutputManager()
         self.mode = mode
-
-    def _create_dated_output_dir(self) -> Path:
-        """
-        日付とインデックスを含む出力ディレクトリを作成する.
-
-        形式: image_aggregated/YYYYMMDD_INDEX
-
-        Returns:
-            作成された出力ディレクトリのパス
-        """
-        # 出力ベースディレクトリが存在しない場合は作成
-        self.output_base_dir.mkdir(parents=True, exist_ok=True)
-
-        # 現在の日付を取得
-        today = datetime.now().strftime("%Y%m%d")
-
-        # 同じ日付のフォルダが既に存在する場合、インデックスを増やす
-        index = 0
-        while True:
-            output_dir = self.output_base_dir / f"{today}_{index}"
-            if not output_dir.exists():
-                break
-            index += 1
-
-        # 出力ディレクトリを作成
-        output_dir.mkdir(parents=True, exist_ok=True)
-        print(f"Created output directory: {output_dir}")
-
-        return output_dir
 
     def _collect_all_image_files(
         self, processor_types: Dict[str, List[Path]]
@@ -106,7 +74,7 @@ class ImageAggregator:
         ]
 
         # 出力ディレクトリを作成
-        output_dir = self._create_dated_output_dir()
+        output_dir = self.output_manager.create_output_dir("aggregated")
 
         # 各処理タイプのフォルダから画像ファイルを収集
         for processor_type, folders in processor_types.items():

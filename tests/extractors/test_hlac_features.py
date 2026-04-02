@@ -3,6 +3,7 @@
 import numpy as np
 import pytest  # noqa: F401
 
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.feature_extractors import HLACTextureExtractor, get_feature_extractor
 from tests.extractors.conftest import DummyImages
 
@@ -304,11 +305,11 @@ def test_hlac_error_handling():
     extractor = HLACTextureExtractor()
 
     # 空の画像で ValueError
-    with pytest.raises(ValueError, match="empty or None"):
+    with pytest.raises((ValueError, ExtractorValidationError), match="empty or None"):
         extractor.extract(np.array([]))
 
     # None画像で ValueError
-    with pytest.raises(ValueError, match="empty or None"):
+    with pytest.raises((ValueError, ExtractorValidationError), match="empty or None"):
         extractor.extract(None)
 
 

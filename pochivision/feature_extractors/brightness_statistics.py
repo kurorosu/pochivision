@@ -5,6 +5,9 @@ from typing import Any, Dict, Optional, Union
 import cv2
 import numpy as np
 
+from pochivision.capturelib.log_manager import LogManager
+from pochivision.exceptions.extractor import ExtractorValidationError
+
 from .base import BaseFeatureExtractor
 from .registry import register_feature_extractor
 
@@ -24,7 +27,10 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
     - std_dev: 輝度標準偏差 [0-255]
     - cv: 変動係数（標準偏差/平均値） [ratio]
 
-    設定により、輝度値が0のピクセルを計算から除外することができます。
+    exclude_zero_pixels の動作:
+    - True: 輝度値が 0 のピクセルを統計から除外する.
+    - False: 全ピクセルを統計に含む.
+    - 用途: 背景が真っ黒の画像で, 背景領域を統計から除外したい場合に使用.
     """
 
     # 特徴量の単位定義
@@ -73,43 +79,48 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
             ValueError: 画像が空の場合や無効な形状の場合.
         """
         if image is None or image.size == 0:
-            raise ValueError("Input image is empty or None")
+            raise ExtractorValidationError("Input image is empty or None")
 
-        brightness_image = self._get_brightness_image(image)
-        pixels = brightness_image.flatten().astype(np.float64)
+        try:
+            # float (0-1) 入力を uint8 スケールに変換
+            if np.issubdtype(image.dtype, np.floating) and image.max() <= 1.0:
+                image = (image * 255).astype(np.uint8)
 
-        # ゼロピクセル除外の処理
-        if self.exclude_zero_pixels:
-            # 輝度値0のピクセルを除外
-            non_zero_pixels = pixels[pixels > 0]
-            calculation_pixels = non_zero_pixels
-        else:
-            # すべてのピクセルを使用
-            calculation_pixels = pixels
+            brightness_image = self._get_brightness_image(image)
+            pixels = brightness_image.flatten().astype(np.float64)
 
-        if len(calculation_pixels) == 0:
-            # 有効なピクセルがない場合
-            mean_val = 0.0
-            median_val = 0.0
-            variance_val = 0.0
-            std_dev_val = 0.0
-            cv_val = float("inf")
-        else:
-            mean_val = float(np.mean(calculation_pixels))
-            median_val = float(np.median(calculation_pixels))
-            variance_val = float(np.var(calculation_pixels))
-            std_dev_val = float(np.std(calculation_pixels))
+            # 輝度値 0 のピクセルを除外 (背景の真っ黒部分を統計から除く)
+            if self.exclude_zero_pixels:
+                non_zero_pixels = pixels[pixels > 0]
+                calculation_pixels = non_zero_pixels
+            else:
+                calculation_pixels = pixels
 
-            # 変動係数の計算（平均値が0の場合は無限大になるため特別処理）
-            cv_val = float(std_dev_val / mean_val) if mean_val != 0 else float("inf")
+            if len(calculation_pixels) == 0:
+                mean_val = 0.0
+                median_val = 0.0
+                variance_val = 0.0
+                std_dev_val = 0.0
+                cv_val = float("inf")
+            else:
+                mean_val = float(np.mean(calculation_pixels))
+                median_val = float(np.median(calculation_pixels))
+                variance_val = float(np.var(calculation_pixels))
+                std_dev_val = float(np.std(calculation_pixels))
+                cv_val = (
+                    float(std_dev_val / mean_val) if mean_val != 0 else float("inf")
+                )
 
-        return {
-            "mean": mean_val,
-            "median": median_val,
-            "variance": variance_val,
-            "std_dev": std_dev_val,
-            "cv": cv_val,
-        }
+            return {
+                "mean": mean_val,
+                "median": median_val,
+                "variance": variance_val,
+                "std_dev": std_dev_val,
+                "cv": cv_val,
+            }
+        except Exception:
+            LogManager().get_logger().exception("Brightness feature extraction failed")
+            raise
 
     def _get_brightness_image(self, image: np.ndarray) -> np.ndarray:
         """
@@ -140,9 +151,11 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
                 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
                 return hsv[:, :, 2]  # V成分
             else:
-                raise ValueError(f"Unsupported color_mode: {self.color_mode}")
+                raise ExtractorValidationError(
+                    f"Unsupported color_mode: {self.color_mode}"
+                )
         else:
-            raise ValueError(f"Unsupported image shape: {image.shape}")
+            raise ExtractorValidationError(f"Unsupported image shape: {image.shape}")
 
     @staticmethod
     def get_default_config() -> Dict[str, Any]:

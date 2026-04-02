@@ -1,0 +1,195 @@
+"""run サブコマンド: ライブプレビュー起動."""
+
+import click
+
+from pochivision.capture_runner import LivePreviewRunner
+from pochivision.capturelib.camera_setup import CameraSetup
+from pochivision.capturelib.config_handler import ConfigHandler
+from pochivision.capturelib.log_manager import LogManager
+from pochivision.capturelib.recording_manager import RecordingManager
+from pochivision.core import PipelineExecutor
+from pochivision.exceptions.config import ConfigValidationError
+from pochivision.workspace import OutputManager
+
+
+@click.command()
+@click.option("--camera", "-c", type=int, default=0, help="カメラデバイスインデックス")
+@click.option("--profile", "-p", type=str, default=None, help="カメラプロファイル名")
+@click.option("--list-profiles", "-l", is_flag=True, help="プロファイル一覧を表示")
+@click.option("--config", type=str, default="config.json", help="設定ファイルパス")
+@click.option("--no-recording", is_flag=True, help="録画機能を無効化")
+@click.pass_context
+def run(
+    ctx: click.Context,
+    camera: int,
+    profile: str | None,
+    list_profiles: bool,
+    config: str,
+    no_recording: bool,
+) -> None:
+    """ライブプレビューを起動する (従来の pochi コマンド)."""
+    log_manager = LogManager()
+    logger = log_manager.get_logger()
+    logger.info("Starting pochivision application")
+
+    config_data = _load_config(config, logger)
+
+    if list_profiles:
+        _print_profiles(config_data)
+        return
+
+    output_manager = ctx.obj.get("output_manager") if ctx.obj else None
+    if output_manager is None:
+        output_manager = OutputManager()
+
+    cap, camera_setup = _setup_camera(config_data, log_manager, camera, profile)
+    _run_preview(
+        config_data, log_manager, cap, camera_setup, no_recording, output_manager
+    )
+
+
+def _load_config(config_path: str, logger: object) -> dict:
+    """設定ファイルを読み込む.
+
+    Args:
+        config_path: 設定ファイルのパス.
+        logger: ロガーインスタンス.
+
+    Returns:
+        設定辞書.
+    """
+    try:
+        config_data = ConfigHandler.load(config_path)
+        logger.info("Configuration loaded successfully")  # type: ignore[attr-defined]
+        return config_data
+    except ConfigValidationError as e:
+        logger.error(str(e))  # type: ignore[attr-defined]
+        click.echo("設定ファイルに誤りがあります. 詳細はログを確認してください.")
+        raise SystemExit(1)
+    except Exception as e:
+        logger.error(f"Failed to load configuration: {e}")  # type: ignore[attr-defined]
+        raise SystemExit(1)
+
+
+def _print_profiles(config_data: dict) -> None:
+    """プロファイル一覧を表示する.
+
+    Args:
+        config_data: 設定辞書.
+    """
+    for prof in config_data.get("cameras", {}).keys():
+        prof_config = config_data["cameras"][prof]
+        click.echo(
+            f"Profile: {prof}, "
+            f"Resolution: {prof_config.get('width', 'default')}x"
+            f"{prof_config.get('height', 'default')}, "
+            f"FPS: {prof_config.get('fps', 'default')}"
+        )
+
+
+def _setup_camera(
+    config_data: dict,
+    log_manager: LogManager,
+    camera: int,
+    profile: str | None,
+) -> tuple:
+    """カメラをセットアップする.
+
+    Args:
+        config_data: 設定辞書.
+        log_manager: ログマネージャ.
+        camera: カメラインデックス.
+        profile: プロファイル名.
+
+    Returns:
+        (cap, camera_setup) のタプル.
+    """
+    logger = log_manager.get_logger()
+    try:
+        camera_setup = CameraSetup(
+            config_data,
+            log_manager,
+            camera_index=camera,
+            profile_name=profile or "0",
+        )
+        camera_setup.load_camera_config()
+        cap = camera_setup.initialize_camera()
+
+        if not cap.isOpened():
+            logger.error(f"Failed to open camera {camera_setup.camera_index}.")
+            raise SystemExit(1)
+
+        log_manager.log_camera_info(
+            cap,
+            camera_setup.camera_index,
+            camera_setup.width,
+            camera_setup.height,
+            profile_name=camera_setup.profile_name,
+        )
+        return cap, camera_setup
+
+    except SystemExit:
+        raise
+    except Exception as e:
+        logger.error(f"Error setting up camera: {e}")
+        raise SystemExit(1)
+
+
+def _run_preview(
+    config_data: dict,
+    log_manager: LogManager,
+    cap: object,
+    camera_setup: CameraSetup,
+    no_recording: bool,
+    output_manager: OutputManager,
+) -> None:
+    """プレビューを実行する.
+
+    Args:
+        config_data: 設定辞書.
+        log_manager: ログマネージャ.
+        cap: カメラキャプチャオブジェクト.
+        camera_setup: カメラセットアップ.
+        no_recording: 録画無効フラグ.
+        output_manager: 出力ディレクトリの統一管理クラス.
+    """
+    logger = log_manager.get_logger()
+    try:
+        output_dir = output_manager.create_output_dir("capture")
+
+        log_manager.setup_file_logging(output_dir / "capture.log")
+        log_manager.log_system_info()
+
+        used_profile = camera_setup.profile_name
+        minimal_config = {
+            "cameras": {used_profile: config_data["cameras"][used_profile]},
+            "selected_camera_index": camera_setup.camera_index,
+        }
+        ConfigHandler.save(minimal_config, output_dir)
+
+        pipeline = PipelineExecutor.from_config(
+            config_data,
+            output_dir=output_dir,
+            camera_index=camera_setup.camera_index,
+            profile_name=camera_setup.profile_name,
+        )
+
+        recording_manager = None
+        if not no_recording:
+            recording_config = config_data.get("recording", {})
+            select_format = recording_config.get("select_format", "mjpg")
+            recording_manager = RecordingManager(default_format=select_format)
+
+        preview_config = config_data.get("preview", {})
+        preview_size = (
+            preview_config.get("width", 1280),
+            preview_config.get("height", 720),
+        )
+
+        app = LivePreviewRunner(cap, pipeline, recording_manager, preview_size)
+        app.run()
+
+    except Exception as e:
+        logger.error(f"Error during execution: {e}")
+    finally:
+        logger.info("Application shutdown complete")

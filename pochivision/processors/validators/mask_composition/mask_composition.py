@@ -21,39 +21,6 @@ class MaskCompositionValidator(BaseValidator):
         """
         self.config = config
 
-    def validate_config(self) -> None:
-        """
-        マスク合成プロセッサの設定パラメータを検証.
-
-        Raises:
-            ProcessorValidationError: 設定が無効な場合.
-        """
-        # target_imageのタイプチェック
-        if "target_image" in self.config and not isinstance(
-            self.config["target_image"], str
-        ):
-            raise ProcessorValidationError("'target_image' must be a string")
-
-        # use_white_pixelsのタイプチェック
-        if "use_white_pixels" in self.config and not isinstance(
-            self.config["use_white_pixels"], bool
-        ):
-            raise ProcessorValidationError("'use_white_pixels' must be a boolean")
-
-        # enable_croppingのタイプチェック
-        if "enable_cropping" in self.config and not isinstance(
-            self.config["enable_cropping"], bool
-        ):
-            raise ProcessorValidationError("'enable_cropping' must be a boolean")
-
-        # crop_marginのタイプと値チェック
-        if "crop_margin" in self.config:
-            crop_margin = self.config["crop_margin"]
-            if not isinstance(crop_margin, int):
-                raise ProcessorValidationError("'crop_margin' must be an integer")
-            if crop_margin < 0:
-                raise ProcessorValidationError("'crop_margin' must be non-negative")
-
     def validate_image(self, image: np.ndarray) -> None:
         """
         入力画像を検証.

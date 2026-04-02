@@ -7,6 +7,7 @@ import numpy as np
 from skimage.feature import graycomatrix, graycoprops
 
 from pochivision.capturelib.log_manager import LogManager
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.processors.resize import ResizeProcessor
 
 from .base import BaseFeatureExtractor
@@ -104,15 +105,15 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
             ValueError: 無効な角度設定の場合
         """
         if not isinstance(angles_config, list):
-            raise ValueError("Angles must be a list of numbers")
+            raise ExtractorValidationError("Angles must be a list of numbers")
 
         if not angles_config:
-            raise ValueError("Angles list cannot be empty")
+            raise ExtractorValidationError("Angles list cannot be empty")
 
         # すべての要素が数値かチェック
         for angle in angles_config:
             if not isinstance(angle, (int, float)):
-                raise ValueError("All angles must be numeric values")
+                raise ExtractorValidationError("All angles must be numeric values")
 
         # 度数をラジアンに変換
         return [np.radians(float(angle)) for angle in angles_config]
@@ -133,7 +134,7 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
             ValueError: 画像が空の場合や無効な形状の場合.
         """
         if image is None or image.size == 0:
-            raise ValueError("Input image is empty or None")
+            raise ExtractorValidationError("Input image is empty or None")
 
         # 画像の型を適切に変換（OpenCVがサポートしていない型の場合）
         if image.dtype not in [np.uint8, np.uint16, np.float32, np.float64]:
@@ -154,7 +155,9 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
         elif len(image.shape) == 2:
             gray_image = image.copy()
         else:
-            raise ValueError(f"Input image must be 2D or 3D, got shape: {image.shape}")
+            raise ExtractorValidationError(
+                f"Input image must be 2D or 3D, got shape: {image.shape}"
+            )
 
         # リサイズ (設定されている場合)
         if self.resize_processor is not None:

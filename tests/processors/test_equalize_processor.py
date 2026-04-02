@@ -115,12 +115,10 @@ def test_equalize_color_bgr_mode():
 
 def test_equalize_invalid_color_mode():
     """無効なcolor_modeテスト."""
-    # バリデーションエラーになるはず
-    with pytest.raises(ProcessorValidationError):
-        processor = EqualizeProcessor(name="equalize", config={"color_mode": "invalid"})
-        # テスト用カラー画像の作成
-        image = np.copy(DUMMY_COLOR_IMAGE)
-        processor.process(image)
+    from pochivision.processors.registry import get_processor
+
+    with pytest.raises(ValueError):
+        get_processor("equalize", {"color_mode": "invalid"})
 
 
 def test_equalize_invalid_input():

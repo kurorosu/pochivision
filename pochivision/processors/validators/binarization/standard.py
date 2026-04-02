@@ -28,19 +28,6 @@ class StandardBinarizationValidator(BaseValidator):
         """
         self.config = config
 
-    def validate_config(self) -> None:
-        """
-        設定値のバリデーションを実行する.
-
-        Raises:
-            ProcessorValidationError: 不正なパラメータが検出された場合.
-        """
-        threshold = self.config.get("threshold", 128)
-        if not (isinstance(threshold, int) and 0 <= threshold <= 255):
-            raise ProcessorValidationError(
-                "threshold must be an integer between 0 and 255."
-            )
-
     def validate_image(self, image: np.ndarray) -> None:
         """
         入力画像を検証します.

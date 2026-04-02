@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.feature_extractors.glcm_texture import GLCMTextureExtractor
 from tests.extractors.conftest import DummyImages
 
@@ -82,15 +83,23 @@ class TestGLCMTextureExtractor:
     def test_invalid_angle_input(self):
         """無効な角度入力のエラーハンドリングをテスト."""
         # 文字列での指定（プリセットは廃止）
-        with pytest.raises(ValueError, match="Angles must be a list of numbers"):
+        with pytest.raises(
+            (ValueError, ExtractorValidationError),
+            match="Angles must be a list of numbers",
+        ):
             GLCMTextureExtractor(config={"angles": "invalid_preset"})
 
         # 空のリスト
-        with pytest.raises(ValueError, match="Angles list cannot be empty"):
+        with pytest.raises(
+            (ValueError, ExtractorValidationError), match="Angles list cannot be empty"
+        ):
             GLCMTextureExtractor(config={"angles": []})
 
         # 数値以外の要素を含むリスト
-        with pytest.raises(ValueError, match="All angles must be numeric values"):
+        with pytest.raises(
+            (ValueError, ExtractorValidationError),
+            match="All angles must be numeric values",
+        ):
             GLCMTextureExtractor(config={"angles": [0, "45", 90]})
 
     def test_extract_basic_functionality(self):
@@ -229,11 +238,15 @@ class TestGLCMTextureExtractor:
         extractor = GLCMTextureExtractor()
 
         # 空の画像
-        with pytest.raises(ValueError, match="Input image is empty or None"):
+        with pytest.raises(
+            (ValueError, ExtractorValidationError), match="Input image is empty or None"
+        ):
             extractor.extract(np.array([]))
 
         # None画像
-        with pytest.raises(ValueError, match="Input image is empty or None"):
+        with pytest.raises(
+            (ValueError, ExtractorValidationError), match="Input image is empty or None"
+        ):
             extractor.extract(None)
 
     def test_extract_invalid_shape_error(self):
@@ -241,11 +254,15 @@ class TestGLCMTextureExtractor:
         extractor = GLCMTextureExtractor()
 
         # 1次元画像
-        with pytest.raises(ValueError, match="Input image must be 2D or 3D"):
+        with pytest.raises(
+            (ValueError, ExtractorValidationError), match="Input image must be 2D or 3D"
+        ):
             extractor.extract(np.array([1, 2, 3]))
 
         # 4次元画像
-        with pytest.raises(ValueError, match="Input image must be 2D or 3D"):
+        with pytest.raises(
+            (ValueError, ExtractorValidationError), match="Input image must be 2D or 3D"
+        ):
             extractor.extract(np.random.randint(0, 256, (10, 10, 3, 3)))
 
     def test_get_default_config(self):
@@ -651,3 +668,16 @@ class TestGLCMBehavior:
         """ランダム画像の contrast は > 1000."""
         f = self.ext.extract(DummyImages.random())
         assert f["contrast_1_0"] > 1000
+
+
+def test_schema_validation_rejects_invalid_config():
+    """スキーマバリデーションが無効な設定を拒否することを確認."""
+    from pochivision.feature_extractors import get_feature_extractor
+
+    # levels が範囲外
+    with pytest.raises((ValueError, ExtractorValidationError), match="Invalid config"):
+        get_feature_extractor("glcm", {"levels": 1})
+
+    # levels が範囲外 (上限)
+    with pytest.raises((ValueError, ExtractorValidationError), match="Invalid config"):
+        get_feature_extractor("glcm", {"levels": 999})

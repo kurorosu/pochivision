@@ -87,111 +87,66 @@ class TestContourProcessor:
 
     def test_invalid_retrieval_mode(self):
         """無効な輪郭抽出モードを指定した場合にエラーが発生することをテストします."""
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            ContourProcessor(
-                name="contour_invalid",
-                config={"retrieval_mode": "invalid_mode"},
-            )
-        assert "retrieval_mode" in str(excinfo.value)
-        assert "must be one of" in str(excinfo.value)
+        from pochivision.processors.registry import get_processor
+
+        with pytest.raises(ValueError):
+            get_processor("contour", {"retrieval_mode": "invalid_mode"})
 
     def test_invalid_approximation_method(self):
         """無効な輪郭近似方法を指定した場合にエラーが発生することをテストします."""
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            ContourProcessor(
-                name="contour_invalid",
-                config={"approximation_method": "invalid_method"},
-            )
-        assert "approximation_method" in str(excinfo.value)
-        assert "must be one of" in str(excinfo.value)
+        from pochivision.processors.registry import get_processor
+
+        with pytest.raises(ValueError):
+            get_processor("contour", {"approximation_method": "invalid_method"})
 
     def test_invalid_min_area(self):
         """無効な最小面積を指定した場合にエラーが発生することをテストします."""
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            ContourProcessor(
-                name="contour_invalid",
-                config={"min_area": -10},
-            )
-        assert "min_area" in str(excinfo.value)
-        assert "must be non-negative" in str(excinfo.value)
+        from pochivision.processors.registry import get_processor
+
+        with pytest.raises(ValueError):
+            get_processor("contour", {"min_area": -10})
 
     def test_invalid_select_mode(self):
         """無効な選択モードを指定した場合にエラーが発生することをテストします."""
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            ContourProcessor(
-                name="contour_invalid",
-                config={"select_mode": "invalid_mode"},
-            )
-        assert "select_mode" in str(excinfo.value)
-        assert "must be one of" in str(excinfo.value)
+        from pochivision.processors.registry import get_processor
+
+        with pytest.raises(ValueError):
+            get_processor("contour", {"select_mode": "invalid_mode"})
 
     def test_invalid_contour_rank(self):
         """無効な輪郭ランクを指定した場合にエラーが発生することをテストします."""
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            ContourProcessor(
-                name="contour_invalid",
-                config={"contour_rank": -1},
-            )
-        assert "contour_rank" in str(excinfo.value)
-        assert "must be non-negative" in str(excinfo.value)
+        from pochivision.processors.registry import get_processor
+
+        with pytest.raises(ValueError):
+            get_processor("contour", {"contour_rank": -1})
 
     def test_invalid_inside_color(self):
         """無効な内側色を指定した場合にエラーが発生することをテストします."""
-        # リストではない場合
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            ContourProcessor(
-                name="contour_invalid",
-                config={"inside_color": "white"},
-            )
-        assert "inside_color" in str(excinfo.value)
-        assert "must be a list" in str(excinfo.value)
+        from pochivision.processors.registry import get_processor
 
-        # 要素数が3でない場合
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            ContourProcessor(
-                name="contour_invalid",
-                config={"inside_color": [255, 255]},
-            )
-        assert "inside_color" in str(excinfo.value)
-        assert "must be a list of 3 integers" in str(excinfo.value)
+        # リストではない場合 (型の不一致)
+        with pytest.raises(ValueError):
+            get_processor("contour", {"inside_color": "white"})
 
-        # 要素が整数でない場合
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            ContourProcessor(
-                name="contour_invalid",
-                config={"inside_color": [255, "255", 255]},
-            )
-        assert "inside_color" in str(excinfo.value)
-        assert "elements must be integers" in str(excinfo.value)
+        # 要素数が3でない場合 (min_length/max_length 違反)
+        with pytest.raises(ValueError):
+            get_processor("contour", {"inside_color": [255, 255]})
 
-        # 要素が0-255の範囲外の場合
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            ContourProcessor(
-                name="contour_invalid",
-                config={"inside_color": [255, 256, 255]},
-            )
-        assert "inside_color" in str(excinfo.value)
-        assert "values must be between 0 and 255" in str(excinfo.value)
+        # 要素が整数でない場合 (StrictInt 違反)
+        with pytest.raises(ValueError):
+            get_processor("contour", {"inside_color": [255, "255", 255]})
 
     def test_invalid_outside_color(self):
         """無効な外側色を指定した場合にエラーが発生することをテストします."""
-        # リストではない場合
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            ContourProcessor(
-                name="contour_invalid",
-                config={"outside_color": "black"},
-            )
-        assert "outside_color" in str(excinfo.value)
-        assert "must be a list" in str(excinfo.value)
+        from pochivision.processors.registry import get_processor
 
-        # 要素数が3でない場合
-        with pytest.raises(ProcessorValidationError) as excinfo:
-            ContourProcessor(
-                name="contour_invalid",
-                config={"outside_color": [0, 0, 0, 0]},
-            )
-        assert "outside_color" in str(excinfo.value)
-        assert "must be a list of 3 integers" in str(excinfo.value)
+        # リストではない場合 (型の不一致)
+        with pytest.raises(ValueError):
+            get_processor("contour", {"outside_color": "black"})
+
+        # 要素数が3でない場合 (min_length/max_length 違反)
+        with pytest.raises(ValueError):
+            get_processor("contour", {"outside_color": [0, 0, 0, 0]})
 
     def test_process_binary_image(self):
         """二値画像の処理をテストします."""

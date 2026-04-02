@@ -54,9 +54,8 @@ class MaskCompositionProcessor(BaseProcessor):
         """
         super().__init__(name, config)
         self.validator = MaskCompositionValidator(self.config)
-        self.validator.validate_config()
 
-        # 設定パラメータ
+        # パラメータ解析
         default_config = self.get_default_config()
         self.target_image_name = self.config.get(
             "target_image", default_config["target_image"]

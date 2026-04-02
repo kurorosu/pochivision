@@ -1,6 +1,6 @@
 [project]
 name = "pochivision"
-version = "0.1.5"
+version = "0.2.0"
 description = "Real-time image capture and preprocessing engine for AI vision"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -21,6 +21,7 @@ dependencies = [
     "scikit-image>=0.24.0",
     "scipy>=1.13.1",
     "seaborn>=0.13.2",
+    "tqdm>=4.66.0",
 ]
 
 [project.scripts]
@@ -53,6 +54,7 @@ python_version = "3.12"
 mypy_path = "."
 warn_return_any = true
 warn_unused_configs = true
+explicit_package_bases = true
 
 [[tool.mypy.overrides]]
 module = ["cv2", "dearpygui.*"]

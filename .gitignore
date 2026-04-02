@@ -218,22 +218,7 @@ tmp*.*
 .claude
 
 # Data directory (keep folder, ignore contents)
-data/*
-!data/.gitkeep
-work_dirs/*
-configs/work_dirs/*
-results/*
 *.bat
-
-__pycache__/
-*.pyc
-*.pyo
-capture/
-.cursorrules
-capture.py
-tmp.txt
-.mypy_cache
-image_aggregated/
-extraction_results/
 *.bmp
 profile_results/
+outputs/

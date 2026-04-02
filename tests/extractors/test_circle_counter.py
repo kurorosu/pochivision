@@ -4,7 +4,9 @@ import cv2
 import numpy as np
 import pytest  # noqa: F401
 
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.feature_extractors import CircleCounterExtractor, get_feature_extractor
+from tests.extractors.conftest import DummyImages
 
 
 def test_circle_counter_basic():
@@ -292,11 +294,11 @@ def test_edge_cases():
     extractor = CircleCounterExtractor()
 
     # 空の画像で ValueError
-    with pytest.raises(ValueError, match="empty or None"):
+    with pytest.raises((ValueError, ExtractorValidationError), match="empty or None"):
         extractor.extract(np.array([]))
 
     # None画像で ValueError
-    with pytest.raises(ValueError, match="empty or None"):
+    with pytest.raises((ValueError, ExtractorValidationError), match="empty or None"):
         extractor.extract(None)
 
     # 非常に小さい画像でも処理できる
@@ -414,3 +416,16 @@ if __name__ == "__main__":
     test_unit_for_feature_method()
 
     print("\n=== すべてのテスト完了 ===")
+
+
+def test_dtype_float01_equals_uint8():
+    """float (0-1) と uint8 で同じ特徴量が返ることを確認."""
+    ext = CircleCounterExtractor()
+    img_uint8 = DummyImages.random()
+    img_float = img_uint8.astype(np.float32) / 255.0
+
+    f_u = ext.extract(img_uint8)
+    f_f = ext.extract(img_float)
+
+    for key in f_u:
+        assert abs(f_u[key] - f_f[key]) < 0.5, f"{key}: {f_u[key]} vs {f_f[key]}"

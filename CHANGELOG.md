@@ -17,26 +17,37 @@
 ### Removed
 - 無し
 
-## [0.1.5] - 2026-03-29
+## [0.2.0] - 2026-04-02
 
 ### Added
-- LBP の振る舞いテスト 21 件を追加. ([#223](https://github.com/kurorosu/pochivision/pull/223))
-- `docs/lbp_features.md` を追加. LBP 特徴量抽出器の全特徴量・パラメータ・設計制約の解説. ([#224](https://github.com/kurorosu/pochivision/pull/224))
+- `exceptions/extractor.py` を新設し `ExtractorValidationError` / `ExtractorRuntimeError` を追加. 全例外に標準例外の多重継承を適用. ([#235](https://github.com/kurorosu/pochivision/pull/235))
+- `BaseProcessor` / `BaseFeatureExtractor` に `abc.ABC` 継承を追加し抽象メソッドを強制. ([#236](https://github.com/kurorosu/pochivision/pull/236))
+- プロセッサ / 特徴量抽出器の両レジストリに重複登録時の警告ログを追加. ([#237](https://github.com/kurorosu/pochivision/pull/237))
+- バリデータの `validate_config` を削除しスキーマに一本化. パラメータ解析をプロセッサの `__init__` に移動. ([#238](https://github.com/kurorosu/pochivision/pull/238))
+- プロセッサスキーマの検証漏れを補完. `MaskCompositionParams` を新設. `@field_validator` / `@model_validator` で複合条件を追加. ([#240](https://github.com/kurorosu/pochivision/pull/240))
+- `extractor_config.json` に `extractors` リストを追加し, 選択した抽出器のみ実行する機能を追加. ([#241](https://github.com/kurorosu/pochivision/pull/241))
+- `pochi` CLI を click サブコマンド構成に変更. `pochi run` / `pochi extract` / `pochi process` / `pochi aggregate` / `pochi fft` を追加. ([#242](https://github.com/kurorosu/pochivision/pull/242))
+- CLI サブコマンドを `commands/` ディレクトリに分離. tools/ のスクリプト本体を移動し, `sys.argv` 操作を排除. `tqdm` を依存に追加. ([#245](https://github.com/kurorosu/pochivision/pull/245))
 
 ### Changed
-- 振る舞いテスト用ダミー画像を `tests/extractors/conftest.py` の `DummyImages` クラスに共通化. ([#215](https://github.com/kurorosu/pochivision/pull/215))
-- Pydantic V2 非推奨 API を移行 (`min_items` → `min_length`, `class Config` → `ConfigDict`, `each_item_gt` を削除). ([#216](https://github.com/kurorosu/pochivision/pull/216))
-- LBP `lbp_uniformity` を `lbp_energy` にリネームし GLCM の energy (ASM) と名称を統一. ([#219](https://github.com/kurorosu/pochivision/pull/219))
-- LBP の mean/std/skewness/kurtosis を LBP 画像の直接統計に変更. ([#221](https://github.com/kurorosu/pochivision/pull/221))
+- 全 9 抽出器のエラーハンドリングを `LogManager` + `raise` パターンに統一. brightness, rgb, hsv, circle_counter に try-except を追加. ([#226](https://github.com/kurorosu/pochivision/pull/226))
+- README.md / README.en.md を CLI サブコマンド構成に合わせて更新. ディレクトリ構成・アーキテクチャセクションを削除. CLAUDE.md の CLI・tools 記述を更新. ([#246](https://github.com/kurorosu/pochivision/pull/246))
+- `OutputManager` を新設し全サブコマンドの出力先を `outputs/{command_type}/YYYYMMDD_{suffix}/` に統一. `CaptureManager` を廃止し `PipelineExecutor` に `Path` を直接渡す構造に変更. `--output-root` オプションを追加. ([#247](https://github.com/kurorosu/pochivision/pull/247))
 
 ### Fixed
-- LBP ヒストグラム計算を `density=True` から手動正規化に変更. var メソッドの値域と nri_uniform のビン数を修正. ([#217](https://github.com/kurorosu/pochivision/pull/217))
-- LBP エントロピーを `log2(n_bins)` で正規化し [0, 1] 範囲に変更. ([#218](https://github.com/kurorosu/pochivision/pull/218))
-- リサイズ対応 5 抽出器のスキーマに `preserve_aspect_ratio` / `aspect_ratio_mode` を追加. ([#220](https://github.com/kurorosu/pochivision/pull/220))
-- LBP の `except Exception` を `LogManager` ログ出力 + `raise` に変更. ([#222](https://github.com/kurorosu/pochivision/pull/222))
+- brightness, rgb, hsv, circle_counter に float (0-1) 入力の uint8 スケール変換を追加. dtype 一致テスト 4 件も追加. ([#227](https://github.com/kurorosu/pochivision/pull/227))
+- Brightness スキーマに `exclude_zero_pixels`, HLAC スキーマに `binarization_method` / `adaptive_block_size` / `adaptive_c` を追加. ([#228](https://github.com/kurorosu/pochivision/pull/228))
+- circle_counter の `blur_kernel_size` に偶数バリデーションを追加. ([#230](https://github.com/kurorosu/pochivision/pull/230))
+- RGB/HSV/Brightness の `exclude_black_pixels` / `exclude_zero_pixels` の動作を docstring とコメントに明記. ([#231](https://github.com/kurorosu/pochivision/pull/231))
+- `get_feature_extractor` で Pydantic スキーマによる設定バリデーションを実行するよう変更. ([#232](https://github.com/kurorosu/pochivision/pull/232))
+- スキーマの関心分離, プロセッサバリデーション追加, 例外階層の統一. ([#233](https://github.com/kurorosu/pochivision/pull/233))
+  - プロセッサスキーマを `processors/schema.py` に分離し `config_schema.py` を `schema.py` にリネーム
+  - `get_processor` で Pydantic スキーマによる設定バリデーションを実行するよう変更
+  - `ConfigLoadError` / `CameraConfigError` を `exceptions/config.py` に移動し `VisionCaptureError` 階層に統一
 
 ### Removed
-- 無し
+- `CaptureManager` を廃止. `PipelineExecutor` が `output_dir: Path` を直接受け取る構造に変更. ([#247](https://github.com/kurorosu/pochivision/pull/247))
+- tools/ の 4 スクリプト (`feature_extraction.py`, `profile_processor.py`, `image_aggregator.py`, `fft_visualizer.py`) を `cli/commands/` に移動し削除. ([#245](https://github.com/kurorosu/pochivision/pull/245))
 
 ## Archived Changelogs
 

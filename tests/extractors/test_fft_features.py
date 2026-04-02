@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 
+from pochivision.exceptions.extractor import ExtractorValidationError
 from pochivision.feature_extractors.fft_frequency import FFTFrequencyExtractor
 from tests.extractors.conftest import DummyImages
 
@@ -117,12 +118,16 @@ class TestFFTFrequencyExtractor:
         """空の画像での例外処理をテスト."""
         empty_image = np.array([])
 
-        with pytest.raises(ValueError, match="Input image is empty or None"):
+        with pytest.raises(
+            (ValueError, ExtractorValidationError), match="Input image is empty or None"
+        ):
             self.extractor.extract(empty_image)
 
     def test_extract_none_image(self):
         """None画像での例外処理をテスト."""
-        with pytest.raises(ValueError, match="Input image is empty or None"):
+        with pytest.raises(
+            (ValueError, ExtractorValidationError), match="Input image is empty or None"
+        ):
             self.extractor.extract(None)
 
     def test_extract_invalid_shape(self):
@@ -130,14 +135,18 @@ class TestFFTFrequencyExtractor:
         # 1次元配列
         invalid_image = np.array([1, 2, 3, 4])
 
-        with pytest.raises(ValueError, match="Input image must be 2D or 3D"):
+        with pytest.raises(
+            (ValueError, ExtractorValidationError), match="Input image must be 2D or 3D"
+        ):
             self.extractor.extract(invalid_image)
 
     def test_extract_too_small_image(self):
         """極小画像で ValueError が発生することを確認."""
         for size in [(1, 1), (2, 2), (3, 3), (3, 64), (64, 3)]:
             small_image = np.ones(size, dtype=np.uint8) * 128
-            with pytest.raises(ValueError, match="Image too small for FFT"):
+            with pytest.raises(
+                (ValueError, ExtractorValidationError), match="Image too small for FFT"
+            ):
                 self.extractor.extract(small_image)
 
     def test_extract_minimum_size_works(self):

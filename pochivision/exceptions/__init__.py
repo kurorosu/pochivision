@@ -1,7 +1,8 @@
 """exceptionsパッケージ:pochivisionの例外クラス群を提供します."""
 
 from .base import VisionCaptureError
-from .config import ConfigValidationError
+from .config import CameraConfigError, ConfigLoadError, ConfigValidationError
+from .extractor import ExtractorRuntimeError, ExtractorValidationError
 from .processor import ProcessorRuntimeError, ProcessorValidationError
 
 __all__ = [
@@ -9,4 +10,8 @@ __all__ = [
     "ProcessorValidationError",
     "ProcessorRuntimeError",
     "ConfigValidationError",
+    "ConfigLoadError",
+    "CameraConfigError",
+    "ExtractorValidationError",
+    "ExtractorRuntimeError",
 ]
