@@ -1,14 +1,10 @@
-#!/usr/bin/env python3
-"""Simple FFT Visualization Tool.
+"""fft サブコマンド: FFT ビジュアライザー."""
 
-画像のFFTを可視化し、ローパス・ハイパスフィルタを切り替えて表示できるツールです。
-"""
-
-import argparse
 import sys
 from pathlib import Path
 from typing import Optional
 
+import click
 import cv2
 import numpy as np
 
@@ -20,37 +16,35 @@ class SimpleFFTVisualizer:
         """初期化処理.
 
         Args:
-            image_path (str): 画像ファイルのパス
+            image_path: 画像ファイルのパス.
         """
         self.image_path = Path(image_path)
         self.img: Optional[np.ndarray] = None
         self.fshift: Optional[np.ndarray] = None
         self.spectrum_display: Optional[np.ndarray] = None
         self.window_name = "FFT Visualizer - Spectrum (left) and Filtered Image (right)"
-        self.filter_mode = "original"  # "original", "lowpass", "highpass"
+        self.filter_mode = "original"
         self.filter_radius = 50
 
     def load_image(self) -> bool:
-        """画像を読み込みます."""
+        """画像を読み込む."""
         if not self.image_path.exists():
             print(f"エラー: 画像ファイルが見つかりません: {self.image_path}")
             return False
 
-        # 画像読み込み（元の形式で読み込み）
         original_img = cv2.imread(str(self.image_path))
 
         if original_img is None:
             print(f"エラー: 画像ファイルを読み込めません: {self.image_path}")
             return False
 
-        # グレースケール変換（3チャンネルのグレースケール画像にも対応）
         if len(original_img.shape) == 3:
             self.img = cv2.cvtColor(original_img, cv2.COLOR_BGR2GRAY)
         elif len(original_img.shape) == 2:
             self.img = original_img.copy()
         else:
             print(
-                f"エラー: 対応していない画像形式です。画像の次元: {original_img.shape}"
+                f"エラー: 対応していない画像形式です. 画像の次元: {original_img.shape}"
             )
             return False
 
@@ -58,10 +52,8 @@ class SimpleFFTVisualizer:
         print(f"画像を読み込みました: {self.image_path}")
         print(f"元画像サイズ: {original_width} x {original_height}")
 
-        # FHD（1920x1080）を超える場合はFHDにリサイズ（表示用と処理用の両方）
         fhd_width, fhd_height = 1920, 1080
         if original_width > fhd_width or original_height > fhd_height:
-            # アスペクト比を保持してFHDに収まるようにリサイズ
             scale_w = fhd_width / original_width
             scale_h = fhd_height / original_height
             scale = min(scale_w, scale_h)
@@ -77,27 +69,25 @@ class SimpleFFTVisualizer:
                 f"(元: {original_width} x {original_height})"
             )
         else:
-            print("リサイズは不要です（FHD以下）")
+            print("リサイズは不要です (FHD以下)")
 
         return True
 
     def compute_fft(self) -> None:
-        """FFTを計算します."""
+        """FFTを計算する."""
         if self.img is None:
             raise ValueError("画像が読み込まれていません")
 
-        # FFT + シフト
         f = np.fft.fft2(self.img)
         self.fshift = np.fft.fftshift(f)
         magnitude_spectrum = 20 * np.log(np.abs(self.fshift) + 1)
 
-        # 表示用に正規化
         self.spectrum_display = cv2.normalize(
             magnitude_spectrum, None, 0, 255, cv2.NORM_MINMAX
         ).astype(np.uint8)
 
     def apply_filter(self) -> np.ndarray:
-        """現在のフィルタモードに応じて画像をフィルタリングします."""
+        """現在のフィルタモードに応じて画像をフィルタリングする."""
         if self.img is None:
             raise ValueError("画像が読み込まれていません")
         if self.fshift is None:
@@ -106,48 +96,39 @@ class SimpleFFTVisualizer:
         if self.filter_mode == "original":
             return self.img
 
-        # フィルタマスクを作成（NumPy配列操作で高速化）
         mask = np.zeros_like(self.fshift, dtype=complex)
         center_y, center_x = self.fshift.shape[0] // 2, self.fshift.shape[1] // 2
 
-        # 距離マップを一度に計算
         y_indices, x_indices = np.ogrid[: self.fshift.shape[0], : self.fshift.shape[1]]
         distance_map = np.sqrt(
             (y_indices - center_y) ** 2 + (x_indices - center_x) ** 2
         )
 
         if self.filter_mode == "lowpass":
-            # 低周波のみ通す
             mask[distance_map <= self.filter_radius] = self.fshift[
                 distance_map <= self.filter_radius
             ]
         elif self.filter_mode == "highpass":
-            # 高周波のみ通す
             mask[distance_map > self.filter_radius] = self.fshift[
                 distance_map > self.filter_radius
             ]
 
-        # 逆FFT
         f_ishift = np.fft.ifftshift(mask)
         img_back = np.fft.ifft2(f_ishift)
         img_back = np.abs(img_back)
 
-        # 正規化
         return cv2.normalize(img_back, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
 
     def update_display(self) -> None:
-        """表示を更新します."""
+        """表示を更新する."""
         if self.spectrum_display is None:
             raise ValueError("スペクトラムが計算されていません")
 
-        # フィルタリングされた画像を取得
         filtered_img = self.apply_filter()
 
-        # カラー画像に変換
         spectrum_color = cv2.cvtColor(self.spectrum_display, cv2.COLOR_GRAY2BGR)
         filtered_color = cv2.cvtColor(filtered_img, cv2.COLOR_GRAY2BGR)
 
-        # フィルター半径を可視化
         if self.filter_mode != "original":
             center_y, center_x = (
                 spectrum_color.shape[0] // 2,
@@ -155,7 +136,6 @@ class SimpleFFTVisualizer:
             )
 
             if self.filter_mode == "lowpass":
-                # ローパス: 内側の円（通す範囲）を緑で表示
                 cv2.circle(
                     spectrum_color,
                     (center_x, center_y),
@@ -173,7 +153,6 @@ class SimpleFFTVisualizer:
                     2,
                 )
             elif self.filter_mode == "highpass":
-                # ハイパス: 外側の円（カットする範囲）を赤で表示
                 cv2.circle(
                     spectrum_color,
                     (center_x, center_y),
@@ -200,10 +179,8 @@ class SimpleFFTVisualizer:
                     2,
                 )
 
-        # 結合して表示
         combined = np.hstack([spectrum_color, filtered_color])
 
-        # 表示用にFHDを超える場合はさらにリサイズ
         display_height, display_width = combined.shape[:2]
         fhd_width, fhd_height = 1920, 1080
         if display_width > fhd_width or display_height > fhd_height:
@@ -219,7 +196,6 @@ class SimpleFFTVisualizer:
                 interpolation=cv2.INTER_AREA,
             )
 
-        # 情報を表示
         info_text = f"Filter: {self.filter_mode.upper()} | Radius: {self.filter_radius}"
         cv2.putText(
             combined,
@@ -245,16 +221,14 @@ class SimpleFFTVisualizer:
         cv2.imshow(self.window_name, combined)
 
     def run(self) -> None:
-        """ビジュアライゼーションを実行します."""
+        """ビジュアライゼーションを実行する."""
         if not self.load_image():
             return
 
         self.compute_fft()
 
-        # ウィンドウ作成
         cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
 
-        # ウィンドウサイズ調整（FHDに収まるように）
         if self.img is not None:
             display_width = self.img.shape[1] * 2
             display_height = self.img.shape[0]
@@ -279,10 +253,8 @@ class SimpleFFTVisualizer:
         print("  '-': フィルタ半径を減少")
         print("  'q': 終了")
 
-        # 初期表示
         self.update_display()
 
-        # キー入力待ち
         while True:
             key = cv2.waitKey(1) & 0xFF
             if (
@@ -291,7 +263,6 @@ class SimpleFFTVisualizer:
             ):
                 break
             elif key == ord("f"):
-                # フィルタモード切り替え
                 if self.filter_mode == "original":
                     self.filter_mode = "lowpass"
                 elif self.filter_mode == "lowpass":
@@ -300,13 +271,11 @@ class SimpleFFTVisualizer:
                     self.filter_mode = "original"
                 print(f"フィルタモード: {self.filter_mode}")
                 self.update_display()
-            elif key == ord("+") or key == ord("="):  # +キー
-                # 半径を増加
+            elif key == ord("+") or key == ord("="):
                 self.filter_radius = min(200, self.filter_radius + 10)
                 print(f"フィルタ半径: {self.filter_radius}")
                 self.update_display()
-            elif key == ord("-"):  # -キー
-                # 半径を減少
+            elif key == ord("-"):
                 self.filter_radius = max(10, self.filter_radius - 10)
                 print(f"フィルタ半径: {self.filter_radius}")
                 self.update_display()
@@ -314,22 +283,17 @@ class SimpleFFTVisualizer:
         cv2.destroyAllWindows()
 
 
-def main() -> None:
-    """メイン関数."""
-    parser = argparse.ArgumentParser(description="Simple FFT Visualization Tool")
-    parser.add_argument("image_path", help="画像ファイルのパス")
-
-    args = parser.parse_args()
-
+@click.command()
+@click.option(
+    "--input", "-i", "input_path", type=str, required=True, help="入力画像パス"
+)
+def fft(input_path: str) -> None:
+    """FFT ビジュアライザーを起動する."""
     try:
-        visualizer = SimpleFFTVisualizer(args.image_path)
+        visualizer = SimpleFFTVisualizer(input_path)
         visualizer.run()
     except KeyboardInterrupt:
         print("\n中断されました")
     except Exception as e:
         print(f"エラーが発生しました: {e}")
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()

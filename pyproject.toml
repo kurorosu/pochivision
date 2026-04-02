@@ -21,6 +21,7 @@ dependencies = [
     "scikit-image>=0.24.0",
     "scipy>=1.13.1",
     "seaborn>=0.13.2",
+    "tqdm>=4.66.0",
 ]
 
 [project.scripts]
@@ -53,7 +54,6 @@ python_version = "3.12"
 mypy_path = "."
 warn_return_any = true
 warn_unused_configs = true
-exclude = ["tools/"]
 explicit_package_bases = true
 
 [[tool.mypy.overrides]]
