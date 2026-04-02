@@ -21,25 +21,6 @@ Real-time image capture & preprocessing engine for AI vision applications, featu
 - Recording with selectable codec
 - Command-line interface for easy configuration
 
-## Directory Structure
-
-```
-pochivision/
-├── pochivision/
-│   ├── cli/                  # CLI entrypoint (vcc command)
-│   ├── capture_runner/       # Camera capture and preview runner
-│   ├── capturelib/           # Camera setup, config, logging, recording
-│   ├── core/                 # Pipeline executor
-│   ├── exceptions/           # Custom exception classes
-│   ├── feature_extractors/   # Feature extraction plugins
-│   ├── processors/           # Image processing pipeline
-│   ├── tools/                # Utility scripts
-│   └── utils/                # Shared utilities
-├── tests/                    # Test suite
-├── config.json               # Application configuration
-└── pyproject.toml            # Project metadata & dependencies
-```
-
 ## Installation
 
 ```bash
@@ -64,34 +45,44 @@ uv sync --group dev
 Run the application with default settings:
 
 ```bash
-uv run pochi
+uv run pochi run
 ```
 
 ## Command-Line Interface
 
-pochivision provides a flexible command-line interface via the `pochi` command:
+pochivision provides a CLI built on subcommands via the `pochi` command:
 
 ```bash
-# Use a specific camera device (by index)
-uv run pochi --camera 1
-
-# Use a specific camera profile from config
-uv run pochi --profile "high_res"
-
-# Use both a specific camera and profile
-uv run pochi --camera 2 --profile "high_fps"
-
-# List all available camera profiles
-uv run pochi --list-profiles
-
-# Use an alternative config file
-uv run pochi --config "my_config.json"
-
-# Disable recording
-uv run pochi --no-recording
+# Show available subcommands
+uv run pochi --help
 ```
 
-### CLI Arguments
+### `pochi run` - Launch live preview
+
+Start the camera preview with real-time image processing. This is the main entry point equivalent to the previous `pochi` command.
+
+```bash
+# Launch with default settings
+uv run pochi run
+
+# Use a specific camera device (by index)
+uv run pochi run --camera 1
+
+# Use a specific camera profile from config
+uv run pochi run --profile "high_res"
+
+# Use both a specific camera and profile
+uv run pochi run --camera 2 --profile "high_fps"
+
+# List all available camera profiles
+uv run pochi run --list-profiles
+
+# Use an alternative config file
+uv run pochi run --config "my_config.json"
+
+# Disable recording
+uv run pochi run --no-recording
+```
 
 | Argument | Short | Description |
 |----------|-------|-------------|
@@ -100,6 +91,78 @@ uv run pochi --no-recording
 | `--list-profiles` | `-l` | Display all available camera profiles |
 | `--config` | | Specify a config file path (default: config.json) |
 | `--no-recording` | | Disable recording functionality |
+
+### `pochi extract` - Extract features from images
+
+Run feature extraction on images using the extractor configuration file.
+
+```bash
+# Use default config (extractor_config.json)
+uv run pochi extract
+
+# Use a custom config file
+uv run pochi extract --config my_extractor_config.json
+```
+
+| Argument | Short | Description |
+|----------|-------|-------------|
+| `--config` | `-c` | Extractor config file path (default: extractor_config.json) |
+
+### `pochi process` - Apply camera profile processing to images
+
+Apply the image processing pipeline defined in a camera profile to a directory of images.
+
+```bash
+# Process images with a specific profile
+uv run pochi process --input ./images --profile all_para
+
+# Process with a custom config and output directory
+uv run pochi process --config my_config.json --input ./images --output ./processed --profile high_res
+
+# List available profiles
+uv run pochi process --list-profiles
+
+# Skip saving original images
+uv run pochi process --input ./images --profile all_para --no-save-original
+```
+
+| Argument | Short | Description |
+|----------|-------|-------------|
+| `--config` | `-c` | Config file path (default: config.json) |
+| `--input` | `-i` | Input image directory (required) |
+| `--output` | `-o` | Output directory (default: auto-generated) |
+| `--profile` | `-p` | Camera profile name (required) |
+| `--no-save-original` | | Do not save original images alongside processed ones |
+| `--list-profiles` | | Display all available camera profiles |
+
+### `pochi aggregate` - Aggregate images
+
+Collect and organize images from nested directories into a single directory.
+
+```bash
+# Aggregate images (copy mode)
+uv run pochi aggregate --input ./captured_images
+
+# Aggregate images (move mode)
+uv run pochi aggregate --input ./captured_images --mode move
+```
+
+| Argument | Short | Description |
+|----------|-------|-------------|
+| `--input` | `-i` | Input directory containing images (required) |
+| `--mode` | `-m` | Aggregation mode: `copy` or `move` (default: copy) |
+
+### `pochi fft` - FFT visualizer
+
+Visualize the FFT (Fast Fourier Transform) spectrum of images.
+
+```bash
+uv run pochi fft --input image.png
+```
+
+| Argument | Short | Description |
+|----------|-------|-------------|
+| `--input` | `-i` | Input image path (required) |
 
 ## Configuration
 
@@ -168,17 +231,6 @@ The application uses a JSON configuration file to define camera profiles, proces
 - When only `--camera` is specified on the command line, profile "0" will be used
 - Each camera profile can specify different processors and settings
 - Specifying an unregistered processor will result in an error
-
-## Architecture
-
-pochivision follows SOLID principles with a modular architecture:
-
-- **CLI**: Command-line entrypoint (`pochi` command)
-- **Core**: Central pipeline execution (pipeline / parallel modes)
-- **CaptureLib**: Camera setup, config handling, logging, recording
-- **Processors**: Image processing modules (registry pattern)
-- **Feature Extractors**: Feature extraction plugins (registry pattern)
-- **Capture Runner**: Live preview and application control
 
 ## Available Processors
 
