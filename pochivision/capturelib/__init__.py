@@ -4,7 +4,6 @@
 from pochivision.exceptions.config import CameraConfigError, ConfigLoadError
 
 from .camera_setup import CameraSetup
-from .capture_manager import CaptureManager
 from .config_handler import (
     CameraConfigHandler,
     ConfigHandler,

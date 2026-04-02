@@ -4,12 +4,12 @@ import click
 
 from pochivision.capture_runner import LivePreviewRunner
 from pochivision.capturelib.camera_setup import CameraSetup
-from pochivision.capturelib.capture_manager import CaptureManager
 from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.core import PipelineExecutor
 from pochivision.exceptions.config import ConfigValidationError
+from pochivision.workspace import OutputManager
 
 
 @click.command()
@@ -18,7 +18,9 @@ from pochivision.exceptions.config import ConfigValidationError
 @click.option("--list-profiles", "-l", is_flag=True, help="プロファイル一覧を表示")
 @click.option("--config", type=str, default="config.json", help="設定ファイルパス")
 @click.option("--no-recording", is_flag=True, help="録画機能を無効化")
+@click.pass_context
 def run(
+    ctx: click.Context,
     camera: int,
     profile: str | None,
     list_profiles: bool,
@@ -36,8 +38,14 @@ def run(
         _print_profiles(config_data)
         return
 
+    output_manager = ctx.obj.get("output_manager") if ctx.obj else None
+    if output_manager is None:
+        output_manager = OutputManager()
+
     cap, camera_setup = _setup_camera(config_data, log_manager, camera, profile)
-    _run_preview(config_data, log_manager, cap, camera_setup, no_recording)
+    _run_preview(
+        config_data, log_manager, cap, camera_setup, no_recording, output_manager
+    )
 
 
 def _load_config(config_path: str, logger: object) -> dict:
@@ -133,6 +141,7 @@ def _run_preview(
     cap: object,
     camera_setup: CameraSetup,
     no_recording: bool,
+    output_manager: OutputManager,
 ) -> None:
     """プレビューを実行する.
 
@@ -142,13 +151,13 @@ def _run_preview(
         cap: カメラキャプチャオブジェクト.
         camera_setup: カメラセットアップ.
         no_recording: 録画無効フラグ.
+        output_manager: 出力ディレクトリの統一管理クラス.
     """
     logger = log_manager.get_logger()
     try:
-        capture_manager = CaptureManager()
-        log_manager.setup_file_logging(
-            capture_manager.get_log_file_path(camera_index=camera_setup.camera_index)
-        )
+        output_dir = output_manager.create_output_dir("capture")
+
+        log_manager.setup_file_logging(output_dir / "capture.log")
         log_manager.log_system_info()
 
         used_profile = camera_setup.profile_name
@@ -156,14 +165,11 @@ def _run_preview(
             "cameras": {used_profile: config_data["cameras"][used_profile]},
             "selected_camera_index": camera_setup.camera_index,
         }
-        ConfigHandler.save(
-            minimal_config,
-            capture_manager.get_output_dir(camera_index=camera_setup.camera_index),
-        )
+        ConfigHandler.save(minimal_config, output_dir)
 
         pipeline = PipelineExecutor.from_config(
             config_data,
-            capture_manager=capture_manager,
+            output_dir=output_dir,
             camera_index=camera_setup.camera_index,
             profile_name=camera_setup.profile_name,
         )

@@ -17,7 +17,8 @@
 
 ### Changed
 - 全 9 抽出器のエラーハンドリングを `LogManager` + `raise` パターンに統一. brightness, rgb, hsv, circle_counter に try-except を追加. ([#226](https://github.com/kurorosu/pochivision/pull/226))
-- README.md / README.en.md を CLI サブコマンド構成に合わせて更新. ディレクトリ構成・アーキテクチャセクションを削除. CLAUDE.md の CLI・tools 記述を更新. (NA.)
+- README.md / README.en.md を CLI サブコマンド構成に合わせて更新. ディレクトリ構成・アーキテクチャセクションを削除. CLAUDE.md の CLI・tools 記述を更新. ([#246](https://github.com/kurorosu/pochivision/pull/246))
+- `OutputManager` を新設し全サブコマンドの出力先を `outputs/{command_type}/YYYYMMDD_{suffix}/` に統一. `CaptureManager` を廃止し `PipelineExecutor` に `Path` を直接渡す構造に変更. `--output-root` オプションを追加. (NA.)
 
 ### Fixed
 - brightness, rgb, hsv, circle_counter に float (0-1) 入力の uint8 スケール変換を追加. dtype 一致テスト 4 件も追加. ([#227](https://github.com/kurorosu/pochivision/pull/227))

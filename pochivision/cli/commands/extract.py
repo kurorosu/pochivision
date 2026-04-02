@@ -13,22 +13,29 @@ import click
 import cv2
 
 from pochivision.feature_extractors.registry import get_feature_extractor
+from pochivision.workspace import OutputManager
 
 
 class FeatureExtractionRunner:
     """特徴量抽出の実行クラス."""
 
-    def __init__(self, config_path: str) -> None:
+    def __init__(
+        self,
+        config_path: str,
+        output_manager: OutputManager | None = None,
+    ) -> None:
         """FeatureExtractionRunnerのコンストラクタ.
 
         Args:
             config_path: 設定ファイルのパス.
+            output_manager: 出力ディレクトリの統一管理クラス.
+                None の場合はデフォルトの OutputManager を使用.
         """
         self.config_path = config_path
         self.config = self._load_config(config_path)
         self.input_dir = Path(self.config["input_directory"])
-        self.base_output_dir = Path(self.config["output_directory"])
-        self.output_dir = self._create_timestamped_output_dir()
+        self.output_manager = output_manager or OutputManager()
+        self.output_dir = self.output_manager.create_output_dir("features")
         self.extractors = self._initialize_extractors()
 
     def _load_config(self, config_path: str) -> Dict[str, Any]:
@@ -50,50 +57,6 @@ class FeatureExtractionRunner:
         except json.JSONDecodeError as e:
             print(f"エラー: 設定ファイルのJSON形式が不正です: {e}")
             sys.exit(1)
-
-    def _get_next_suffix(self, base_dir: Path, date_str: str) -> int:
-        """指定された日付の次のサフィックス番号を取得する.
-
-        Args:
-            base_dir: 出力ベースディレクトリのパス.
-            date_str: 日付文字列 (YYYYMMDD形式).
-
-        Returns:
-            次のサフィックス番号.
-        """
-        if not base_dir.exists():
-            return 0
-
-        max_suffix = -1
-        for dir_path in base_dir.iterdir():
-            if not dir_path.is_dir():
-                continue
-
-            if dir_path.name.startswith(date_str + "_"):
-                try:
-                    suffix = int(dir_path.name.split("_")[-1])
-                    max_suffix = max(max_suffix, suffix)
-                except ValueError:
-                    continue
-
-        return max_suffix + 1
-
-    def _create_timestamped_output_dir(self) -> Path:
-        """日付とインクリメントを含む出力ディレクトリを作成する.
-
-        Returns:
-            作成されたディレクトリのパス.
-        """
-        date_str = datetime.now().strftime("%Y%m%d")
-
-        if not self.base_output_dir.exists():
-            self.base_output_dir.mkdir(parents=True, exist_ok=True)
-
-        suffix = self._get_next_suffix(self.base_output_dir, date_str)
-
-        final_path = self.base_output_dir / f"{date_str}_{suffix}"
-        final_path.mkdir(parents=True, exist_ok=True)
-        return final_path
 
     def _copy_config_to_output(self) -> None:
         """使用した設定ファイルを出力ディレクトリにコピーする."""
@@ -455,7 +418,9 @@ class FeatureExtractionRunner:
 @click.option(
     "--config", "-c", type=str, default="extractor_config.json", help="設定ファイルパス"
 )
-def extract(config: str) -> None:
+@click.pass_context
+def extract(ctx: click.Context, config: str) -> None:
     """画像から特徴量を抽出する."""
-    runner = FeatureExtractionRunner(config)
+    output_manager = ctx.obj.get("output_manager") if ctx.obj else None
+    runner = FeatureExtractionRunner(config, output_manager)
     runner.run()
