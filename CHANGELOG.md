@@ -16,7 +16,8 @@
 - `RecordingManager.start_recording()` で `VideoWriter` 初期化失敗時に `video_writer` を `None` にクリアするよう修正. ([#264](https://github.com/kurorosu/pochivision/pull/264))
 
 ### Removed
-- 未使用の `ExtractorRuntimeError` 例外クラスを削除. (NA.)
+- 未使用の `ExtractorRuntimeError` 例外クラスを削除. ([#265](https://github.com/kurorosu/pochivision/pull/265))
+- `CameraConfigHandler` の未使用メソッド (`get_camera_config`, `get_all_camera_indices`, `get_selected_camera_index`) を削除. (NA.)
 
 ## [0.2.0] - 2026-04-02
 
