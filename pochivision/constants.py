@@ -1,19 +1,19 @@
 """アプリケーション共通の定数を定義するモジュール."""
 
-# カメラデフォルト設定
+# カメラデフォルト設定 (camera_setup.py)
 DEFAULT_CAMERA_WIDTH = 640
 DEFAULT_CAMERA_HEIGHT = 480
 DEFAULT_CAMERA_FPS = 30
 
-# プレビューサイズ
+# プレビューサイズ (viewer.py, run.py)
 DEFAULT_PREVIEW_WIDTH = 1280
 DEFAULT_PREVIEW_HEIGHT = 720
 
-# FHD (Full HD) サイズ
+# FHD (Full HD) サイズ (fft.py)
 FHD_WIDTH = 1920
 FHD_HEIGHT = 1080
 
-# FFT フィルタ設定
+# FFT フィルタ設定 (fft.py)
 FFT_FILTER_RADIUS_MAX = 200
 FFT_FILTER_RADIUS_MIN = 10
 FFT_FILTER_RADIUS_STEP = 10
