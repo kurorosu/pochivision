@@ -367,9 +367,9 @@ class FeatureExtractionRunner:
 
     def run(self) -> None:
         """特徴量抽出を実行する."""
-        click.echo("=== 特徴量抽出を開始します ===")
-        click.echo(f"入力ディレクトリ: {self.input_dir}")
-        click.echo(f"出力ディレクトリ: {self.output_dir}")
+        self.logger.info("=== 特徴量抽出を開始します ===")
+        self.logger.info(f"入力ディレクトリ: {self.input_dir}")
+        self.logger.info(f"出力ディレクトリ: {self.output_dir}")
 
         self._copy_config_to_output()
 
@@ -377,11 +377,11 @@ class FeatureExtractionRunner:
         if not image_files:
             return
 
-        click.echo(f"対象画像ファイル数: {len(image_files)}")
+        self.logger.info(f"対象画像ファイル数: {len(image_files)}")
 
         results = []
         for i, image_path in enumerate(image_files, 1):
-            click.echo(f"処理中 ({i}/{len(image_files)}): {image_path.name}")
+            self.logger.info(f"処理中 ({i}/{len(image_files)}): {image_path.name}")
             features = self._extract_features_from_image(image_path)
             if features:
                 results.append(features)
@@ -394,7 +394,7 @@ class FeatureExtractionRunner:
         elif self.config.get("output_format", "csv") == "long_csv":
             self._save_results_to_long_csv(results)
 
-        click.echo("=== 特徴量抽出が完了しました ===")
+        self.logger.info("=== 特徴量抽出が完了しました ===")
 
 
 @click.command()

@@ -214,9 +214,9 @@ class ProfileProcessor:
         if not image_files:
             return
 
-        click.echo(f"処理開始: {len(image_files)}個の画像を処理します")
-        click.echo(f"使用プロファイル: {self.profile_name}")
-        click.echo(f"出力ディレクトリ: {output_path}")
+        self.logger.info(f"処理開始: {len(image_files)}個の画像を処理します")
+        self.logger.info(f"使用プロファイル: {self.profile_name}")
+        self.logger.info(f"出力ディレクトリ: {output_path}")
 
         self._save_config_info(output_path)
 
@@ -224,7 +224,7 @@ class ProfileProcessor:
         failed_count = 0
 
         for image_path in image_files:
-            click.echo(f"処理中: {image_path.name}")
+            self.logger.info(f"処理中: {image_path.name}")
 
             if save_original:
                 original_dir = output_path / "original"
@@ -245,7 +245,7 @@ class ProfileProcessor:
                 success = cv2.imwrite(str(processed_output_path), processed_image)
                 if success:
                     processed_count += 1
-                    click.echo(f"  → 保存完了: {processed_output_path}")
+                    self.logger.info(f"保存完了: {processed_output_path}")
                 else:
                     failed_count += 1
                     self.logger.warning(f"保存失敗: {processed_output_path}")
@@ -253,10 +253,10 @@ class ProfileProcessor:
                 failed_count += 1
                 self.logger.warning(f"処理失敗: {image_path.name}")
 
-        click.echo("\n処理完了:")
-        click.echo(f"  成功: {processed_count}個")
-        click.echo(f"  失敗: {failed_count}個")
-        click.echo(f"  出力先: {output_path}")
+        self.logger.info("処理完了:")
+        self.logger.info(f"  成功: {processed_count}個")
+        self.logger.info(f"  失敗: {failed_count}個")
+        self.logger.info(f"  出力先: {output_path}")
 
     def _save_config_info(self, output_path: Path) -> None:
         """使用した設定情報を保存する.
@@ -284,15 +284,14 @@ class ProfileProcessor:
     def list_available_profiles(self) -> None:
         """利用可能なプロファイルを一覧表示する."""
         cameras = self.config.get("cameras", {})
-        click.echo("利用可能なプロファイル:")
+        self.logger.info("利用可能なプロファイル:")
         for profile_name, profile_config in cameras.items():
             label = profile_config.get("label", "No Label")
             processors = profile_config.get("processors", [])
             mode = profile_config.get("mode", "pipeline")
-            click.echo(f"  {profile_name}: {label}")
-            click.echo(f"    モード: {mode}")
-            click.echo(f"    プロセッサ: {', '.join(processors)}")
-            click.echo()
+            self.logger.info(f"  {profile_name}: {label}")
+            self.logger.info(f"    モード: {mode}")
+            self.logger.info(f"    プロセッサ: {', '.join(processors)}")
 
 
 @click.command()
@@ -327,9 +326,11 @@ def process(
                 proc = ProfileProcessor(config, first_profile, output_manager)
                 proc.list_available_profiles()
             else:
-                click.echo("利用可能なプロファイルがありません")
+                LogManager().get_logger().warning("利用可能なプロファイルがありません")
         except Exception as e:
-            click.echo(f"エラー: プロファイル一覧の表示に失敗しました: {e}")
+            LogManager().get_logger().error(
+                f"プロファイル一覧の表示に失敗しました: {e}"
+            )
         return
 
     processor = ProfileProcessor(config, profile, output_manager)
