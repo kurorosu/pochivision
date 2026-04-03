@@ -4,18 +4,18 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List
 
-import cv2
 import numpy as np
 
 from pochivision.capturelib import LogManager
 from pochivision.capturelib.config_handler import CameraConfigHandler
+from pochivision.core.image_saver import ImageSaver
 from pochivision.processors import BaseProcessor
 from pochivision.processors.registry import PROCESSOR_REGISTRY
 from pochivision.utils.file_naming import get_file_naming_manager
 
 
 class PipelineExecutor:
-    """画像処理プロセッサ群を管理し, 処理と保存を行うパイプライン実行クラス.
+    """画像処理プロセッサ群を管理し, 処理を行うパイプライン実行クラス.
 
     Attributes:
         processors: 実行対象の画像処理プロセッサのリスト.
@@ -24,6 +24,7 @@ class PipelineExecutor:
         camera_index: このパイプラインが対応するカメラのインデックス.
         id_interval: ID値が増加する画像数の間隔.
         config_fps: 設定ファイルから取得したFPS値.
+        saver: 画像保存を担当する ImageSaver インスタンス.
     """
 
     def __init__(
@@ -58,6 +59,7 @@ class PipelineExecutor:
         self.id_interval = id_interval
         self.config_fps = config_fps
         self.logger = LogManager().get_logger()
+        self.saver = ImageSaver(output_dir, camera_index)
 
         for processor in processors:
             if hasattr(processor, "set_pipeline_mode"):
@@ -133,19 +135,6 @@ class PipelineExecutor:
             logger.error(f"Failed to create pipeline from config: {e}")
             raise
 
-    def _get_processing_dir(self, process_name: str) -> Path:
-        """処理結果保存用のサブディレクトリを取得する.
-
-        Args:
-            process_name: 処理の名前. 例: 'grayscale', 'gaussian_blur'.
-
-        Returns:
-            処理結果保存用ディレクトリのパス.
-        """
-        path = self.output_dir / process_name
-        path.mkdir(parents=True, exist_ok=True)
-        return path
-
     def run(self, image: np.ndarray) -> None:
         """指定された画像に対してプロセッサを適用し, 処理結果を保存する.
 
@@ -154,20 +143,7 @@ class PipelineExecutor:
         """
         start_time = time.time()
 
-        original_dir = self._get_processing_dir("original")
-        filename, id_index, image_index = get_file_naming_manager().get_filename(
-            "original", self.camera_index
-        )
-        original_path = original_dir / filename
-        try:
-            cv2.imwrite(str(original_path), image)
-            self.logger.info(
-                f"Original image saved: {original_path} "
-                f"({image.shape[1]}x{image.shape[0]}, "
-                f"id={id_index}, image={image_index})"
-            )
-        except Exception as e:
-            self.logger.error(f"Failed to save original image: {e}")
+        self.saver.save(image, "original")
 
         processed_images = {"original": image.copy()}
         if self.mode == "parallel":
@@ -180,7 +156,7 @@ class PipelineExecutor:
                         f"Processing time ({processor.name}): {proc_time:.3f} sec"
                     )
                     processed_images[processor.name] = result
-                    self._save(result, processor.name)
+                    self.saver.save(result, processor.name)
                 except Exception as e:
                     self.logger.error(
                         f"Processor '{processor.name}' failed, skipping: {e}"
@@ -221,33 +197,7 @@ class PipelineExecutor:
                         f"Processor '{processor.name}' failed, skipping: {e}"
                     )
 
-            self._save(result, "pipeline")
+            self.saver.save(result, "pipeline")
 
         total_time = time.time() - start_time
         self.logger.info(f"Total processing time: {total_time:.3f} sec")
-
-    def _save(self, image: np.ndarray, processor_name: str) -> None:
-        """処理された画像を保存する.
-
-        Args:
-            image: 処理済み画像.
-            processor_name: 処理に使われたプロセッサの名前.
-        """
-        save_dir = self._get_processing_dir(processor_name)
-
-        filename, id_index, image_index = get_file_naming_manager().get_filename(
-            processor_name, self.camera_index
-        )
-        path = save_dir / filename
-
-        save_start = time.time()
-        try:
-            cv2.imwrite(str(path), image)
-            save_time = time.time() - save_start
-            self.logger.info(
-                f"Image saved ({processor_name}): {path} "
-                f"({image.shape[1]}x{image.shape[0]}, "
-                f"id={id_index}, image={image_index}, {save_time:.3f} sec)"
-            )
-        except Exception as e:
-            self.logger.error(f"Failed to save image ({processor_name}): {e}")

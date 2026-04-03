@@ -15,7 +15,8 @@
 - CLI コマンドの `sys.exit(1)` を `click.ClickException` に置換. ([#270](https://github.com/kurorosu/pochivision/pull/270))
 - `extract.py` と `process.py` の `print()` を `LogManager` に統一. ([#271](https://github.com/kurorosu/pochivision/pull/271))
 - マジックナンバーを `pochivision/constants.py` に定数化. ([#273](https://github.com/kurorosu/pochivision/pull/273))
-- CLI コマンドからビジネスロジッククラスを `core/` に分離. (NA.)
+- CLI コマンドからビジネスロジッククラスを `core/` に分離. ([#274](https://github.com/kurorosu/pochivision/pull/274))
+- `PipelineExecutor` の File I/O 責務を `ImageSaver` クラスに分離. (NA.)
 
 ### Fixed
 - `ConfigHandler.save()` の `strftime` フォーマットを `%Y-%m%d-%H%M-%S` から `%Y%m%d_%H%M%S` に修正. ([#263](https://github.com/kurorosu/pochivision/pull/263))
