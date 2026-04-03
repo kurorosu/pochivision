@@ -12,7 +12,7 @@
 - 無し
 
 ### Fixed
-- 無し
+- `ConfigHandler.save()` の `strftime` フォーマットを `%Y-%m%d-%H%M-%S` から `%Y%m%d_%H%M%S` に修正. (NA.)
 
 ### Removed
 - 無し
