@@ -7,7 +7,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 from pydantic import ValidationError
 
@@ -95,41 +95,6 @@ class CameraConfigHandler:
     _logger = LogManager().get_logger()
 
     @staticmethod
-    def get_camera_config(config: Dict[str, Any], camera_index: int) -> Dict[str, Any]:
-        """
-        指定されたカメラインデックスの設定を取得する.
-
-        カメラインデックスが指定されていない場合はselected_camera_indexの設定を使用。
-
-        Args:
-            config (dict): 設定辞書。
-            camera_index (int, optional): カメラインデックス。Noneの場合はselected_camera_indexを使用。
-
-        Returns:
-            dict: カメラ設定の辞書。
-
-        Raises:
-            CameraConfigError: カメラ設定がない場合、または指定されたカメラインデックスの設定がない場合。
-        """
-        if "cameras" not in config:
-            raise CameraConfigError("No camera configurations found in config")
-
-        if camera_index is None:
-            if "selected_camera_index" in config:
-                camera_index = config["selected_camera_index"]
-            else:
-                raise CameraConfigError("No selected camera index specified in config")
-
-        camera_id_str = str(camera_index)
-        if camera_id_str not in config["cameras"]:
-            raise CameraConfigError(
-                f"No configuration found for camera index: {camera_index}"
-            )
-
-        result: Dict[str, Any] = config["cameras"][camera_id_str]
-        return result
-
-    @staticmethod
     def get_camera_processors(config: Dict[str, Any], profile_name: str) -> Tuple:
         """
         指定されたカメラプロファイルのプロセッサ設定を取得する.
@@ -178,46 +143,3 @@ class CameraConfigHandler:
         mode = camera_config.get("mode", "parallel")
 
         return processors, processor_configs, mode
-
-    @staticmethod
-    def get_all_camera_indices(config: Dict[str, Any]) -> List[int]:
-        """
-        設定ファイルに定義されているすべてのカメラインデックスを取得する.
-
-        Args:
-            config (dict): 設定辞書。
-
-        Returns:
-            List[int]: カメラインデックスのリスト。
-
-        Raises:
-            CameraConfigError: カメラ設定が設定ファイルに存在しない場合。
-        """
-        if "cameras" not in config:
-            raise CameraConfigError("No camera configurations found in config")
-
-        # 文字列のカメラインデックスを整数に変換して返す
-        return [int(camera_id) for camera_id in config["cameras"].keys()]
-
-    @staticmethod
-    def get_selected_camera_index(config: Dict[str, Any]) -> int:
-        """
-        選択されたカメラインデックスを取得する.
-
-        Args:
-            config (dict): 設定辞書。
-
-        Returns:
-            int: 選択されたカメラインデックス。
-
-        Raises:
-            CameraConfigError: 選択されたカメラインデックスの指定がない場合。
-        """
-        if "selected_camera_index" in config:
-            return int(config["selected_camera_index"])
-
-        # カメラが定義されていれば、最初のカメラを選択
-        if "cameras" in config and config["cameras"]:
-            return int(list(config["cameras"].keys())[0])
-
-        raise CameraConfigError("No selected camera index specified in config")

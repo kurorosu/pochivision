@@ -99,44 +99,6 @@ class TestConfigHandlerSave:
         assert "timestamp" in saved
 
 
-class TestCameraConfigHandlerGetCameraConfig:
-    """CameraConfigHandler.get_camera_config のテスト."""
-
-    def test_get_camera_config_by_index(self):
-        """カメラインデックスで設定を取得できる."""
-        config = _minimal_config()
-        result = CameraConfigHandler.get_camera_config(config, 0)
-
-        assert result["width"] == 1920
-        assert result["height"] == 1080
-
-    def test_get_camera_config_no_cameras_key(self):
-        """cameras キーがない場合 CameraConfigError."""
-        with pytest.raises(CameraConfigError, match="No camera configurations"):
-            CameraConfigHandler.get_camera_config({}, 0)
-
-    def test_get_camera_config_missing_index(self):
-        """指定インデックスが存在しない場合 CameraConfigError."""
-        config = _minimal_config()
-        with pytest.raises(CameraConfigError, match="No configuration found"):
-            CameraConfigHandler.get_camera_config(config, 99)
-
-    def test_get_camera_config_none_index_uses_selected(self):
-        """camera_index=None で selected_camera_index を使用する."""
-        config = _minimal_config()
-        result = CameraConfigHandler.get_camera_config(config, None)
-
-        assert result["width"] == 1920
-
-    def test_get_camera_config_none_index_no_selected(self):
-        """camera_index=None かつ selected_camera_index なしで CameraConfigError."""
-        config = _minimal_config()
-        del config["selected_camera_index"]
-
-        with pytest.raises(CameraConfigError, match="No selected camera index"):
-            CameraConfigHandler.get_camera_config(config, None)
-
-
 class TestCameraConfigHandlerGetProcessors:
     """CameraConfigHandler.get_camera_processors のテスト."""
 
@@ -185,39 +147,3 @@ class TestCameraConfigHandlerGetProcessors:
 
         _, _, mode = CameraConfigHandler.get_camera_processors(config, "0")
         assert mode == "parallel"
-
-
-class TestCameraConfigHandlerUtilities:
-    """ユーティリティメソッドのテスト."""
-
-    def test_get_all_camera_indices(self):
-        """全カメラインデックスを取得できる."""
-        config = _minimal_config()
-        indices = CameraConfigHandler.get_all_camera_indices(config)
-
-        assert indices == [0]
-
-    def test_get_all_camera_indices_no_cameras(self):
-        """cameras キーがない場合 CameraConfigError."""
-        with pytest.raises(CameraConfigError):
-            CameraConfigHandler.get_all_camera_indices({})
-
-    def test_get_selected_camera_index(self):
-        """選択されたカメラインデックスを取得できる."""
-        config = _minimal_config()
-        index = CameraConfigHandler.get_selected_camera_index(config)
-
-        assert index == 0
-
-    def test_get_selected_camera_index_fallback(self):
-        """selected_camera_index なしの場合, 最初のカメラを返す."""
-        config = _minimal_config()
-        del config["selected_camera_index"]
-
-        index = CameraConfigHandler.get_selected_camera_index(config)
-        assert index == 0
-
-    def test_get_selected_camera_index_no_cameras(self):
-        """カメラ設定がない場合 CameraConfigError."""
-        with pytest.raises(CameraConfigError, match="No selected camera index"):
-            CameraConfigHandler.get_selected_camera_index({})
