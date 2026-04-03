@@ -65,6 +65,29 @@ class ConfigHandler:
             raise ConfigLoadError(f"Failed to decode JSON configuration: {e}")
 
     @staticmethod
+    def load_json(path: str) -> Dict[str, Any]:
+        """
+        JSON 設定ファイルをバリデーションなしで読み込む.
+
+        Args:
+            path (str): 設定ファイルのパス.
+
+        Returns:
+            dict: 読み込んだ設定の辞書.
+
+        Raises:
+            ConfigLoadError: 設定ファイルが見つからない, またはJSONデコードに失敗した場合.
+        """
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                result: Dict[str, Any] = json.load(f)
+            return result
+        except FileNotFoundError:
+            raise ConfigLoadError(f"Configuration file not found: {path}")
+        except json.JSONDecodeError as e:
+            raise ConfigLoadError(f"Failed to decode JSON configuration: {e}")
+
+    @staticmethod
     def save(config: Dict[str, Any], output_dir: Path) -> None:
         """
         設定をファイルに保存する.

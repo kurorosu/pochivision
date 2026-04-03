@@ -2,7 +2,6 @@
 
 import csv
 import inspect
-import json
 import shutil
 import sys
 from datetime import datetime
@@ -12,6 +11,8 @@ from typing import Any, Dict, List
 import click
 import cv2
 
+from pochivision.capturelib.config_handler import ConfigHandler
+from pochivision.exceptions.config import ConfigLoadError
 from pochivision.feature_extractors.registry import get_feature_extractor
 from pochivision.workspace import OutputManager
 
@@ -32,14 +33,15 @@ class FeatureExtractionRunner:
                 None の場合はデフォルトの OutputManager を使用.
         """
         self.config_path = config_path
-        self.config = self._load_config(config_path)
+        self.config = self._load_config_or_exit(config_path)
         self.input_dir = Path(self.config["input_directory"])
         self.output_manager = output_manager or OutputManager()
         self.output_dir = self.output_manager.create_output_dir("features")
         self.extractors = self._initialize_extractors()
 
-    def _load_config(self, config_path: str) -> Dict[str, Any]:
-        """設定ファイルを読み込む.
+    @staticmethod
+    def _load_config_or_exit(config_path: str) -> Dict[str, Any]:
+        """設定ファイルを読み込む. 失敗時はプロセスを終了する.
 
         Args:
             config_path: 設定ファイルのパス.
@@ -48,14 +50,9 @@ class FeatureExtractionRunner:
             設定辞書.
         """
         try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                result: Dict[str, Any] = json.load(f)
-                return result
-        except FileNotFoundError:
-            print(f"エラー: 設定ファイルが見つかりません: {config_path}")
-            sys.exit(1)
-        except json.JSONDecodeError as e:
-            print(f"エラー: 設定ファイルのJSON形式が不正です: {e}")
+            return ConfigHandler.load_json(config_path)
+        except ConfigLoadError as e:
+            print(f"エラー: {e}")
             sys.exit(1)
 
     def _copy_config_to_output(self) -> None:
