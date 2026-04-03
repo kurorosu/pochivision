@@ -73,7 +73,7 @@ class ConfigHandler:
             config (dict): 保存する設定辞書。
             output_dir (Path): 保存先ディレクトリのパス。
         """
-        timestamp = datetime.now().strftime("%Y-%m%d-%H%M-%S")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = output_dir / f"{timestamp}_config.json"
 
         config_copy = config.copy()
