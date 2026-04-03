@@ -1,6 +1,5 @@
 """fft サブコマンド: FFT ビジュアライザー."""
 
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -297,5 +296,4 @@ def fft(input_path: str) -> None:
     except KeyboardInterrupt:
         print("\n中断されました")
     except Exception as e:
-        print(f"エラーが発生しました: {e}")
-        sys.exit(1)
+        raise click.ClickException(str(e))

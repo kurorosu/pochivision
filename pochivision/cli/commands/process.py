@@ -2,7 +2,6 @@
 
 import json
 import shutil
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -59,8 +58,7 @@ class ProfileProcessor:
         try:
             return ConfigHandler.load(config_path)
         except (ConfigLoadError, ConfigValidationError) as e:
-            print(f"エラー: {e}")
-            sys.exit(1)
+            raise click.ClickException(str(e))
 
     def _get_profile_config(self, profile_name: str) -> Dict[str, Any]:
         """指定されたプロファイルの設定を取得する.
@@ -74,9 +72,10 @@ class ProfileProcessor:
         cameras = self.config.get("cameras", {})
         if profile_name not in cameras:
             available_profiles = list(cameras.keys())
-            print(f"エラー: プロファイル '{profile_name}' が見つかりません")
-            print(f"利用可能なプロファイル: {available_profiles}")
-            sys.exit(1)
+            raise click.ClickException(
+                f"プロファイル '{profile_name}' が見つかりません. "
+                f"利用可能なプロファイル: {available_profiles}"
+            )
 
         result: Dict[str, Any] = cameras[profile_name]
         return result
@@ -114,8 +113,7 @@ class ProfileProcessor:
             画像ファイルのパスリスト.
         """
         if not input_dir.exists():
-            print(f"エラー: 入力ディレクトリが存在しません: {input_dir}")
-            sys.exit(1)
+            raise click.ClickException(f"入力ディレクトリが存在しません: {input_dir}")
 
         image_files = get_image_files(input_dir)
 
