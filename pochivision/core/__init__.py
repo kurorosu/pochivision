@@ -3,5 +3,6 @@
 # flake8: noqa: F401
 from .feature_extraction import FeatureExtractionRunner
 from .fft_visualization import SimpleFFTVisualizer
+from .image_saver import ImageSaver
 from .pipeline_executor import PipelineExecutor
 from .profile_processing import ProfileProcessor
