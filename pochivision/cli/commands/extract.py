@@ -10,6 +10,7 @@ from typing import Any, Dict, List
 import click
 
 from pochivision.capturelib.config_handler import ConfigHandler
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.exceptions.config import ConfigLoadError
 from pochivision.feature_extractors.registry import get_feature_extractor
 from pochivision.utils.image import get_image_files, load_image
@@ -31,6 +32,7 @@ class FeatureExtractionRunner:
             output_manager: 出力ディレクトリの統一管理クラス.
                 None の場合はデフォルトの OutputManager を使用.
         """
+        self.logger = LogManager().get_logger()
         self.config_path = config_path
         self.config = self._load_config_or_exit(config_path)
         self.input_dir = Path(self.config["input_directory"])
@@ -59,9 +61,9 @@ class FeatureExtractionRunner:
             config_filename = Path(self.config_path).name
             output_config_path = self.output_dir / config_filename
             shutil.copy2(self.config_path, output_config_path)
-            print(f"設定ファイルをコピーしました: {output_config_path}")
+            self.logger.info(f"設定ファイルをコピーしました: {output_config_path}")
         except Exception as e:
-            print(f"警告: 設定ファイルのコピーに失敗しました: {e}")
+            self.logger.warning(f"設定ファイルのコピーに失敗しました: {e}")
 
     def _initialize_extractors(self) -> Dict[str, Any]:
         """設定に基づいて特徴量抽出器を初期化する.
@@ -83,9 +85,9 @@ class FeatureExtractionRunner:
             try:
                 extractor = get_feature_extractor(name, config)
                 extractors[name] = extractor
-                print(f"特徴量抽出器を初期化しました: {name}")
+                self.logger.info(f"特徴量抽出器を初期化しました: {name}")
             except ValueError as e:
-                print(f"警告: 特徴量抽出器の初期化に失敗しました ({name}): {e}")
+                self.logger.warning(f"特徴量抽出器の初期化に失敗しました ({name}): {e}")
 
         if not extractors:
             raise click.ClickException("使用可能な特徴量抽出器がありません")
@@ -113,10 +115,10 @@ class FeatureExtractionRunner:
         image_files = get_image_files(self.input_dir, extensions, case_sensitive)
 
         if not image_files:
-            print(
-                f"警告: 入力ディレクトリに対象画像ファイルが見つかりません: {self.input_dir}"
+            self.logger.warning(
+                f"入力ディレクトリに対象画像ファイルが見つかりません: {self.input_dir}"
             )
-            print(f"対象拡張子: {extensions}")
+            self.logger.warning(f"対象拡張子: {extensions}")
 
         return image_files
 
@@ -147,13 +149,13 @@ class FeatureExtractionRunner:
             elif position < 0 and abs(position) <= len(parts):
                 return str(parts[position])
             else:
-                print(
-                    f"警告: ファイル名 '{filename}' の位置 {position} にクラス名が見つかりません"
+                self.logger.warning(
+                    f"ファイル名 '{filename}' の位置 {position} にクラス名が見つかりません"
                 )
                 return ""
         except Exception as e:
-            print(
-                f"警告: ファイル名 '{filename}' からクラス名の抽出に失敗しました: {e}"
+            self.logger.warning(
+                f"ファイル名 '{filename}' からクラス名の抽出に失敗しました: {e}"
             )
             return ""
 
@@ -169,7 +171,7 @@ class FeatureExtractionRunner:
         try:
             image = load_image(image_path)
             if image is None:
-                print(f"警告: 画像の読み込みに失敗しました: {image_path}")
+                self.logger.warning(f"画像の読み込みに失敗しました: {image_path}")
                 return {}
 
             features: Dict[str, Any] = {"filename": image_path.name}
@@ -223,14 +225,14 @@ class FeatureExtractionRunner:
                             features[f"{extractor_name}_{feature_name}"] = value
 
                 except Exception as e:
-                    print(
-                        f"警告: 特徴量抽出に失敗しました ({extractor_name}, {image_path}): {e}"
+                    self.logger.warning(
+                        f"特徴量抽出に失敗しました ({extractor_name}, {image_path}): {e}"
                     )
 
             return features
 
         except Exception as e:
-            print(f"エラー: 画像処理中にエラーが発生しました ({image_path}): {e}")
+            self.logger.error(f"画像処理中にエラーが発生しました ({image_path}): {e}")
             return {}
 
     def _save_results_to_csv(self, results: List[Dict[str, Any]]) -> None:
@@ -240,7 +242,7 @@ class FeatureExtractionRunner:
             results: 特徴量抽出結果のリスト.
         """
         if not results:
-            print("警告: 保存する結果がありません")
+            self.logger.warning("保存する結果がありません")
             return
 
         output_filename = self.config.get("output_settings", {}).get(
@@ -279,11 +281,11 @@ class FeatureExtractionRunner:
                 writer.writeheader()
                 writer.writerows(results)
 
-            print(f"横持ちCSV結果を保存しました: {output_path}")
-            print(f"処理された画像数: {len(results)}")
+            self.logger.info(f"横持ちCSV結果を保存しました: {output_path}")
+            self.logger.info(f"処理された画像数: {len(results)}")
 
         except Exception as e:
-            print(f"エラー: CSV保存中にエラーが発生しました: {e}")
+            self.logger.error(f"CSV保存中にエラーが発生しました: {e}")
 
     def _save_results_to_long_csv(self, results: List[Dict[str, Any]]) -> None:
         """抽出結果を縦持ちCSVファイルに保存する.
@@ -292,7 +294,7 @@ class FeatureExtractionRunner:
             results: 特徴量抽出結果のリスト.
         """
         if not results:
-            print("警告: 保存する結果がありません")
+            self.logger.warning("保存する結果がありません")
             return
 
         output_filename = self.config.get("output_settings", {}).get(
@@ -357,17 +359,17 @@ class FeatureExtractionRunner:
                 writer.writeheader()
                 writer.writerows(long_data)
 
-            print(f"縦持ちCSV結果を保存しました: {output_path}")
-            print(f"特徴量レコード数: {len(long_data)}")
+            self.logger.info(f"縦持ちCSV結果を保存しました: {output_path}")
+            self.logger.info(f"特徴量レコード数: {len(long_data)}")
 
         except Exception as e:
-            print(f"エラー: 縦持ちCSV保存中にエラーが発生しました: {e}")
+            self.logger.error(f"縦持ちCSV保存中にエラーが発生しました: {e}")
 
     def run(self) -> None:
         """特徴量抽出を実行する."""
-        print("=== 特徴量抽出を開始します ===")
-        print(f"入力ディレクトリ: {self.input_dir}")
-        print(f"出力ディレクトリ: {self.output_dir}")
+        self.logger.info("=== 特徴量抽出を開始します ===")
+        self.logger.info(f"入力ディレクトリ: {self.input_dir}")
+        self.logger.info(f"出力ディレクトリ: {self.output_dir}")
 
         self._copy_config_to_output()
 
@@ -375,11 +377,11 @@ class FeatureExtractionRunner:
         if not image_files:
             return
 
-        print(f"対象画像ファイル数: {len(image_files)}")
+        self.logger.info(f"対象画像ファイル数: {len(image_files)}")
 
         results = []
         for i, image_path in enumerate(image_files, 1):
-            print(f"処理中 ({i}/{len(image_files)}): {image_path.name}")
+            self.logger.info(f"処理中 ({i}/{len(image_files)}): {image_path.name}")
             features = self._extract_features_from_image(image_path)
             if features:
                 results.append(features)
@@ -392,7 +394,7 @@ class FeatureExtractionRunner:
         elif self.config.get("output_format", "csv") == "long_csv":
             self._save_results_to_long_csv(results)
 
-        print("=== 特徴量抽出が完了しました ===")
+        self.logger.info("=== 特徴量抽出が完了しました ===")
 
 
 @click.command()

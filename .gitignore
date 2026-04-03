@@ -222,3 +222,4 @@ tmp*.*
 *.bmp
 profile_results/
 outputs/
+/data
