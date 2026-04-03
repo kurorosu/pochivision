@@ -9,6 +9,7 @@ import numpy as np
 
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
+from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
 from pochivision.core import PipelineExecutor
 from pochivision.exceptions import VisionCaptureError
 
@@ -30,7 +31,7 @@ class LivePreviewRunner:
         cap: cv2.VideoCapture,
         pipeline: PipelineExecutor,
         recording_manager: Optional[RecordingManager] = None,
-        preview_size: tuple[int, int] = (1280, 720),
+        preview_size: tuple[int, int] = (DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT),
     ) -> None:
         """
         LivePreviewRunnerを初期化する.

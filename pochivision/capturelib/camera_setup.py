@@ -5,6 +5,11 @@ from typing import Any, Dict
 import cv2
 
 from pochivision.capturelib.log_manager import LogManager
+from pochivision.constants import (
+    DEFAULT_CAMERA_FPS,
+    DEFAULT_CAMERA_HEIGHT,
+    DEFAULT_CAMERA_WIDTH,
+)
 from pochivision.exceptions.config import CameraConfigError
 
 
@@ -56,9 +61,9 @@ class CameraSetup:
                     f"not found in config, using default settings"
                 )
 
-            self.width = camera_config.get("width", 640)
-            self.height = camera_config.get("height", 480)
-            self.fps = camera_config.get("fps", 30)
+            self.width = camera_config.get("width", DEFAULT_CAMERA_WIDTH)
+            self.height = camera_config.get("height", DEFAULT_CAMERA_HEIGHT)
+            self.fps = camera_config.get("fps", DEFAULT_CAMERA_FPS)
             self.backend = camera_config.get("backend", None)
 
             self.logger.info(

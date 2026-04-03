@@ -7,6 +7,13 @@ import click
 import cv2
 import numpy as np
 
+from pochivision.constants import (
+    FFT_FILTER_RADIUS_MAX,
+    FFT_FILTER_RADIUS_MIN,
+    FFT_FILTER_RADIUS_STEP,
+    FHD_HEIGHT,
+    FHD_WIDTH,
+)
 from pochivision.utils.image import load_image
 
 
@@ -53,10 +60,9 @@ class SimpleFFTVisualizer:
         print(f"画像を読み込みました: {self.image_path}")
         print(f"元画像サイズ: {original_width} x {original_height}")
 
-        fhd_width, fhd_height = 1920, 1080
-        if original_width > fhd_width or original_height > fhd_height:
-            scale_w = fhd_width / original_width
-            scale_h = fhd_height / original_height
+        if original_width > FHD_WIDTH or original_height > FHD_HEIGHT:
+            scale_w = FHD_WIDTH / original_width
+            scale_h = FHD_HEIGHT / original_height
             scale = min(scale_w, scale_h)
 
             new_width = int(original_width * scale)
@@ -273,11 +279,17 @@ class SimpleFFTVisualizer:
                 print(f"フィルタモード: {self.filter_mode}")
                 self.update_display()
             elif key == ord("+") or key == ord("="):
-                self.filter_radius = min(200, self.filter_radius + 10)
+                self.filter_radius = min(
+                    FFT_FILTER_RADIUS_MAX,
+                    self.filter_radius + FFT_FILTER_RADIUS_STEP,
+                )
                 print(f"フィルタ半径: {self.filter_radius}")
                 self.update_display()
             elif key == ord("-"):
-                self.filter_radius = max(10, self.filter_radius - 10)
+                self.filter_radius = max(
+                    FFT_FILTER_RADIUS_MIN,
+                    self.filter_radius - FFT_FILTER_RADIUS_STEP,
+                )
                 print(f"フィルタ半径: {self.filter_radius}")
                 self.update_display()
 

@@ -13,7 +13,8 @@
 - `extract.py` と `process.py` の `_get_image_files()` を `utils/image.py` の `get_image_files()` に統合. ([#268](https://github.com/kurorosu/pochivision/pull/268))
 - `cv2.imread` + None チェックパターンを `utils/image.py` の `load_image()` に統合. ([#269](https://github.com/kurorosu/pochivision/pull/269))
 - CLI コマンドの `sys.exit(1)` を `click.ClickException` に置換. ([#270](https://github.com/kurorosu/pochivision/pull/270))
-- `extract.py` と `process.py` の `print()` を `LogManager` / `click.echo()` に統一. (NA.)
+- `extract.py` と `process.py` の `print()` を `LogManager` に統一. ([#271](https://github.com/kurorosu/pochivision/pull/271))
+- マジックナンバーを `pochivision/constants.py` に定数化. (NA.)
 
 ### Fixed
 - `ConfigHandler.save()` の `strftime` フォーマットを `%Y-%m%d-%H%M-%S` から `%Y%m%d_%H%M%S` に修正. ([#263](https://github.com/kurorosu/pochivision/pull/263))

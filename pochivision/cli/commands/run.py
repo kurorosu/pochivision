@@ -7,6 +7,7 @@ from pochivision.capturelib.camera_setup import CameraSetup
 from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
+from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
 from pochivision.core import PipelineExecutor
 from pochivision.exceptions.config import ConfigValidationError
 from pochivision.workspace import OutputManager
@@ -182,8 +183,8 @@ def _run_preview(
 
         preview_config = config_data.get("preview", {})
         preview_size = (
-            preview_config.get("width", 1280),
-            preview_config.get("height", 720),
+            preview_config.get("width", DEFAULT_PREVIEW_WIDTH),
+            preview_config.get("height", DEFAULT_PREVIEW_HEIGHT),
         )
 
         app = LivePreviewRunner(cap, pipeline, recording_manager, preview_size)
