@@ -3,7 +3,6 @@
 import csv
 import inspect
 import shutil
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
@@ -52,8 +51,7 @@ class FeatureExtractionRunner:
         try:
             return ConfigHandler.load_json(config_path)
         except ConfigLoadError as e:
-            print(f"エラー: {e}")
-            sys.exit(1)
+            raise click.ClickException(str(e))
 
     def _copy_config_to_output(self) -> None:
         """使用した設定ファイルを出力ディレクトリにコピーする."""
@@ -90,8 +88,7 @@ class FeatureExtractionRunner:
                 print(f"警告: 特徴量抽出器の初期化に失敗しました ({name}): {e}")
 
         if not extractors:
-            print("エラー: 使用可能な特徴量抽出器がありません")
-            sys.exit(1)
+            raise click.ClickException("使用可能な特徴量抽出器がありません")
 
         return extractors
 
@@ -102,8 +99,9 @@ class FeatureExtractionRunner:
             画像ファイルのパスリスト.
         """
         if not self.input_dir.exists():
-            print(f"エラー: 入力ディレクトリが存在しません: {self.input_dir}")
-            sys.exit(1)
+            raise click.ClickException(
+                f"入力ディレクトリが存在しません: {self.input_dir}"
+            )
 
         extensions = self.config.get("file_filters", {}).get(
             "extensions", [".jpg", ".png"]
