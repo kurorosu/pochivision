@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 
 from pochivision.capturelib.config_handler import ConfigHandler
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
 from pochivision.processors.registry import get_processor
 from pochivision.utils.image import (
@@ -38,6 +39,7 @@ class ProfileProcessor:
             output_manager: 出力ディレクトリの統一管理クラス.
                 None の場合はデフォルトの OutputManager を使用.
         """
+        self.logger = LogManager().get_logger()
         self.config_path = config_path
         self.profile_name = profile_name
         self.output_manager = output_manager or OutputManager()
@@ -94,12 +96,14 @@ class ProfileProcessor:
                 processor_config = self.profile_config.get(processor_name, {})
                 processor = get_processor(processor_name, processor_config)
                 processors.append(processor)
-                print(f"プロセッサを初期化しました: {processor_name}")
+                self.logger.info(f"プロセッサを初期化しました: {processor_name}")
             except Exception as e:
-                print(f"警告: プロセッサの初期化に失敗しました ({processor_name}): {e}")
+                self.logger.warning(
+                    f"プロセッサの初期化に失敗しました ({processor_name}): {e}"
+                )
 
         if not processors:
-            print("警告: 使用可能なプロセッサがありません")
+            self.logger.warning("使用可能なプロセッサがありません")
 
         return processors
 
@@ -118,8 +122,10 @@ class ProfileProcessor:
         image_files = get_image_files(input_dir)
 
         if not image_files:
-            print(f"警告: 入力ディレクトリに画像ファイルが見つかりません: {input_dir}")
-            print(f"対象拡張子: {DEFAULT_IMAGE_EXTENSIONS}")
+            self.logger.warning(
+                f"入力ディレクトリに画像ファイルが見つかりません: {input_dir}"
+            )
+            self.logger.warning(f"対象拡張子: {DEFAULT_IMAGE_EXTENSIONS}")
 
         return image_files
 
@@ -143,7 +149,7 @@ class ProfileProcessor:
         try:
             image = load_image(image_path)
             if image is None:
-                print(f"警告: 画像の読み込みに失敗しました: {image_path}")
+                self.logger.warning(f"画像の読み込みに失敗しました: {image_path}")
                 return None
 
             mode = self.profile_config.get("mode", "pipeline")
@@ -158,7 +164,9 @@ class ProfileProcessor:
 
                     processed_image = processor.process(processed_image)
                     if processed_image is None:
-                        print(f"警告: プロセッサでの処理に失敗しました: {image_path}")
+                        self.logger.warning(
+                            f"プロセッサでの処理に失敗しました: {image_path}"
+                        )
                         return None
                 return processed_image
 
@@ -166,8 +174,8 @@ class ProfileProcessor:
                 results = {}
                 for processor in self.processors:
                     if hasattr(processor, "set_target_image"):
-                        print(
-                            f"警告: {processor.__class__.__name__}はパラレルモードでは使用できません"
+                        self.logger.warning(
+                            f"{processor.__class__.__name__}はパラレルモードでは使用できません"
                         )
                         continue
 
@@ -183,11 +191,11 @@ class ProfileProcessor:
                 return None
 
             else:
-                print(f"警告: 不明な処理モード: {mode}")
+                self.logger.warning(f"不明な処理モード: {mode}")
                 return None
 
         except Exception as e:
-            print(f"エラー: 画像処理中にエラーが発生しました ({image_path}): {e}")
+            self.logger.error(f"画像処理中にエラーが発生しました ({image_path}): {e}")
             return None
 
     def process_directory(self, input_dir: str, save_original: bool = True) -> None:
@@ -206,9 +214,9 @@ class ProfileProcessor:
         if not image_files:
             return
 
-        print(f"処理開始: {len(image_files)}個の画像を処理します")
-        print(f"使用プロファイル: {self.profile_name}")
-        print(f"出力ディレクトリ: {output_path}")
+        click.echo(f"処理開始: {len(image_files)}個の画像を処理します")
+        click.echo(f"使用プロファイル: {self.profile_name}")
+        click.echo(f"出力ディレクトリ: {output_path}")
 
         self._save_config_info(output_path)
 
@@ -216,7 +224,7 @@ class ProfileProcessor:
         failed_count = 0
 
         for image_path in image_files:
-            print(f"処理中: {image_path.name}")
+            click.echo(f"処理中: {image_path.name}")
 
             if save_original:
                 original_dir = output_path / "original"
@@ -225,7 +233,7 @@ class ProfileProcessor:
                 try:
                     shutil.copy2(image_path, original_output_path)
                 except Exception as e:
-                    print(f"警告: 元画像のコピーに失敗しました: {e}")
+                    self.logger.warning(f"元画像のコピーに失敗しました: {e}")
 
             processed_image = self._process_image(image_path)
 
@@ -237,18 +245,18 @@ class ProfileProcessor:
                 success = cv2.imwrite(str(processed_output_path), processed_image)
                 if success:
                     processed_count += 1
-                    print(f"  → 保存完了: {processed_output_path}")
+                    click.echo(f"  → 保存完了: {processed_output_path}")
                 else:
                     failed_count += 1
-                    print(f"  → 保存失敗: {processed_output_path}")
+                    self.logger.warning(f"保存失敗: {processed_output_path}")
             else:
                 failed_count += 1
-                print("  → 処理失敗")
+                self.logger.warning(f"処理失敗: {image_path.name}")
 
-        print("\n処理完了:")
-        print(f"  成功: {processed_count}個")
-        print(f"  失敗: {failed_count}個")
-        print(f"  出力先: {output_path}")
+        click.echo("\n処理完了:")
+        click.echo(f"  成功: {processed_count}個")
+        click.echo(f"  失敗: {failed_count}個")
+        click.echo(f"  出力先: {output_path}")
 
     def _save_config_info(self, output_path: Path) -> None:
         """使用した設定情報を保存する.
@@ -268,23 +276,23 @@ class ProfileProcessor:
             with open(info_file, "w", encoding="utf-8") as f:
                 json.dump(profile_info, f, indent=2, ensure_ascii=False)
 
-            print(f"プロファイル情報を保存しました: {info_file}")
+            self.logger.info(f"プロファイル情報を保存しました: {info_file}")
 
         except Exception as e:
-            print(f"警告: プロファイル情報の保存に失敗しました: {e}")
+            self.logger.warning(f"プロファイル情報の保存に失敗しました: {e}")
 
     def list_available_profiles(self) -> None:
         """利用可能なプロファイルを一覧表示する."""
         cameras = self.config.get("cameras", {})
-        print("利用可能なプロファイル:")
+        click.echo("利用可能なプロファイル:")
         for profile_name, profile_config in cameras.items():
             label = profile_config.get("label", "No Label")
             processors = profile_config.get("processors", [])
             mode = profile_config.get("mode", "pipeline")
-            print(f"  {profile_name}: {label}")
-            print(f"    モード: {mode}")
-            print(f"    プロセッサ: {', '.join(processors)}")
-            print()
+            click.echo(f"  {profile_name}: {label}")
+            click.echo(f"    モード: {mode}")
+            click.echo(f"    プロセッサ: {', '.join(processors)}")
+            click.echo()
 
 
 @click.command()
