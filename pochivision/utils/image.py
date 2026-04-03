@@ -1,7 +1,41 @@
 """画像処理に関する共通ユーティリティ関数を提供するモジュール."""
 
+from pathlib import Path
+from typing import List, Optional
+
 import cv2
 import numpy as np
+
+DEFAULT_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"]
+
+
+def get_image_files(
+    directory: Path,
+    extensions: Optional[List[str]] = None,
+    case_sensitive: bool = False,
+) -> List[Path]:
+    """ディレクトリから画像ファイルのパスリストを取得する.
+
+    Args:
+        directory: 検索対象ディレクトリ.
+        extensions: 対象拡張子のリスト. None の場合はデフォルト拡張子を使用.
+        case_sensitive: True の場合, 拡張子の大文字小文字を区別する.
+
+    Returns:
+        画像ファイルのパスリスト (ソート済み).
+    """
+    if extensions is None:
+        extensions = DEFAULT_IMAGE_EXTENSIONS
+
+    image_files: List[Path] = []
+    for ext in extensions:
+        if case_sensitive:
+            image_files.extend(directory.glob(f"*{ext}"))
+        else:
+            image_files.extend(directory.glob(f"*{ext.lower()}"))
+            image_files.extend(directory.glob(f"*{ext.upper()}"))
+
+    return sorted(set(image_files))
 
 
 def to_grayscale(image: np.ndarray) -> np.ndarray:

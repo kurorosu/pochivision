@@ -9,7 +9,8 @@
 - 無し
 
 ### Changed
-- `FeatureExtractionRunner` と `ProfileProcessor` の `_load_config()` を `ConfigHandler.load_json()` に統合. (NA.)
+- `FeatureExtractionRunner` と `ProfileProcessor` の `_load_config()` を `ConfigHandler.load_json()` に統合. ([#267](https://github.com/kurorosu/pochivision/pull/267))
+- `extract.py` と `process.py` の `_get_image_files()` を `utils/image.py` の `get_image_files()` に統合. (NA.)
 
 ### Fixed
 - `ConfigHandler.save()` の `strftime` フォーマットを `%Y-%m%d-%H%M-%S` から `%Y%m%d_%H%M%S` に修正. ([#263](https://github.com/kurorosu/pochivision/pull/263))

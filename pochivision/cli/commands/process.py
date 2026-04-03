@@ -14,6 +14,7 @@ import numpy as np
 from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
 from pochivision.processors.registry import get_processor
+from pochivision.utils.image import DEFAULT_IMAGE_EXTENSIONS, get_image_files
 from pochivision.workspace import OutputManager
 
 
@@ -112,18 +113,11 @@ class ProfileProcessor:
             print(f"エラー: 入力ディレクトリが存在しません: {input_dir}")
             sys.exit(1)
 
-        extensions = [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"]
-        image_files: List[Path] = []
-
-        for ext in extensions:
-            image_files.extend(input_dir.glob(f"*{ext.lower()}"))
-            image_files.extend(input_dir.glob(f"*{ext.upper()}"))
-
-        image_files = sorted(list(set(image_files)))
+        image_files = get_image_files(input_dir)
 
         if not image_files:
             print(f"警告: 入力ディレクトリに画像ファイルが見つかりません: {input_dir}")
-            print(f"対象拡張子: {extensions}")
+            print(f"対象拡張子: {DEFAULT_IMAGE_EXTENSIONS}")
 
         return image_files
 

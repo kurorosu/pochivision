@@ -14,6 +14,7 @@ import cv2
 from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.exceptions.config import ConfigLoadError
 from pochivision.feature_extractors.registry import get_feature_extractor
+from pochivision.utils.image import get_image_files
 from pochivision.workspace import OutputManager
 
 
@@ -112,21 +113,7 @@ class FeatureExtractionRunner:
             "case_sensitive", False
         )
 
-        image_files: List[Path] = []
-        for ext in extensions:
-            if case_sensitive:
-                pattern = f"*{ext}"
-            else:
-                pattern_lower = f"*{ext.lower()}"
-                pattern_upper = f"*{ext.upper()}"
-                image_files.extend(self.input_dir.glob(pattern_lower))
-                image_files.extend(self.input_dir.glob(pattern_upper))
-                continue
-
-            image_files.extend(self.input_dir.glob(pattern))
-
-        image_files = list(set(image_files))
-        image_files.sort()
+        image_files = get_image_files(self.input_dir, extensions, case_sensitive)
 
         if not image_files:
             print(
