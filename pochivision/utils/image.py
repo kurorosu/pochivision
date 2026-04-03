@@ -9,6 +9,21 @@ import numpy as np
 DEFAULT_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"]
 
 
+def load_image(image_path: Path) -> Optional[np.ndarray]:
+    """画像ファイルを読み込む.
+
+    Args:
+        image_path: 画像ファイルのパス.
+
+    Returns:
+        読み込んだ画像. 失敗時は None.
+    """
+    image = cv2.imread(str(image_path))
+    if image is None:
+        return None
+    return image
+
+
 def get_image_files(
     directory: Path,
     extensions: Optional[List[str]] = None,

@@ -9,12 +9,11 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import click
-import cv2
 
 from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.exceptions.config import ConfigLoadError
 from pochivision.feature_extractors.registry import get_feature_extractor
-from pochivision.utils.image import get_image_files
+from pochivision.utils.image import get_image_files, load_image
 from pochivision.workspace import OutputManager
 
 
@@ -170,7 +169,7 @@ class FeatureExtractionRunner:
             抽出された特徴量の辞書.
         """
         try:
-            image = cv2.imread(str(image_path))
+            image = load_image(image_path)
             if image is None:
                 print(f"警告: 画像の読み込みに失敗しました: {image_path}")
                 return {}
