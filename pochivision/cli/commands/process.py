@@ -11,6 +11,8 @@ import click
 import cv2
 import numpy as np
 
+from pochivision.capturelib.config_handler import ConfigHandler
+from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
 from pochivision.processors.registry import get_processor
 from pochivision.workspace import OutputManager
 
@@ -35,12 +37,13 @@ class ProfileProcessor:
         self.config_path = config_path
         self.profile_name = profile_name
         self.output_manager = output_manager or OutputManager()
-        self.config = self._load_config(config_path)
+        self.config = self._load_config_or_exit(config_path)
         self.profile_config = self._get_profile_config(profile_name)
         self.processors = self._initialize_processors()
 
-    def _load_config(self, config_path: str) -> Dict[str, Any]:
-        """設定ファイルを読み込む.
+    @staticmethod
+    def _load_config_or_exit(config_path: str) -> Dict[str, Any]:
+        """設定ファイルを読み込む. 失敗時はプロセスを終了する.
 
         Args:
             config_path: 設定ファイルのパス.
@@ -49,14 +52,9 @@ class ProfileProcessor:
             設定辞書.
         """
         try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                result: Dict[str, Any] = json.load(f)
-                return result
-        except FileNotFoundError:
-            print(f"エラー: 設定ファイルが見つかりません: {config_path}")
-            sys.exit(1)
-        except json.JSONDecodeError as e:
-            print(f"エラー: 設定ファイルのJSON形式が不正です: {e}")
+            return ConfigHandler.load(config_path)
+        except (ConfigLoadError, ConfigValidationError) as e:
+            print(f"エラー: {e}")
             sys.exit(1)
 
     def _get_profile_config(self, profile_name: str) -> Dict[str, Any]:
