@@ -13,10 +13,10 @@
 
 ### Fixed
 - `ConfigHandler.save()` の `strftime` フォーマットを `%Y-%m%d-%H%M-%S` から `%Y%m%d_%H%M%S` に修正. ([#263](https://github.com/kurorosu/pochivision/pull/263))
-- `RecordingManager.start_recording()` で `VideoWriter` 初期化失敗時に `video_writer` を `None` にクリアするよう修正. (NA.)
+- `RecordingManager.start_recording()` で `VideoWriter` 初期化失敗時に `video_writer` を `None` にクリアするよう修正. ([#264](https://github.com/kurorosu/pochivision/pull/264))
 
 ### Removed
-- 無し
+- 未使用の `ExtractorRuntimeError` 例外クラスを削除. (NA.)
 
 ## [0.2.0] - 2026-04-02
 
