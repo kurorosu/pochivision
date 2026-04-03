@@ -8,6 +8,8 @@ import click
 import cv2
 import numpy as np
 
+from pochivision.utils.image import load_image
+
 
 class SimpleFFTVisualizer:
     """シンプルなFFTビジュアライザークラス."""
@@ -32,7 +34,7 @@ class SimpleFFTVisualizer:
             print(f"エラー: 画像ファイルが見つかりません: {self.image_path}")
             return False
 
-        original_img = cv2.imread(str(self.image_path))
+        original_img = load_image(self.image_path)
 
         if original_img is None:
             print(f"エラー: 画像ファイルを読み込めません: {self.image_path}")

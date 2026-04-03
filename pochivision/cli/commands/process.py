@@ -14,7 +14,11 @@ import numpy as np
 from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
 from pochivision.processors.registry import get_processor
-from pochivision.utils.image import DEFAULT_IMAGE_EXTENSIONS, get_image_files
+from pochivision.utils.image import (
+    DEFAULT_IMAGE_EXTENSIONS,
+    get_image_files,
+    load_image,
+)
 from pochivision.workspace import OutputManager
 
 
@@ -139,7 +143,7 @@ class ProfileProcessor:
             処理された画像. エラーの場合は None.
         """
         try:
-            image = cv2.imread(str(image_path))
+            image = load_image(image_path)
             if image is None:
                 print(f"警告: 画像の読み込みに失敗しました: {image_path}")
                 return None
