@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 
 from pochivision.capturelib.config_handler import ConfigHandler
-from pochivision.exceptions.config import ConfigLoadError
+from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
 from pochivision.processors.registry import get_processor
 from pochivision.workspace import OutputManager
 
@@ -52,8 +52,8 @@ class ProfileProcessor:
             設定辞書.
         """
         try:
-            return ConfigHandler.load_json(config_path)
-        except ConfigLoadError as e:
+            return ConfigHandler.load(config_path)
+        except (ConfigLoadError, ConfigValidationError) as e:
             print(f"エラー: {e}")
             sys.exit(1)
 
