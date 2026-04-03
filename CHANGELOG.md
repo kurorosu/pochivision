@@ -12,7 +12,8 @@
 - 無し
 
 ### Fixed
-- `ConfigHandler.save()` の `strftime` フォーマットを `%Y-%m%d-%H%M-%S` から `%Y%m%d_%H%M%S` に修正. (NA.)
+- `ConfigHandler.save()` の `strftime` フォーマットを `%Y-%m%d-%H%M-%S` から `%Y%m%d_%H%M%S` に修正. ([#263](https://github.com/kurorosu/pochivision/pull/263))
+- `RecordingManager.start_recording()` で `VideoWriter` 初期化失敗時に `video_writer` を `None` にクリアするよう修正. (NA.)
 
 ### Removed
 - 無し
