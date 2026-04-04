@@ -20,7 +20,9 @@ from pochivision.workspace import OutputManager
 @click.option("--camera", "-c", type=int, default=0, help="カメラデバイスインデックス")
 @click.option("--profile", "-p", type=str, default=None, help="カメラプロファイル名")
 @click.option("--list-profiles", "-l", is_flag=True, help="プロファイル一覧を表示")
-@click.option("--config", type=str, default="config.json", help="設定ファイルパス")
+@click.option(
+    "--config", type=str, default="config/config.json", help="設定ファイルパス"
+)
 @click.option("--no-recording", is_flag=True, help="録画機能を無効化")
 @click.pass_context
 def run(
