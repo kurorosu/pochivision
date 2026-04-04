@@ -17,6 +17,7 @@
 
 ### Removed
 - `RecordingManager` の未使用属性 `frame_queue`, `recording_thread` を削除. ([#320](https://github.com/kurorosu/pochivision/pull/320))
+- `tests/conftest.py` の未使用フィクスチャ `dummy_color_image`, `dummy_grayscale_image` を削除. (NA.)
 
 ## [0.4.0] - 2026-04-04
 

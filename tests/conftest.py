@@ -5,18 +5,6 @@ import pytest
 
 
 @pytest.fixture
-def dummy_color_image() -> np.ndarray:
-    """100x100 のカラー画像 (BGR, uint8) を返す."""
-    return np.random.randint(0, 256, (100, 100, 3), dtype=np.uint8)
-
-
-@pytest.fixture
-def dummy_grayscale_image() -> np.ndarray:
-    """100x100 のグレースケール画像 (uint8) を返す."""
-    return np.random.randint(0, 256, (100, 100), dtype=np.uint8)
-
-
-@pytest.fixture
 def dummy_binary_image() -> np.ndarray:
     """100x100 の2値画像 (0/255, uint8) を返す."""
     image = np.zeros((100, 100), dtype=np.uint8)
