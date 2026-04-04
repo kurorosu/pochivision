@@ -6,7 +6,7 @@
 ## [Unreleased]
 
 ### Added
-- 無し
+- ライブプレビューに `h` キーでトグルするヘルプオーバーレイ表示機能を追加. 黒文字 + 白縁で表示し, 保存画像には影響しない. (NA.)
 
 ### Changed
 - 設定ファイル (`config.json`, `extractor_config.json`) を `config/` ディレクトリに移動し, CLI のデフォルトパスを更新. (NA.)
