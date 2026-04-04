@@ -10,6 +10,7 @@
 
 ### Changed
 - 設定ファイル (`config.json`, `extractor_config.json`) を `config/` ディレクトリに移動し, CLI のデフォルトパスを更新. (NA.)
+- `FeatureExtractionRunner` の CSV 出力を `FeatureCSVWriter` に, クラス名抽出を `extract_class_from_filename()` に分離. (NA.)
 
 ### Fixed
 - `ImageSaver.save()` で `cv2.imwrite()` の戻り値を検証し, 保存失敗時に警告ログを出力するよう修正. ([#291](https://github.com/kurorosu/pochivision/pull/291))
