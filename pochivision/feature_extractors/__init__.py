@@ -18,17 +18,6 @@ from .registry import (
     register_feature_extractor,
 )
 from .rgb_statistics import RGBStatisticsExtractor
-from .schema import (
-    BrightnessStatisticsParams,
-    CircleCounterParams,
-    FFTFrequencyParams,
-    GLCMTextureParams,
-    HLACTextureParams,
-    HSVStatisticsParams,
-    LBPTextureParams,
-    RGBStatisticsParams,
-    SWTFrequencyParams,
-)
 from .swt_frequency import SWTFrequencyExtractor
 
 __all__ = [
@@ -45,13 +34,4 @@ __all__ = [
     "FEATURE_EXTRACTOR_REGISTRY",
     "get_feature_extractor",
     "register_feature_extractor",
-    "BrightnessStatisticsParams",
-    "CircleCounterParams",
-    "FFTFrequencyParams",
-    "GLCMTextureParams",
-    "HLACTextureParams",
-    "HSVStatisticsParams",
-    "LBPTextureParams",
-    "RGBStatisticsParams",
-    "SWTFrequencyParams",
 ]

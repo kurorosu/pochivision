@@ -17,7 +17,7 @@
 - `ImageSaver.save()` のログ出力でグレースケール画像の幅/高さが正しく取得されるよう `image.shape[:2]` に修正. ([#293](https://github.com/kurorosu/pochivision/pull/293))
 
 ### Removed
-- 無し
+- `feature_extractors/__init__.py` から未使用の Params クラス 9 件のエクスポートを削除. (NA.)
 
 ## [0.3.0] - 2026-04-04
 
