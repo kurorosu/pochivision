@@ -5,6 +5,7 @@ import json
 
 import cv2
 import numpy as np
+import pytest
 
 from pochivision.core.feature_extraction import FeatureExtractionRunner
 from pochivision.workspace import OutputManager
@@ -182,6 +183,59 @@ class TestFeatureExtractionRunner:
 
         assert len(rows) == 1
         assert any("brightness" in c for c in reader.fieldnames)
+
+    def test_all_invalid_extractors_raises(self, tmp_path):
+        """全ての抽出器名が無効な場合に ValueError が発生する."""
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+
+        config_path = _create_config(
+            tmp_path,
+            input_dir,
+            extractors=["nonexistent_a", "nonexistent_b"],
+        )
+        output_manager = OutputManager(str(tmp_path))
+        with pytest.raises(ValueError, match="使用可能な特徴量抽出器がありません"):
+            FeatureExtractionRunner(config_path, output_manager)
+
+    def test_empty_extractors_list_raises(self, tmp_path):
+        """抽出器リストが空の場合に ValueError が発生する."""
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+
+        config_path = _create_config(
+            tmp_path,
+            input_dir,
+            extractors=[],
+        )
+        output_manager = OutputManager(str(tmp_path))
+        with pytest.raises(ValueError, match="使用可能な特徴量抽出器がありません"):
+            FeatureExtractionRunner(config_path, output_manager)
+
+    def test_no_extractors_key_uses_feature_extractors_keys(self, tmp_path):
+        """extractors キー未指定時に feature_extractors のキーが使われる."""
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+        _create_test_image(input_dir / "img1.png")
+
+        config = {
+            "input_directory": str(input_dir),
+            "output_format": "csv",
+            "feature_extractors": {
+                "brightness": {"color_mode": "gray", "exclude_zero_pixels": False},
+            },
+            "file_filters": {"extensions": [".png"], "case_sensitive": False},
+            "output_settings": {
+                "output_filename": "features.csv",
+                "csv_separator": ",",
+            },
+        }
+        config_path = tmp_path / "extractor_config.json"
+        config_path.write_text(json.dumps(config), encoding="utf-8")
+
+        output_manager = OutputManager(str(tmp_path))
+        runner = FeatureExtractionRunner(str(config_path), output_manager)
+        assert "brightness" in runner.extractors
 
     def test_nonexistent_input_directory_raises(self, tmp_path):
         """存在しない入力ディレクトリで FileNotFoundError が発生する."""
