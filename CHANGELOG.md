@@ -7,6 +7,7 @@
 
 ### Added
 - ライブプレビューに `h` キーでトグルするヘルプオーバーレイ表示機能を追加. 黒文字 + 白縁で表示し, 保存画像には影響しない. ([#295](https://github.com/kurorosu/pochivision/pull/295))
+- `FeatureExtractionRunner` の統合テスト 7 件を追加. (NA.)
 
 ### Changed
 - 設定ファイル (`config.json`, `extractor_config.json`) を `config/` ディレクトリに移動し, CLI のデフォルトパスを更新. ([#294](https://github.com/kurorosu/pochivision/pull/294))
@@ -19,7 +20,7 @@
 - `run.py` の `SystemExit(1)` を `click.ClickException` に統一, `logger` パラメータ型と `_setup_camera()` 戻り値型を修正. ([#309](https://github.com/kurorosu/pochivision/pull/309))
 - `FeatureExtractionRunner` の特徴量ユニット名取得失敗時に警告ログを出力するよう修正. ([#310](https://github.com/kurorosu/pochivision/pull/310))
 - `_measure_actual_fps()` の除算ゼロリスクに防御コードを追加. ([#311](https://github.com/kurorosu/pochivision/pull/311))
-- `RecordingManager.start_recording()` の `is_recording` チェックをロック内に移動し race condition を修正. (NA.)
+- `RecordingManager.start_recording()` の `is_recording` チェックをロック内に移動し race condition を修正. ([#312](https://github.com/kurorosu/pochivision/pull/312))
 
 ### Removed
 - `feature_extractors/__init__.py` から未使用の Params クラス 9 件のエクスポートを削除. ([#296](https://github.com/kurorosu/pochivision/pull/296))
