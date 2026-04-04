@@ -196,47 +196,42 @@ class RecordingManager:
         Returns:
             bool: 録画停止に成功した場合True、失敗した場合False
         """
-        if not self.is_recording:
-            self.logger.warning("Recording is not in progress")
-            return False
+        with self.lock:
+            if not self.is_recording:
+                self.logger.warning("Recording is not in progress")
+                return False
 
-        try:
-            # 録画統計情報を計算
-            recording_end_time = time.time()
-            actual_duration = recording_end_time - (
-                self.recording_start_time or recording_end_time
-            )
-            actual_fps = (
-                self.frame_count / actual_duration if actual_duration > 0 else 0
-            )
+            try:
+                # 録画統計情報を計算
+                recording_end_time = time.time()
+                actual_duration = recording_end_time - (
+                    self.recording_start_time or recording_end_time
+                )
+                actual_fps = (
+                    self.frame_count / actual_duration if actual_duration > 0 else 0
+                )
 
-            # 現在のVideoWriterを一時的に保存
-            current_writer = self.video_writer
-
-            # 録画フラグを解除
-            with self.lock:
+                # 録画フラグを解除
                 self.is_recording = False
 
-            # 現在のファイル名を取得（再作成用）
-            if current_writer is not None:
-                # VideoWriterから直接ファイル名を取得することはできないため、
-                # 実際のFPSで新しいファイルを作成する方法を採用
-                current_writer.release()
-                self.video_writer = None
+                # VideoWriterを解放
+                if self.video_writer is not None:
+                    self.video_writer.release()
+                    self.video_writer = None
 
-            # 統計情報をログに出力
-            self.logger.info("Recording stopped")
-            self.logger.info("Recording statistics:")
-            self.logger.info(f"  Duration: {actual_duration:.2f} seconds")
-            self.logger.info(f"  Frames recorded: {self.frame_count}")
-            self.logger.info(f"  Actual FPS: {actual_fps:.2f}")
-            self.logger.info("Video saved with actual FPS for correct duration")
+            except Exception as e:
+                self.logger.error(f"Error occurred while stopping recording: {e}")
+                return False
 
-            return True
+        # 統計情報をログに出力（ロック外で安全に実行）
+        self.logger.info("Recording stopped")
+        self.logger.info("Recording statistics:")
+        self.logger.info(f"  Duration: {actual_duration:.2f} seconds")
+        self.logger.info(f"  Frames recorded: {self.frame_count}")
+        self.logger.info(f"  Actual FPS: {actual_fps:.2f}")
+        self.logger.info("Video saved with actual FPS for correct duration")
 
-        except Exception as e:
-            self.logger.error(f"Error occurred while stopping recording: {e}")
-            return False
+        return True
 
     def add_frame(self, frame: np.ndarray) -> bool:
         """

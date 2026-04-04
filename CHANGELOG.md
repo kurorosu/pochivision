@@ -12,10 +12,10 @@
 - `SimpleFFTVisualizer` の `print()` を `LogManager` 経由のログ出力に統一. ([#318](https://github.com/kurorosu/pochivision/pull/318))
 - `processors/registry.py` と `feature_extractors/registry.py` のロガーを `LogManager` に統一. ([#319](https://github.com/kurorosu/pochivision/pull/319))
 - プロセッサ (`binarization.py`, `clahe.py`, `equalize.py`) の `logging.getLogger` を `LogManager` に統一. ([#332](https://github.com/kurorosu/pochivision/pull/332))
-- 型アノテーションを Python 3.12+ 新スタイル (`dict`, `list`, `tuple`, `X | None`) に統一. (NA.)
+- 型アノテーションを Python 3.12+ 新スタイル (`dict`, `list`, `tuple`, `X | None`) に統一. ([#333](https://github.com/kurorosu/pochivision/pull/333))
 
 ### Fixed
-- 無し
+- `RecordingManager.stop_recording()` の `is_recording` チェックをロック内に移動し race condition を修正. (NA.)
 
 ### Removed
 - `RecordingManager` の未使用属性 `frame_queue`, `recording_thread` を削除. ([#320](https://github.com/kurorosu/pochivision/pull/320))
