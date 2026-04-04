@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 from pochivision.core.pipeline_executor import PipelineExecutor
+from pochivision.exceptions import CameraConfigError
 from pochivision.processors.registry import get_processor
 
 
@@ -121,6 +122,64 @@ class TestPipelineExecutorFromConfig:
                 output_dir=tmp_path,
                 profile_name="0",
             )
+
+
+class TestPipelineExecutorFromConfigErrors:
+    """PipelineExecutor.from_config のエラーケーステスト."""
+
+    def test_no_cameras_key_raises(self, tmp_path):
+        """cameras キーがない設定で CameraConfigError が発生する."""
+        config = {"id_interval": 1}
+        with pytest.raises(CameraConfigError, match="No camera configurations"):
+            PipelineExecutor.from_config(
+                config=config,
+                output_dir=tmp_path,
+                profile_name="0",
+            )
+
+    def test_empty_processors_raises(self, tmp_path):
+        """プロセッサリストが空で CameraConfigError が発生する."""
+        config = _minimal_config()
+        config["cameras"]["0"]["processors"] = []
+        with pytest.raises(CameraConfigError, match="Empty processors list"):
+            PipelineExecutor.from_config(
+                config=config,
+                output_dir=tmp_path,
+                profile_name="0",
+            )
+
+    def test_no_processors_key_raises(self, tmp_path):
+        """processors キーがない設定で CameraConfigError が発生する."""
+        config = _minimal_config()
+        del config["cameras"]["0"]["processors"]
+        with pytest.raises(CameraConfigError, match="No processors defined"):
+            PipelineExecutor.from_config(
+                config=config,
+                output_dir=tmp_path,
+                profile_name="0",
+            )
+
+    def test_invalid_mode_raises(self, tmp_path):
+        """無効な mode で ValueError が発生する."""
+        config = _minimal_config()
+        config["cameras"]["0"]["mode"] = "invalid_mode"
+        with pytest.raises(ValueError, match="Invalid pipeline mode"):
+            PipelineExecutor.from_config(
+                config=config,
+                output_dir=tmp_path,
+                profile_name="0",
+            )
+
+    def test_from_config_uses_default_mode(self, tmp_path):
+        """mode 未指定時にデフォルトの parallel が使用される."""
+        config = _minimal_config()
+        del config["cameras"]["0"]["mode"]
+        executor = PipelineExecutor.from_config(
+            config=config,
+            output_dir=tmp_path,
+            profile_name="0",
+        )
+        assert executor.mode == "parallel"
 
 
 class TestPipelineExecutorRun:
