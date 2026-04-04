@@ -1,6 +1,6 @@
 """FFT（高速フーリエ変換）周波数領域特徴量抽出を行うモジュール."""
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -75,7 +75,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         name: str = "fft_frequency",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         """
         FFTFrequencyExtractorのコンストラクタ.
@@ -118,7 +118,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
 
     def _compute_fft_data(
         self, image: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         FFT を1回計算し, 各ヘルパーで共有するデータを返す.
 
@@ -161,18 +161,18 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         self,
         power_spectrum: np.ndarray,
         freq_norm: np.ndarray,
-        bands: List[Tuple[float, float]],
-    ) -> Dict[str, float]:
+        bands: list[tuple[float, float]],
+    ) -> dict[str, float]:
         """
         周波数帯域ごとのエネルギーを計算する.
 
         Args:
             power_spectrum (np.ndarray): パワースペクトル
             freq_norm (np.ndarray): 正規化周波数マップ
-            bands (List[Tuple[float, float]]): 周波数帯域のリスト
+            bands (list[tuple[float, float]]): 周波数帯域のリスト
 
         Returns:
-            Dict[str, float]: 帯域別エネルギーの辞書
+            dict[str, float]: 帯域別エネルギーの辞書
         """
         total_energy = np.sum(power_spectrum)
         energies = {}
@@ -282,7 +282,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
 
     def _compute_spectral_peaks(
         self, magnitude: np.ndarray, threshold_ratio: float
-    ) -> Tuple[int, float]:
+    ) -> tuple[int, float]:
         """
         スペクトルピーク数と最大値を計算する.
 
@@ -291,7 +291,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
             threshold_ratio (float): ピーク検出の閾値比
 
         Returns:
-            Tuple[int, float]: (ピーク数, 最大ピーク振幅)
+            tuple[int, float]: (ピーク数, 最大ピーク振幅)
         """
         max_local = maximum_filter(magnitude, size=3)
         peaks = (magnitude == max_local) & (
@@ -360,18 +360,18 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         self,
         magnitude: np.ndarray,
         freq_norm: np.ndarray,
-        bands: List[Tuple[float, float]],
-    ) -> Dict[str, float]:
+        bands: list[tuple[float, float]],
+    ) -> dict[str, float]:
         """
         周波数帯域ごとのエントロピーを計算する.
 
         Args:
             magnitude (np.ndarray): 振幅スペクトル
             freq_norm (np.ndarray): 正規化周波数マップ
-            bands (List[Tuple[float, float]]): 周波数帯域のリスト
+            bands (list[tuple[float, float]]): 周波数帯域のリスト
 
         Returns:
-            Dict[str, float]: 帯域別エントロピーの辞書
+            dict[str, float]: 帯域別エントロピーの辞書
         """
         entropies = {}
 
@@ -393,7 +393,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
 
         return entropies
 
-    def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
+    def extract(self, image: np.ndarray) -> dict[str, float | int]:
         """
         画像からFFT周波数領域特徴量を抽出する.
 
@@ -401,7 +401,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
             image (np.ndarray): 入力画像（BGR形式）.
 
         Returns:
-            Dict[str, Union[float, int]]: 抽出された特徴量の辞書.
+            dict[str, float | int]: 抽出された特徴量の辞書.
 
         Raises:
             ValueError: 画像が空の場合や無効な形状の場合.
@@ -509,12 +509,12 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         return results
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         FFTFrequencyExtractorのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
                 - frequency_bands: 周波数帯域のリスト
                 - high_low_threshold: 高周波/低周波の境界閾値
                 - directional_tolerance: 方向性エネルギー計算の許容角度
@@ -537,12 +537,12 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         }
 
     @staticmethod
-    def get_feature_names() -> List[str]:
+    def get_feature_names() -> list[str]:
         """
         この特徴量抽出器が出力する特徴量名のリストを返す（単位付き）.
 
         Returns:
-            List[str]: 特徴量名のリスト（単位付き）.
+            list[str]: 特徴量名のリスト（単位付き）.
         """
         base_names = FFTFrequencyExtractor.get_base_feature_names()
         return [
@@ -551,12 +551,12 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         ]
 
     @staticmethod
-    def get_base_feature_names() -> List[str]:
+    def get_base_feature_names() -> list[str]:
         """
         この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
 
         Returns:
-            List[str]: 基本特徴量名のリスト.
+            list[str]: 基本特徴量名のリスト.
         """
         return [
             "high_low_ratio",
@@ -578,12 +578,12 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
         ]
 
     @staticmethod
-    def get_feature_units() -> Dict[str, str]:
+    def get_feature_units() -> dict[str, str]:
         """
         特徴量の単位辞書を返す.
 
         Returns:
-            Dict[str, str]: 特徴量名と単位の対応辞書.
+            dict[str, str]: 特徴量名と単位の対応辞書.
         """
         return FFTFrequencyExtractor._FEATURE_UNITS.copy()
 

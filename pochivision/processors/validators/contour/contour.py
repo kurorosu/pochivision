@@ -1,6 +1,6 @@
 """輪郭抽出プロセッサーのバリデータを定義するモジュール."""
 
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -12,12 +12,12 @@ from pochivision.utils.image import to_grayscale
 class ContourValidator(BaseValidator):
     """輪郭抽出処理のためのバリデータ."""
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any]) -> None:
         """
         ContourValidatorのコンストラクタ.
 
         Args:
-            config (Dict[str, Any]): バリデーション対象の設定辞書.
+            config (dict[str, Any]): バリデーション対象の設定辞書.
         """
         self.config = config
 
@@ -69,7 +69,7 @@ class ContourValidator(BaseValidator):
             msg_part2 = "or 3/4 channel color image."
             raise ProcessorValidationError(msg_part1 + msg_part2)
 
-    def validate_image_for_contour(self, image: np.ndarray) -> Tuple[bool, str]:
+    def validate_image_for_contour(self, image: np.ndarray) -> tuple[bool, str]:
         """
         輪郭抽出処理のための画像検証を行い、二値化画像かどうかを返す.
 
@@ -77,7 +77,7 @@ class ContourValidator(BaseValidator):
             image (np.ndarray): 入力画像.
 
         Returns:
-            Tuple[bool, str]: 画像が適切かどうかのフラグとメッセージのタプル.
+            tuple[bool, str]: 画像が適切かどうかのフラグとメッセージのタプル.
                               (True, "") なら問題なし、(False, "エラーメッセージ") なら問題あり
         """
         try:

@@ -1,6 +1,6 @@
 """適応的2値化バリデータの実装モジュール."""
 
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -13,18 +13,18 @@ class GaussianAdaptiveBinarizationValidator(BaseValidator):
     ガウシアン適応的2値化用のバリデータ.
 
     Args:
-        config (Dict[str, Any]): バリデーション対象の設定辞書.
+        config (dict[str, Any]): バリデーション対象の設定辞書.
 
     Raises:
         ProcessorValidationError: 不正なパラメータが検出された場合.
     """
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any]) -> None:
         """
         GaussianAdaptiveBinarizationValidatorのコンストラクタ.
 
         Args:
-            config (Dict[str, Any]): バリデーション対象の設定辞書.
+            config (dict[str, Any]): バリデーション対象の設定辞書.
         """
         self.config = config
 
@@ -52,18 +52,18 @@ class MeanAdaptiveBinarizationValidator(BaseValidator):
     平均適応的2値化用のバリデータ.
 
     Args:
-        config (Dict[str, Any]): バリデーション対象の設定辞書.
+        config (dict[str, Any]): バリデーション対象の設定辞書.
 
     Raises:
         ProcessorValidationError: 不正なパラメータが検出された場合.
     """
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any]) -> None:
         """
         MeanAdaptiveBinarizationValidatorのコンストラクタ.
 
         Args:
-            config (Dict[str, Any]): バリデーション対象の設定辞書.
+            config (dict[str, Any]): バリデーション対象の設定辞書.
         """
         self.config = config
 

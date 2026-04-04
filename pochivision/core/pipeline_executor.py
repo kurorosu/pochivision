@@ -2,7 +2,7 @@
 
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import numpy as np
 
@@ -29,7 +29,7 @@ class PipelineExecutor:
 
     def __init__(
         self,
-        processors: List[BaseProcessor],
+        processors: list[BaseProcessor],
         output_dir: Path,
         mode: str = "parallel",
         camera_index: int = 0,
@@ -82,7 +82,7 @@ class PipelineExecutor:
     @classmethod
     def from_config(
         cls,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         output_dir: Path,
         camera_index: int = 0,
         profile_name: str = "0",
@@ -111,7 +111,7 @@ class PipelineExecutor:
             file_naming_manager = get_file_naming_manager()
             file_naming_manager.set_label(camera_index, label)
 
-            processors: List[BaseProcessor] = []
+            processors: list[BaseProcessor] = []
             for name in processor_names:
                 if name not in PROCESSOR_REGISTRY:
                     raise ValueError(f"Processor '{name}' is not registered")

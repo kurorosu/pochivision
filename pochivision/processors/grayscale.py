@@ -1,6 +1,6 @@
 """グレースケール変換プロセッサの実装を提供するモジュール."""
 
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -28,13 +28,13 @@ class GrayscaleProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         GrayscaleProcessorを初期化.
 
         Args:
             name (str): プロセッサ名.
-            config (Dict[str, Any]): 設定パラメータ.
+            config (dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
         self.validator = GrayscaleValidator(config)
@@ -63,11 +63,11 @@ class GrayscaleProcessor(BaseProcessor):
             raise ProcessorRuntimeError(error_msg)
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         グレースケール変換プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定（空の辞書）.
+            dict[str, Any]: デフォルト設定（空の辞書）.
         """
         return {}

@@ -2,7 +2,6 @@
 
 import shutil
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 from tqdm import tqdm
 
@@ -42,8 +41,8 @@ class ImageAggregator:
         self.mode = mode
 
     def _collect_all_image_files(
-        self, processor_types: Dict[str, List[Path]]
-    ) -> Tuple[List[Tuple[Path, Path]], Path]:
+        self, processor_types: dict[str, list[Path]]
+    ) -> tuple[list[tuple[Path, Path]], Path]:
         """
         すべての画像ファイルとその出力先を収集する.
 

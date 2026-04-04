@@ -1,6 +1,6 @@
 """カメラの設定・初期化を行うためのユーティリティモジュール."""
 
-from typing import Any, Dict
+from typing import Any
 
 import cv2
 
@@ -18,7 +18,7 @@ class CameraSetup:
 
     def __init__(
         self,
-        config: Dict[str, Any],
+        config: dict[str, Any],
         log_manager: LogManager,
         camera_index: int,
         profile_name: str,
@@ -27,7 +27,7 @@ class CameraSetup:
         CameraSetupクラスのコンストラクタ.
 
         Args:
-            config (Dict[str, Any]): アプリケーション設定.
+            config (dict[str, Any]): アプリケーション設定.
             log_manager (LogManager): ロギングマネージャー.
             camera_index (Optional[int]): 使用するカメラのインデックス. None の場合は設定ファイルの値を使用.
             profile_name (Optional[str]): 使用するカメラプロファイル名. None の場合はカメラインデックスに対応する設定を使用.

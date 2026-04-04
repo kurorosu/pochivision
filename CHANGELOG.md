@@ -11,7 +11,8 @@
 ### Changed
 - `SimpleFFTVisualizer` の `print()` を `LogManager` 経由のログ出力に統一. ([#318](https://github.com/kurorosu/pochivision/pull/318))
 - `processors/registry.py` と `feature_extractors/registry.py` のロガーを `LogManager` に統一. ([#319](https://github.com/kurorosu/pochivision/pull/319))
-- プロセッサ (`binarization.py`, `clahe.py`, `equalize.py`) の `logging.getLogger` を `LogManager` に統一. (NA.)
+- プロセッサ (`binarization.py`, `clahe.py`, `equalize.py`) の `logging.getLogger` を `LogManager` に統一. ([#332](https://github.com/kurorosu/pochivision/pull/332))
+- 型アノテーションを Python 3.12+ 新スタイル (`dict`, `list`, `tuple`, `X | None`) に統一. (NA.)
 
 ### Fixed
 - 無し

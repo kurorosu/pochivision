@@ -2,7 +2,6 @@
 
 import platform
 import time
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -24,14 +23,14 @@ class LivePreviewRunner:
     Attributes:
         cap (cv2.VideoCapture): カメラオブジェクト.
         pipeline: キャプチャ後に処理を行うパイプラインインスタンス.
-        recording_manager (Optional[RecordingManager]): 録画機能を管理するマネージャー.
+        recording_manager (RecordingManager | None): 録画機能を管理するマネージャー.
     """
 
     def __init__(
         self,
         cap: cv2.VideoCapture,
         pipeline: PipelineExecutor,
-        recording_manager: Optional[RecordingManager] = None,
+        recording_manager: RecordingManager | None = None,
         preview_size: tuple[int, int] = (DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT),
     ) -> None:
         """

@@ -1,6 +1,6 @@
 """RGB統計特徴量抽出を行うモジュール."""
 
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 import numpy as np
 
@@ -46,7 +46,7 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         name: str = "rgb_statistics",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         """
         RGBStatisticsExtractorのコンストラクタ.
@@ -60,7 +60,7 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
         # 設定パラメータの取得（デフォルト設定が既にマージされているため直接アクセス）
         self.exclude_black_pixels = self.config["exclude_black_pixels"]
 
-    def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
+    def extract(self, image: np.ndarray) -> dict[str, float | int]:
         """
         画像からRGB統計特徴量を抽出する.
 
@@ -68,7 +68,7 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
             image (np.ndarray): 入力画像（BGR形式）.
 
         Returns:
-            Dict[str, Union[float, int]]: 抽出された特徴量の辞書.
+            dict[str, float | int]: 抽出された特徴量の辞書.
                 R、G、Bチャンネルそれぞれについて:
                 - {channel}_mean: 平均値
                 - {channel}_median: 中央値
@@ -134,12 +134,12 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
             raise
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         RGBStatisticsExtractorのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
                 - exclude_black_pixels: RGB値がすべて0のピクセルを除外するかどうか
         """
         return {"exclude_black_pixels": True}
@@ -177,12 +177,12 @@ class RGBStatisticsExtractor(BaseFeatureExtractor):
         return feature_names
 
     @staticmethod
-    def get_feature_units() -> Dict[str, str]:
+    def get_feature_units() -> dict[str, str]:
         """
         特徴量の単位辞書を返す.
 
         Returns:
-            Dict[str, str]: 特徴量名と単位の対応辞書.
+            dict[str, str]: 特徴量名と単位の対応辞書.
         """
         # 基本特徴量名を取得
         base_names = RGBStatisticsExtractor.get_base_feature_names()

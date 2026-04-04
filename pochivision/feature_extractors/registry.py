@@ -10,7 +10,7 @@
         ...
 """
 
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable
 
 from pochivision.capturelib.log_manager import LogManager
 
@@ -20,12 +20,12 @@ from .schema import EXTRACTOR_SCHEMA_MAP
 logger = LogManager().get_logger()
 
 # 名前とクラスのマッピングを保持する辞書
-FEATURE_EXTRACTOR_REGISTRY: Dict[str, Type[BaseFeatureExtractor]] = {}
+FEATURE_EXTRACTOR_REGISTRY: dict[str, type[BaseFeatureExtractor]] = {}
 
 
 def register_feature_extractor(
     name: str,
-) -> Callable[[Type[BaseFeatureExtractor]], Type[BaseFeatureExtractor]]:
+) -> Callable[[type[BaseFeatureExtractor]], type[BaseFeatureExtractor]]:
     """
     特徴量抽出器クラスを名前付きで登録するためのデコレータ.
 
@@ -36,7 +36,7 @@ def register_feature_extractor(
         Callable: デコレートされたクラスをそのまま返す.
     """
 
-    def decorator(cls: Type[BaseFeatureExtractor]) -> Type[BaseFeatureExtractor]:
+    def decorator(cls: type[BaseFeatureExtractor]) -> type[BaseFeatureExtractor]:
         if name in FEATURE_EXTRACTOR_REGISTRY:
             logger.warning(
                 f"Feature extractor '{name}' is already registered "
@@ -50,7 +50,7 @@ def register_feature_extractor(
 
 
 def get_feature_extractor(
-    name: str, config: Optional[Dict[str, Any]] = None
+    name: str, config: dict[str, Any] | None = None
 ) -> BaseFeatureExtractor:
     """
     指定された名前の特徴量抽出器クラスを取得し、設定を使用してインスタンス化します.
@@ -59,7 +59,7 @@ def get_feature_extractor(
 
     Args:
         name (str): 取得する特徴量抽出器の名前.
-        config (Optional[Dict[str, Any]]): 特徴量抽出器の初期化に使用する設定.
+        config (dict[str, Any] | None): 特徴量抽出器の初期化に使用する設定.
             指定されない場合はデフォルト設定のみを使用.
 
     Returns:

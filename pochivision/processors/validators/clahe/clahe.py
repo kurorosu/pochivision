@@ -1,6 +1,6 @@
 """CLAHE入力バリデータの実装モジュール."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 import numpy as np
 
@@ -11,12 +11,12 @@ from pochivision.processors.validators.base import BaseValidator
 class CLAHEInputValidator(BaseValidator):
     """CLAHE入力用のバリデータ."""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, config: dict[str, Any] | None = None) -> None:
         """
         CLAHEInputValidatorのコンストラクタ.
 
         Args:
-            config (Optional[Dict[str, Any]], optional): 設定パラメータ. デフォルトはNone.
+            config (dict[str, Any] | None, optional): 設定パラメータ. デフォルトはNone.
         """
         self.config = config or {}
 

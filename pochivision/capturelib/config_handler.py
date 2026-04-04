@@ -7,7 +7,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from pydantic import ValidationError
 
@@ -31,7 +31,7 @@ class ConfigHandler:
     _logger = LogManager().get_logger()
 
     @staticmethod
-    def load(path: str) -> Dict[str, Any]:
+    def load(path: str) -> dict[str, Any]:
         """
         設定ファイルを読み込む.
 
@@ -48,7 +48,7 @@ class ConfigHandler:
             logger = LogManager().get_logger()
             logger.debug(f"Loading configuration file: {path}")
             with open(path, "r", encoding="utf-8") as f:
-                config: Dict[str, Any] = json.load(f)
+                config: dict[str, Any] = json.load(f)
             logger.info(f"Configuration file loaded successfully: {path}")
             # バリデーション追加
             try:
@@ -65,7 +65,7 @@ class ConfigHandler:
             raise ConfigLoadError(f"Failed to decode JSON configuration: {e}")
 
     @staticmethod
-    def load_json(path: str) -> Dict[str, Any]:
+    def load_json(path: str) -> dict[str, Any]:
         """
         JSON 設定ファイルをバリデーションなしで読み込む.
 
@@ -80,7 +80,7 @@ class ConfigHandler:
         """
         try:
             with open(path, "r", encoding="utf-8") as f:
-                result: Dict[str, Any] = json.load(f)
+                result: dict[str, Any] = json.load(f)
             return result
         except FileNotFoundError:
             raise ConfigLoadError(f"Configuration file not found: {path}")
@@ -88,7 +88,7 @@ class ConfigHandler:
             raise ConfigLoadError(f"Failed to decode JSON configuration: {e}")
 
     @staticmethod
-    def save(config: Dict[str, Any], output_dir: Path) -> None:
+    def save(config: dict[str, Any], output_dir: Path) -> None:
         """
         設定をファイルに保存する.
 
@@ -118,7 +118,7 @@ class CameraConfigHandler:
     _logger = LogManager().get_logger()
 
     @staticmethod
-    def get_camera_processors(config: Dict[str, Any], profile_name: str) -> Tuple:
+    def get_camera_processors(config: dict[str, Any], profile_name: str) -> tuple:
         """
         指定されたカメラプロファイルのプロセッサ設定を取得する.
 

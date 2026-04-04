@@ -1,6 +1,6 @@
 """2値化処理プロセッサの実装を提供するモジュール."""
 
-from typing import Any, Dict
+from typing import Any
 
 import cv2
 import numpy as np
@@ -42,7 +42,7 @@ class StandardBinarizationProcessor(BaseProcessor):
         threshold (int): 2値化の閾値（0-255, デフォルト128）
     """
 
-    def __init__(self, name: str, config: Dict[str, int]) -> None:
+    def __init__(self, name: str, config: dict[str, int]) -> None:
         """
         StandardBinarizationProcessorのコンストラクタ.
 
@@ -88,12 +88,12 @@ class StandardBinarizationProcessor(BaseProcessor):
         return binary
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         標準2値化プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"threshold": 128}
 
@@ -115,7 +115,7 @@ class OtsuBinarizationProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         OtsuBinarizationProcessorのコンストラクタ.
 
@@ -160,12 +160,12 @@ class OtsuBinarizationProcessor(BaseProcessor):
         return binary
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         大津の2値化プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定（空の辞書）.
+            dict[str, Any]: デフォルト設定（空の辞書）.
         """
         return {}
 
@@ -188,7 +188,7 @@ class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         GaussianAdaptiveBinarizationProcessorのコンストラクタ.
 
@@ -245,12 +245,12 @@ class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
         return binary
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         ガウシアン適応的2値化プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"block_size": 11, "c": 2}
 
@@ -273,7 +273,7 @@ class MeanAdaptiveBinarizationProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         MeanAdaptiveBinarizationProcessorのコンストラクタ.
 
@@ -330,11 +330,11 @@ class MeanAdaptiveBinarizationProcessor(BaseProcessor):
         return binary
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         平均値による適応的2値化プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"block_size": 11, "c": 2}

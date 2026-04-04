@@ -1,6 +1,6 @@
 """輪郭抽出プロセッサーを定義するモジュール."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -17,13 +17,13 @@ from .validators.contour import ContourValidator
 class ContourProcessor(BaseProcessor):
     """画像から輪郭を抽出するプロセッサー."""
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         ContourProcessorを初期化.
 
         Args:
             name (str): プロセッサの名前.
-            config (Dict[str, Any]): 輪郭抽出の設定辞書.
+            config (dict[str, Any]): 輪郭抽出の設定辞書.
         """
         super().__init__(name, config)
         self.validator = ContourValidator(self.config)
@@ -94,17 +94,15 @@ class ContourProcessor(BaseProcessor):
         }
         return int(method_map.get(method_str, cv2.CHAIN_APPROX_SIMPLE))
 
-    def _select_contour_by_rank(
-        self, contours: List[np.ndarray]
-    ) -> Optional[np.ndarray]:
+    def _select_contour_by_rank(self, contours: list[np.ndarray]) -> np.ndarray | None:
         """
         指定されたランクの輪郭を選択する.
 
         Args:
-            contours (List[np.ndarray]): 輪郭のリスト
+            contours (list[np.ndarray]): 輪郭のリスト
 
         Returns:
-            Optional[np.ndarray]: 指定されたランクの輪郭。該当する輪郭がない場合はNone
+            np.ndarray | None: 指定されたランクの輪郭。該当する輪郭がない場合はNone
         """
         if not contours:
             return None
@@ -197,12 +195,12 @@ class ContourProcessor(BaseProcessor):
             raise ProcessorRuntimeError(f"Error occurred during contour detection: {e}")
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         輪郭抽出プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {
             "retrieval_mode": "list",  # デフォルトはLISTモードで全ての輪郭を検出
