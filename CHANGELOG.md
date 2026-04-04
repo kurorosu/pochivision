@@ -6,7 +6,7 @@
 ## [Unreleased]
 
 ### Added
-- 無し
+- `PipelineExecutor`, `ImageSaver`, `RecordingManager`, `CameraSetup`, `ImageAggregator`, `ProcessorFolderFinder`, `get_image_files`, `load_image` のユニットテストを追加 (54件). (NA.)
 
 ### Changed
 - `FeatureExtractionRunner` と `ProfileProcessor` の `_load_config()` を `ConfigHandler.load_json()` に統合. ([#267](https://github.com/kurorosu/pochivision/pull/267))
@@ -25,7 +25,7 @@
 ### Removed
 - 未使用の `ExtractorRuntimeError` 例外クラスを削除. ([#265](https://github.com/kurorosu/pochivision/pull/265))
 - `CameraConfigHandler` の未使用メソッド (`get_camera_config`, `get_all_camera_indices`, `get_selected_camera_index`) を削除. ([#266](https://github.com/kurorosu/pochivision/pull/266))
-- `tools/` ディレクトリを全削除. (NA.)
+- `tools/` ディレクトリを全削除. ([#278](https://github.com/kurorosu/pochivision/pull/278))
 
 ## [0.2.0] - 2026-04-02
 
