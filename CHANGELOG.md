@@ -9,7 +9,7 @@
 - 無し
 
 ### Changed
-- 無し
+- `SimpleFFTVisualizer` の `print()` を `LogManager` 経由のログ出力に統一. (NA.)
 
 ### Fixed
 - 無し
