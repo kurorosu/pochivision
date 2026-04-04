@@ -12,7 +12,7 @@
 - 無し
 
 ### Fixed
-- 無し
+- `ImageSaver.save()` で `cv2.imwrite()` の戻り値を検証し, 保存失敗時に警告ログを出力するよう修正. (NA.)
 
 ### Removed
 - 無し
