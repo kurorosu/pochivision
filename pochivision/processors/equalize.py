@@ -1,11 +1,11 @@
 """ヒストグラム平坦化プロセッサーを提供するモジュール."""
 
-import logging
 from typing import Any, Dict, Optional
 
 import cv2
 import numpy as np
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.exceptions import ProcessorRuntimeError
 from pochivision.processors import BaseProcessor
 from pochivision.processors.registry import register_processor
@@ -45,7 +45,7 @@ class EqualizeProcessor(BaseProcessor):
                 - color_mode (str): カラー画像の処理方式 ('gray', 'lab', 'bgr')
         """
         super().__init__(name, config or {})
-        self.logger = logging.getLogger(__name__)
+        self.logger = LogManager().get_logger()
         self.validator = EqualizeInputValidator(self.config)
 
         self.color_mode = self.config.get("color_mode", "gray")

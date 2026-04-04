@@ -1,11 +1,11 @@
 """CLAHE（適応的ヒストグラム平坦化）プロセッサーを提供するモジュール."""
 
-import logging
 from typing import Any, Dict, Optional
 
 import cv2
 import numpy as np
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.exceptions import ProcessorRuntimeError
 from pochivision.processors import BaseProcessor
 from pochivision.processors.registry import register_processor
@@ -49,7 +49,7 @@ class CLAHEProcessor(BaseProcessor):
                 - tile_grid_size (List[int]): タイルグリッドのサイズ
         """
         super().__init__(name, config or {})
-        self.logger = logging.getLogger(__name__)
+        self.logger = LogManager().get_logger()
         self.validator = CLAHEInputValidator(self.config)
 
         self.color_mode = self.config.get("color_mode", "gray")

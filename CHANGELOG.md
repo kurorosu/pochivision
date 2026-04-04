@@ -11,13 +11,14 @@
 ### Changed
 - `SimpleFFTVisualizer` の `print()` を `LogManager` 経由のログ出力に統一. ([#318](https://github.com/kurorosu/pochivision/pull/318))
 - `processors/registry.py` と `feature_extractors/registry.py` のロガーを `LogManager` に統一. ([#319](https://github.com/kurorosu/pochivision/pull/319))
+- プロセッサ (`binarization.py`, `clahe.py`, `equalize.py`) の `logging.getLogger` を `LogManager` に統一. (NA.)
 
 ### Fixed
 - 無し
 
 ### Removed
 - `RecordingManager` の未使用属性 `frame_queue`, `recording_thread` を削除. ([#320](https://github.com/kurorosu/pochivision/pull/320))
-- `tests/conftest.py` の未使用フィクスチャ `dummy_color_image`, `dummy_grayscale_image` を削除. (NA.)
+- `tests/conftest.py` の未使用フィクスチャ `dummy_color_image`, `dummy_grayscale_image` を削除. ([#321](https://github.com/kurorosu/pochivision/pull/321))
 
 ## [0.4.0] - 2026-04-04
 
