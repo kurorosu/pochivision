@@ -1,6 +1,6 @@
 """run サブコマンド: ライブプレビュー起動."""
 
-from typing import cast
+import logging
 
 import click
 import cv2
@@ -12,7 +12,7 @@ from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
 from pochivision.core import PipelineExecutor
-from pochivision.exceptions.config import ConfigValidationError
+from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
 from pochivision.workspace import OutputManager
 
 
@@ -54,7 +54,7 @@ def run(
     )
 
 
-def _load_config(config_path: str, logger: object) -> dict:
+def _load_config(config_path: str, logger: logging.Logger) -> dict:
     """設定ファイルを読み込む.
 
     Args:
@@ -63,18 +63,22 @@ def _load_config(config_path: str, logger: object) -> dict:
 
     Returns:
         設定辞書.
+
+    Raises:
+        click.ClickException: 設定ファイルの読み込みに失敗した場合.
     """
     try:
         config_data = ConfigHandler.load(config_path)
-        logger.info("Configuration loaded successfully")  # type: ignore[attr-defined]
+        logger.info("Configuration loaded successfully")
         return config_data
     except ConfigValidationError as e:
-        logger.error(str(e))  # type: ignore[attr-defined]
-        click.echo("設定ファイルに誤りがあります. 詳細はログを確認してください.")
-        raise SystemExit(1)
-    except Exception as e:
-        logger.error(f"Failed to load configuration: {e}")  # type: ignore[attr-defined]
-        raise SystemExit(1)
+        logger.error(str(e))
+        raise click.ClickException(
+            "設定ファイルに誤りがあります. 詳細はログ��確認してください."
+        )
+    except (ConfigLoadError, Exception) as e:
+        logger.error(f"Failed to load configuration: {e}")
+        raise click.ClickException(str(e))
 
 
 def _print_profiles(config_data: dict) -> None:
@@ -98,7 +102,7 @@ def _setup_camera(
     log_manager: LogManager,
     camera: int,
     profile: str | None,
-) -> tuple:
+) -> tuple[cv2.VideoCapture, CameraSetup]:
     """カメラをセットアップする.
 
     Args:
@@ -109,6 +113,9 @@ def _setup_camera(
 
     Returns:
         (cap, camera_setup) のタプル.
+
+    Raises:
+        click.ClickException: カメラのセットアップに失敗した場合.
     """
     logger = log_manager.get_logger()
     try:
@@ -119,11 +126,13 @@ def _setup_camera(
             profile_name=profile or "0",
         )
         camera_setup.load_camera_config()
-        cap = cast(cv2.VideoCapture, camera_setup.initialize_camera())
+        cap = camera_setup.initialize_camera()
 
-        if not cap.isOpened():
+        if cap is None or not cap.isOpened():
             logger.error(f"Failed to open camera {camera_setup.camera_index}.")
-            raise SystemExit(1)
+            raise click.ClickException(
+                f"カメラ {camera_setup.camera_index} を開けませ���でした."
+            )
 
         log_manager.log_camera_info(
             cap,
@@ -134,17 +143,17 @@ def _setup_camera(
         )
         return cap, camera_setup
 
-    except SystemExit:
+    except click.ClickException:
         raise
     except Exception as e:
         logger.error(f"Error setting up camera: {e}")
-        raise SystemExit(1)
+        raise click.ClickException(str(e))
 
 
 def _run_preview(
     config_data: dict,
     log_manager: LogManager,
-    cap: object,
+    cap: cv2.VideoCapture,
     camera_setup: CameraSetup,
     no_recording: bool,
     output_manager: OutputManager,
@@ -154,7 +163,7 @@ def _run_preview(
     Args:
         config_data: 設定辞書.
         log_manager: ログマネージャ.
-        cap: カメラキャプチャオブジェクト.
+        cap: カメラキャプチャオブジェクト (cv2.VideoCapture).
         camera_setup: カメラセットアップ.
         no_recording: 録画無効フラグ.
         output_manager: 出力ディレクトリの統一管理クラス.
@@ -192,7 +201,7 @@ def _run_preview(
             preview_config.get("height", DEFAULT_PREVIEW_HEIGHT),
         )
 
-        app = LivePreviewRunner(cap, pipeline, recording_manager, preview_size)  # type: ignore[arg-type]
+        app = LivePreviewRunner(cap, pipeline, recording_manager, preview_size)
         app.run()
 
     except Exception as e:
