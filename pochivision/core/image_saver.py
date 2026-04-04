@@ -61,9 +61,10 @@ class ImageSaver:
             success = cv2.imwrite(str(path), image)
             save_time = time.time() - save_start
             if success:
+                height, width = image.shape[:2]
                 self.logger.info(
                     f"Image saved ({processor_name}): {path} "
-                    f"({image.shape[1]}x{image.shape[0]}, "
+                    f"({width}x{height}, "
                     f"id={id_index}, image={image_index}, {save_time:.3f} sec)"
                 )
             else:
