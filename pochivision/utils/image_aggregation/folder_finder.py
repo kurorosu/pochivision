@@ -1,7 +1,6 @@
 """処理フォルダの検索を行うモジュール."""
 
 from pathlib import Path
-from typing import Dict, List
 
 
 class ProcessorFolderFinder:
@@ -21,14 +20,14 @@ class ProcessorFolderFinder:
         """
         self.base_dir = base_dir
 
-    def find_processor_types(self) -> Dict[str, List[Path]]:
+    def find_processor_types(self) -> dict[str, list[Path]]:
         """
         カメラフォルダ内のすべての機能（プロセッサタイプ）フォルダを検出する.
 
         Returns:
             プロセッサタイプをキー、そのフォルダパスのリストを値とする辞書
         """
-        processor_types: Dict[str, List[Path]] = {}
+        processor_types: dict[str, list[Path]] = {}
 
         print(f"Scanning camera directory: {self.base_dir.name}")
 

@@ -1,6 +1,6 @@
 """SWT（Stationary Wavelet Transform）周波数変換特徴量抽出を行うモジュール."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import numpy as np
 import pywt
@@ -52,7 +52,7 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         name: str = "swt_frequency",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         """
         SWTFrequencyExtractorのコンストラクタ.
@@ -162,7 +162,7 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
 
     def _extract_single_level_features(
         self, coeffs: tuple, level: int = 0
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         単一レベルのSWT特徴量を抽出する.
 
@@ -171,7 +171,7 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             level (int): 分解レベル（マルチスケール時のプレフィックス用）
 
         Returns:
-            Dict[str, float]: 抽出された特徴量の辞書
+            dict[str, float]: 抽出された特徴量の辞書
         """
         features = {}
 
@@ -295,7 +295,7 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
 
         return adjusted_image
 
-    def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
+    def extract(self, image: np.ndarray) -> dict[str, float | int]:
         """
         画像からSWT周波数変換特徴量を抽出する.
 
@@ -303,7 +303,7 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             image (np.ndarray): 入力画像（グレースケールまたはRGB）
 
         Returns:
-            Dict[str, Union[float, int]]: 抽出された特徴量の辞書
+            dict[str, float | int]: 抽出された特徴量の辞書
 
         Raises:
             ValueError: 画像の次元が不正な場合
@@ -368,12 +368,12 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             raise
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         デフォルト設定を取得する.
 
         Returns:
-            Dict[str, Any]: デフォルト設定の辞書
+            dict[str, Any]: デフォルト設定の辞書
         """
         return {
             "wavelet": "db1",
@@ -385,7 +385,7 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
         }
 
     @staticmethod
-    def get_feature_names(config: Optional[Dict[str, Any]] = None) -> List[str]:
+    def get_feature_names(config: dict[str, Any] | None = None) -> list[str]:
         """
         抽出される特徴量名のリストを取得する (単位付き).
 
@@ -394,10 +394,10 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
         config=None の場合はデフォルト設定 (multiscale=True, max_level=1) を使用.
 
         Args:
-            config (Optional[Dict[str, Any]]): 設定辞書.
+            config (dict[str, Any] | None): 設定辞書.
 
         Returns:
-            List[str]: 特徴量名のリスト (単位付き).
+            list[str]: 特徴量名のリスト (単位付き).
         """
         base_names = SWTFrequencyExtractor.get_base_feature_names(config)
         return [
@@ -406,15 +406,15 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
         ]
 
     @staticmethod
-    def get_base_feature_names(config: Optional[Dict[str, Any]] = None) -> List[str]:
+    def get_base_feature_names(config: dict[str, Any] | None = None) -> list[str]:
         """
         抽出される基本特徴量名のリストを取得する（単位なし）.
 
         Args:
-            config (Optional[Dict[str, Any]]): 設定辞書。Noneの場合はデフォルト設定を使用。
+            config (dict[str, Any] | None): 設定辞書。Noneの場合はデフォルト設定を使用。
 
         Returns:
-            List[str]: 基本特徴量名のリスト.
+            list[str]: 基本特徴量名のリスト.
         """
         # 設定を取得（引数で指定されない場合はデフォルト設定を使用）
         if config is None:
@@ -454,15 +454,15 @@ class SWTFrequencyExtractor(BaseFeatureExtractor):
             return base_features
 
     @staticmethod
-    def get_feature_units(config: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    def get_feature_units(config: dict[str, Any] | None = None) -> dict[str, str]:
         """
         特徴量の単位辞書を返す.
 
         Args:
-            config (Optional[Dict[str, Any]]): 設定辞書。Noneの場合はデフォルト設定を使用。
+            config (dict[str, Any] | None): 設定辞書。Noneの場合はデフォルト設定を使用。
 
         Returns:
-            Dict[str, str]: 特徴量名と単位の対応辞書.
+            dict[str, str]: 特徴量名と単位の対応辞書.
         """
         # 基本特徴量名を取得（設定を渡す）
         base_names = SWTFrequencyExtractor.get_base_feature_names(config)

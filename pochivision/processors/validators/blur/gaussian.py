@@ -1,6 +1,6 @@
 """ガウシアンブラー用バリデータの実装モジュール."""
 
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -11,7 +11,7 @@ from pochivision.processors.validators.base import BaseValidator
 class GaussianBlurValidator(BaseValidator):
     """ガウシアンブラー用のバリデータ."""
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any]) -> None:
         """
         GaussianBlurValidatorのコンストラクタ.
 

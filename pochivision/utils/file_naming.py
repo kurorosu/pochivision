@@ -1,7 +1,6 @@
 """ファイル命名規則を管理するユーティリティモジュール."""
 
 from datetime import datetime
-from typing import Dict, Tuple
 
 
 class FileNamingManager:
@@ -9,16 +8,16 @@ class FileNamingManager:
     画像ファイルの命名規則を管理するクラス.
 
     Attributes:
-        image_counters (Dict[Tuple[int, str], int]): カメラとプレフィックスごとの画像カウンタ
-        id_intervals (Dict[Tuple[int, str], int]): カメラとプレフィックスごとのID増加間隔
-        labels (Dict[int, str]): カメラごとのラベル
+        image_counters (dict[tuple[int, str], int]): カメラとプレフィックスごとの画像カウンタ
+        id_intervals (dict[tuple[int, str], int]): カメラとプレフィックスごとのID増加間隔
+        labels (dict[int, str]): カメラごとのラベル
     """
 
     def __init__(self) -> None:
         """FileNamingManagerのコンストラクタ."""
-        self.image_counters: Dict[Tuple[int, str], int] = {}
-        self.id_intervals: Dict[Tuple[int, str], int] = {}
-        self.labels: Dict[int, str] = {}  # カメラごとのラベル
+        self.image_counters: dict[tuple[int, str], int] = {}
+        self.id_intervals: dict[tuple[int, str], int] = {}
+        self.labels: dict[int, str] = {}  # カメラごとのラベル
 
     def set_id_interval(
         self, prefix: str, camera_index: int, interval: int = 1
@@ -46,7 +45,7 @@ class FileNamingManager:
 
     def get_filename(
         self, prefix: str, camera_index: int, extension: str = "bmp"
-    ) -> Tuple[str, int, int]:
+    ) -> tuple[str, int, int]:
         """
         指定されたプレフィックスと拡張子で新しいファイル名を生成します.
 
@@ -59,7 +58,7 @@ class FileNamingManager:
             extension (str): ファイルの拡張子（デフォルトは'bmp'）
 
         Returns:
-            Tuple[str, int, int]: 生成されたファイル名、ID値、画像カウンタ値のタプル
+            tuple[str, int, int]: 生成されたファイル名、ID値、画像カウンタ値のタプル
         """
         # カメラとプレフィックスのセットをキーとして使用
         key = (camera_index, prefix)

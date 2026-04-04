@@ -1,6 +1,6 @@
 """画像内の丸をカウントする特徴量抽出を行うモジュール."""
 
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -56,7 +56,7 @@ class CircleCounterExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         name: str = "circle_counter",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         """
         CircleCounterExtractorのコンストラクタ.
@@ -81,7 +81,7 @@ class CircleCounterExtractor(BaseFeatureExtractor):
             )
         self.enable_circularity_filter = self.config["enable_circularity_filter"]
 
-    def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
+    def extract(self, image: np.ndarray) -> dict[str, float | int]:
         """
         画像から円形オブジェクトをカウントして特徴量を抽出する.
 
@@ -89,7 +89,7 @@ class CircleCounterExtractor(BaseFeatureExtractor):
             image (np.ndarray): 入力画像（BGR形式）.
 
         Returns:
-            Dict[str, Union[float, int]]: 抽出された特徴量の辞書.
+            dict[str, float | int]: 抽出された特徴量の辞書.
 
         Raises:
             ValueError: 画像が空の場合や無効な形状の場合.
@@ -212,7 +212,7 @@ class CircleCounterExtractor(BaseFeatureExtractor):
 
     def _calculate_features(
         self, circles: np.ndarray, image_area: int, max_radius: int
-    ) -> Dict[str, Union[float, int]]:
+    ) -> dict[str, float | int]:
         """
         検出された円から特徴量を計算する.
 
@@ -222,9 +222,9 @@ class CircleCounterExtractor(BaseFeatureExtractor):
             max_radius (int): 使用された最大半径.
 
         Returns:
-            Dict[str, Union[float, int]]: 計算された特徴量.
+            dict[str, float | int]: 計算された特徴量.
         """
-        results: Dict[str, Union[float, int]] = {}
+        results: dict[str, float | int] = {}
 
         # 基本カウント
         total_count = len(circles)
@@ -257,7 +257,9 @@ class CircleCounterExtractor(BaseFeatureExtractor):
             results["large_circle_count"] = large_count
 
             # 密度計算
-            results["circle_density"] = float(total_count / image_area)
+            results["circle_density"] = (
+                float(total_count / image_area) if image_area > 0 else 0.0
+            )
 
             # 半径統計
             results["avg_circle_radius"] = float(np.mean(radii))
@@ -266,12 +268,12 @@ class CircleCounterExtractor(BaseFeatureExtractor):
         return results
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         CircleCounterExtractorのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {
             "min_radius": 5,  # 最小半径（ピクセル）
@@ -317,12 +319,12 @@ class CircleCounterExtractor(BaseFeatureExtractor):
         ]
 
     @staticmethod
-    def get_feature_units() -> Dict[str, str]:
+    def get_feature_units() -> dict[str, str]:
         """
         特徴量の単位辞書を返す.
 
         Returns:
-            Dict[str, str]: 特徴量名と単位の対応辞書.
+            dict[str, str]: 特徴量名と単位の対応辞書.
         """
         base_names = CircleCounterExtractor.get_base_feature_names()
         return {

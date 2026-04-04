@@ -1,6 +1,6 @@
 """Cannyエッジ検出プロセッサーの設定バリデーターを定義します."""
 
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np  # numpy をインポート
 
@@ -15,14 +15,14 @@ from ..base import BaseValidator
 class CannyEdgeValidator(BaseValidator):  # クラス名を CannyEdgeValidator に変更
     """CannyEdgeProcessor設定および入力画像のバリデーター."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         CannyEdgeValidatorを初期化します.
 
         Args:
-            config (Dict[str, Any]): 検証対象の設定.
+            config (dict[str, Any]): 検証対象の設定.
         """
-        self.config: Dict[str, Any] = config
+        self.config: dict[str, Any] = config
 
     def validate_image(self, image: np.ndarray) -> None:
         """

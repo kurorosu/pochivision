@@ -1,11 +1,11 @@
 """2値化処理プロセッサの実装を提供するモジュール."""
 
-import logging
-from typing import Any, Dict
+from typing import Any
 
 import cv2
 import numpy as np
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.exceptions import ProcessorRuntimeError
 from pochivision.processors import BaseProcessor
 from pochivision.processors.registry import register_processor
@@ -42,7 +42,7 @@ class StandardBinarizationProcessor(BaseProcessor):
         threshold (int): 2値化の閾値（0-255, デフォルト128）
     """
 
-    def __init__(self, name: str, config: Dict[str, int]) -> None:
+    def __init__(self, name: str, config: dict[str, int]) -> None:
         """
         StandardBinarizationProcessorのコンストラクタ.
 
@@ -51,7 +51,7 @@ class StandardBinarizationProcessor(BaseProcessor):
             config (dict, optional): 設定パラメータ. デフォルトはNone.
         """
         super().__init__(name, config)
-        self.logger = logging.getLogger(__name__)
+        self.logger = LogManager().get_logger()
         self.validator = StandardBinarizationValidator(self.config)
         self.threshold: int = self.config.get("threshold", 128)
 
@@ -88,12 +88,12 @@ class StandardBinarizationProcessor(BaseProcessor):
         return binary
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         標準2値化プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"threshold": 128}
 
@@ -115,7 +115,7 @@ class OtsuBinarizationProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         OtsuBinarizationProcessorのコンストラクタ.
 
@@ -124,7 +124,7 @@ class OtsuBinarizationProcessor(BaseProcessor):
             config (dict, optional): 設定パラメータ.
         """
         super().__init__(name, config)
-        self.logger = logging.getLogger(__name__)
+        self.logger = LogManager().get_logger()
         self.validator = OtsuBinarizationValidator(self.config)
 
     def process(self, image: np.ndarray) -> np.ndarray:
@@ -160,12 +160,12 @@ class OtsuBinarizationProcessor(BaseProcessor):
         return binary
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         大津の2値化プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定（空の辞書）.
+            dict[str, Any]: デフォルト設定（空の辞書）.
         """
         return {}
 
@@ -188,7 +188,7 @@ class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         GaussianAdaptiveBinarizationProcessorのコンストラクタ.
 
@@ -197,7 +197,7 @@ class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
             config (dict, optional): 設定パラメータ.
         """
         super().__init__(name, config)
-        self.logger = logging.getLogger(__name__)
+        self.logger = LogManager().get_logger()
         self.validator = GaussianAdaptiveBinarizationValidator(self.config)
         self.block_size: int = self.config.get("block_size", 11)
         self.c_value: int | float = self.config.get("c", 2)
@@ -245,12 +245,12 @@ class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
         return binary
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         ガウシアン適応的2値化プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"block_size": 11, "c": 2}
 
@@ -273,7 +273,7 @@ class MeanAdaptiveBinarizationProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         MeanAdaptiveBinarizationProcessorのコンストラクタ.
 
@@ -282,7 +282,7 @@ class MeanAdaptiveBinarizationProcessor(BaseProcessor):
             config (dict, optional): 設定パラメータ.
         """
         super().__init__(name, config)
-        self.logger = logging.getLogger(__name__)
+        self.logger = LogManager().get_logger()
         self.validator = MeanAdaptiveBinarizationValidator(self.config)
         self.block_size: int = self.config.get("block_size", 11)
         self.c_value: int | float = self.config.get("c", 2)
@@ -330,11 +330,11 @@ class MeanAdaptiveBinarizationProcessor(BaseProcessor):
         return binary
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         平均値による適応的2値化プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"block_size": 11, "c": 2}

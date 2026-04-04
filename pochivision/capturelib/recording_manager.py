@@ -9,7 +9,6 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -31,7 +30,7 @@ class VideoFormat:
     """
 
     # 形式名: (fourcc, 拡張子, 説明)
-    FORMATS: Dict[str, Tuple[str, str, str]] = {
+    FORMATS: dict[str, tuple[str, str, str]] = {
         "mp4v": ("mp4v", ".mp4", "MP4 - Standard compression"),
         "xvid": ("XVID", ".avi", "XVID - Balanced compression"),
         "mjpg": ("MJPG", ".avi", "Motion JPEG - Low compression, high quality"),
@@ -41,12 +40,12 @@ class VideoFormat:
     }
 
     @classmethod
-    def get_available_formats(cls) -> Dict[str, str]:
+    def get_available_formats(cls) -> dict[str, str]:
         """利用可能な形式の一覧を取得."""
         return {name: info[2] for name, info in cls.FORMATS.items()}
 
     @classmethod
-    def get_format_info(cls, format_name: str) -> Optional[Tuple[str, str, str]]:
+    def get_format_info(cls, format_name: str) -> tuple[str, str, str] | None:
         """指定された形式の情報を取得."""
         return cls.FORMATS.get(format_name.lower())
 
@@ -61,13 +60,11 @@ class RecordingManager:
 
     Attributes:
         is_recording (bool): 録画中かどうかのフラグ
-        video_writer (Optional[cv2.VideoWriter]): 動画書き込みオブジェクト
-        recording_thread (Optional[threading.Thread]): 録画用スレッド
-        frame_queue (list): フレームキュー（スレッド間でのフレーム受け渡し用）
+        video_writer (cv2.VideoWriter | None): 動画書き込みオブジェクト
         lock (threading.Lock): スレッドセーフ用のロック
         video_format (str): 使用する動画形式
         frame_count (int): 録画中のフレーム数
-        recording_start_time (Optional[float]): 録画開始時間
+        recording_start_time (float | None): 録画開始時間
     """
 
     def __init__(self, default_format: str = "mjpg") -> None:
@@ -78,15 +75,13 @@ class RecordingManager:
             default_format (str): 使用する動画形式
         """
         self.is_recording = False
-        self.video_writer: Optional[cv2.VideoWriter] = None
-        self.recording_thread: Optional[threading.Thread] = None
-        self.frame_queue: list = []
+        self.video_writer: cv2.VideoWriter | None = None
         self.lock = threading.Lock()
         self.logger = LogManager().get_logger()
 
         # フレーム数カウント用
         self.frame_count = 0
-        self.recording_start_time: Optional[float] = None
+        self.recording_start_time: float | None = None
 
         # 動画形式を設定
         format_info = VideoFormat.get_format_info(default_format)
@@ -179,7 +174,6 @@ class RecordingManager:
 
                 # 録画フラグを設定
                 self.is_recording = True
-                self.frame_queue.clear()
                 self.frame_count = 0
                 self.recording_start_time = time.time()
 
@@ -202,47 +196,42 @@ class RecordingManager:
         Returns:
             bool: 録画停止に成功した場合True、失敗した場合False
         """
-        if not self.is_recording:
-            self.logger.warning("Recording is not in progress")
-            return False
+        with self.lock:
+            if not self.is_recording:
+                self.logger.warning("Recording is not in progress")
+                return False
 
-        try:
-            # 録画統計情報を計算
-            recording_end_time = time.time()
-            actual_duration = recording_end_time - (
-                self.recording_start_time or recording_end_time
-            )
-            actual_fps = (
-                self.frame_count / actual_duration if actual_duration > 0 else 0
-            )
+            try:
+                # 録画統計情報を計算
+                recording_end_time = time.time()
+                actual_duration = recording_end_time - (
+                    self.recording_start_time or recording_end_time
+                )
+                actual_fps = (
+                    self.frame_count / actual_duration if actual_duration > 0 else 0
+                )
 
-            # 現在のVideoWriterを一時的に保存
-            current_writer = self.video_writer
-
-            # 録画フラグを解除
-            with self.lock:
+                # 録画フラグを解除
                 self.is_recording = False
 
-            # 現在のファイル名を取得（再作成用）
-            if current_writer is not None:
-                # VideoWriterから直接ファイル名を取得することはできないため、
-                # 実際のFPSで新しいファイルを作成する方法を採用
-                current_writer.release()
-                self.video_writer = None
+                # VideoWriterを解放
+                if self.video_writer is not None:
+                    self.video_writer.release()
+                    self.video_writer = None
 
-            # 統計情報をログに出力
-            self.logger.info("Recording stopped")
-            self.logger.info("Recording statistics:")
-            self.logger.info(f"  Duration: {actual_duration:.2f} seconds")
-            self.logger.info(f"  Frames recorded: {self.frame_count}")
-            self.logger.info(f"  Actual FPS: {actual_fps:.2f}")
-            self.logger.info("Video saved with actual FPS for correct duration")
+            except Exception as e:
+                self.logger.error(f"Error occurred while stopping recording: {e}")
+                return False
 
-            return True
+        # 統計情報をログに出力（ロック外で安全に実行）
+        self.logger.info("Recording stopped")
+        self.logger.info("Recording statistics:")
+        self.logger.info(f"  Duration: {actual_duration:.2f} seconds")
+        self.logger.info(f"  Frames recorded: {self.frame_count}")
+        self.logger.info(f"  Actual FPS: {actual_fps:.2f}")
+        self.logger.info("Video saved with actual FPS for correct duration")
 
-        except Exception as e:
-            self.logger.error(f"Error occurred while stopping recording: {e}")
-            return False
+        return True
 
     def add_frame(self, frame: np.ndarray) -> bool:
         """

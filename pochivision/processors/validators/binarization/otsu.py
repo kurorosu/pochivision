@@ -1,7 +1,5 @@
 """大津の2値化バリデータの実装モジュール."""
 
-from typing import Dict
-
 import numpy as np
 
 from pochivision.exceptions import ProcessorValidationError
@@ -13,18 +11,18 @@ class OtsuBinarizationValidator(BaseValidator):
     大津の2値化用のバリデータ.
 
     Args:
-        config (Dict[str, int]): バリデーション対象の設定辞書.
+        config (dict[str, int]): バリデーション対象の設定辞書.
 
     Raises:
         ProcessorValidationError: 不正なパラメータが検出された場合.
     """
 
-    def __init__(self, config: Dict[str, int]) -> None:
+    def __init__(self, config: dict[str, int]) -> None:
         """
         OtsuBinarizationValidatorのコンストラクタ.
 
         Args:
-            config (Dict[str, int]): バリデーション対象の設定辞書.
+            config (dict[str, int]): バリデーション対象の設定辞書.
         """
         self.config = config
 

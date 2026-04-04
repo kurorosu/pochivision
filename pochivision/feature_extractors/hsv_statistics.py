@@ -1,6 +1,6 @@
 """HSV統計特徴量抽出を行うモジュール."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -61,7 +61,7 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         name: str = "hsv_statistics",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         """
         HSVStatisticsExtractorのコンストラクタ.
@@ -75,7 +75,7 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
         # 設定パラメータの取得（デフォルト設定が既にマージされているため直接アクセス）
         self.exclude_black_pixels = self.config["exclude_black_pixels"]
 
-    def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
+    def extract(self, image: np.ndarray) -> dict[str, float | int]:
         """
         画像からHSV統計特徴量を抽出する.
 
@@ -83,7 +83,7 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
             image (np.ndarray): 入力画像（BGR形式）.
 
         Returns:
-            Dict[str, Union[float, int]]: 抽出された特徴量の辞書.
+            dict[str, float | int]: 抽出された特徴量の辞書.
                 H、S、Vチャンネルそれぞれについて:
                 - {channel}_mean: 平均値
                 - {channel}_median: 中央値
@@ -192,23 +192,23 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
         return mean_val, median_val, variance_val, std_dev_val, cv_val
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         HSVStatisticsExtractorのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
                 - exclude_black_pixels: RGB値がすべて0のピクセルを除外するかどうか
         """
         return {"exclude_black_pixels": True}
 
     @staticmethod
-    def get_feature_names() -> List[str]:
+    def get_feature_names() -> list[str]:
         """
         この特徴量抽出器が出力する特徴量名のリストを返す（単位付き）.
 
         Returns:
-            List[str]: 特徴量名のリスト（単位付き）.
+            list[str]: 特徴量名のリスト（単位付き）.
         """
         base_names = HSVStatisticsExtractor.get_base_feature_names()
         return [
@@ -217,12 +217,12 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
         ]
 
     @staticmethod
-    def get_base_feature_names() -> List[str]:
+    def get_base_feature_names() -> list[str]:
         """
         この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
 
         Returns:
-            List[str]: 基本特徴量名のリスト.
+            list[str]: 基本特徴量名のリスト.
         """
         feature_names = []
         channels = ["hue", "saturation", "value"]
@@ -235,12 +235,12 @@ class HSVStatisticsExtractor(BaseFeatureExtractor):
         return feature_names
 
     @staticmethod
-    def get_feature_units() -> Dict[str, str]:
+    def get_feature_units() -> dict[str, str]:
         """
         特徴量の単位辞書を返す.
 
         Returns:
-            Dict[str, str]: 特徴量名と単位の対応辞書.
+            dict[str, str]: 特徴量名と単位の対応辞書.
         """
         # 基本特徴量名を取得
         base_names = HSVStatisticsExtractor.get_base_feature_names()

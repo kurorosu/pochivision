@@ -1,11 +1,11 @@
 """CLAHE（適応的ヒストグラム平坦化）プロセッサーを提供するモジュール."""
 
-import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 import cv2
 import numpy as np
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.exceptions import ProcessorRuntimeError
 from pochivision.processors import BaseProcessor
 from pochivision.processors.registry import register_processor
@@ -37,19 +37,19 @@ class CLAHEProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, name: str, config: dict[str, Any] | None = None) -> None:
         """
         CLAHEProcessorの初期化.
 
         Args:
             name (str): プロセッサ名.
-            config (Optional[Dict[str, Any]], optional): 設定パラメータ. デフォルトはNone.
+            config (dict[str, Any] | None, optional): 設定パラメータ. デフォルトはNone.
                 - color_mode (str): カラー画像の処理方式 ('gray', 'lab', 'bgr')
                 - clip_limit (float): コントラスト制限値
                 - tile_grid_size (List[int]): タイルグリッドのサイズ
         """
         super().__init__(name, config or {})
-        self.logger = logging.getLogger(__name__)
+        self.logger = LogManager().get_logger()
         self.validator = CLAHEInputValidator(self.config)
 
         self.color_mode = self.config.get("color_mode", "gray")
@@ -121,11 +121,11 @@ class CLAHEProcessor(BaseProcessor):
             raise ProcessorRuntimeError(error_msg)
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         CLAHEプロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"color_mode": "gray", "clip_limit": 2.0, "tile_grid_size": [8, 8]}

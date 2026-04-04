@@ -1,6 +1,6 @@
 """リサイズプロセッサーを提供するモジュール."""
 
-from typing import Any, Dict
+from typing import Any
 
 import cv2
 import numpy as np
@@ -18,13 +18,13 @@ class ResizeProcessor(BaseProcessor):
     アスペクト比の保持オプションを提供します.
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         ResizeProcessorを初期化.
 
         Args:
             name (str): プロセッサー名
-            config (Dict[str, Any]): リサイズパラメータ
+            config (dict[str, Any]): リサイズパラメータ
                 - width (int): リサイズ後の幅
                 - height (int): リサイズ後の高さ
                 - preserve_aspect_ratio (bool, optional): アスペクト比を保持するかどうか
@@ -85,6 +85,9 @@ class ResizeProcessor(BaseProcessor):
                 self.height if self.height is not None else orig_height,
             )
 
+        if orig_height == 0:
+            return orig_width, orig_height
+
         aspect_ratio = orig_width / orig_height
 
         if self.aspect_ratio_mode == "width" and self.width is not None:
@@ -101,12 +104,12 @@ class ResizeProcessor(BaseProcessor):
         return target_w, target_h
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         リサイズプロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {
             "width": 1600,
