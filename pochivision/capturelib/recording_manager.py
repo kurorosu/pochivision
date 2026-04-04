@@ -137,6 +137,11 @@ class RecordingManager:
             self.logger.warning("Recording is already in progress")
             return False
 
+        # フレームサイズの検証
+        if len(frame_size) != 2 or frame_size[0] <= 0 or frame_size[1] <= 0:
+            self.logger.error(f"Invalid frame size: {frame_size}")
+            return False
+
         # 設定された動画形式を使用
         format_info = VideoFormat.get_format_info(self.video_format)
         if format_info is None:
@@ -248,9 +253,6 @@ class RecordingManager:
         Returns:
             bool: フレーム追加に成功した場合True、失敗した場合False
         """
-        if not self.is_recording or self.video_writer is None:
-            return False
-
         try:
             with self.lock:
                 if self.is_recording and self.video_writer is not None:
