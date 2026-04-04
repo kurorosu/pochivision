@@ -61,6 +61,9 @@ class LivePreviewRunner:
             np.ndarray: リサイズされたフレーム.
         """
         h, w = frame.shape[:2]
+        if w == 0 or h == 0:
+            self.logger.warning(f"Invalid frame size: ({w}, {h}), skipping resize")
+            return frame
         max_w, max_h = self.preview_size
         scale = min(max_w / w, max_h / h)
         new_w = int(w * scale)
