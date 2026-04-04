@@ -7,6 +7,7 @@ from typing import Optional
 import cv2
 import numpy as np
 
+from pochivision.capture_runner.help_overlay import HelpOverlay
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
@@ -48,6 +49,7 @@ class LivePreviewRunner:
         self.preview_size = preview_size
         self.os_name = platform.system()
         self.logger = LogManager().get_logger()
+        self.help_overlay = HelpOverlay()
 
     def _resize_for_preview(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -108,6 +110,7 @@ class LivePreviewRunner:
         - 'r': 録画開始
         - 't': 録画停止
         - 's': カメラ設定
+        - 'h': ヘルプオーバーレイ表示/非表示
         - 'q': 終了
 
         Raises:
@@ -117,7 +120,7 @@ class LivePreviewRunner:
         self.logger.info(
             "Press 'c' to capture, 'r' to start recording, 't' to stop recording,"
         )
-        self.logger.info("'s' for camera settings, 'q' to quit.")
+        self.logger.info("'s' for camera settings, 'h' for help, 'q' to quit.")
 
         try:
             while True:
@@ -132,8 +135,10 @@ class LivePreviewRunner:
                 ):
                     self.recording_manager.add_frame(frame)
 
-                # プレビュー表示
-                cv2.imshow("Live View", self._resize_for_preview(frame))
+                # プレビュー表示 (リサイズ後にオーバーレイを描画)
+                preview = self._resize_for_preview(frame)
+                self.help_overlay.draw(preview)
+                cv2.imshow("Live View", preview)
 
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord("c"):
@@ -155,6 +160,9 @@ class LivePreviewRunner:
                             f"Camera settings dialog is only supported on Windows. "
                             f"Current OS: {self.os_name}"
                         )
+                elif key == ord("h"):
+                    # ヘルプオーバーレイのトグル
+                    self.help_overlay.toggle()
                 elif key == ord("q"):
                     self.logger.info("Quit key pressed, exiting application")
                     break
