@@ -16,7 +16,8 @@
 - `ImageSaver.save()` で `cv2.imwrite()` の戻り値を検証し, 保存失敗時に警告ログを出力するよう修正. ([#291](https://github.com/kurorosu/pochivision/pull/291))
 - `RecordingManager.add_frame()` のロック外チェックを削除しスレッド安全性を改善. `start_recording()` にフレームサイズ検証を追加. ([#292](https://github.com/kurorosu/pochivision/pull/292))
 - `ImageSaver.save()` のログ出力でグレースケール画像の幅/高さが正しく取得されるよう `image.shape[:2]` に修正. ([#293](https://github.com/kurorosu/pochivision/pull/293))
-- `run.py` の `SystemExit(1)` を `click.ClickException` に統一, `logger` パラメータ型と `_setup_camera()` 戻り値型を修正. (NA.)
+- `run.py` の `SystemExit(1)` を `click.ClickException` に統一, `logger` パラメータ型と `_setup_camera()` 戻り値型を修正. ([#309](https://github.com/kurorosu/pochivision/pull/309))
+- `FeatureExtractionRunner` の特徴量ユニット名取得失敗時に警告ログを出力するよう修正. (NA.)
 
 ### Removed
 - `feature_extractors/__init__.py` から未使用の Params クラス 9 件のエクスポートを削除. ([#296](https://github.com/kurorosu/pochivision/pull/296))

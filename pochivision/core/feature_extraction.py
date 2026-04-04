@@ -174,7 +174,10 @@ class FeatureExtractionRunner:
                                     features[f"{extractor_name}_{unit_name}"] = value
                                 else:
                                     features[f"{extractor_name}_{base_name}"] = value
-                        except Exception:
+                        except Exception as e:
+                            self.logger.warning(
+                                f"ユニット名の取得に失敗しました ({extractor_name}): {e}"
+                            )
                             for feature_name, value in extracted.items():
                                 features[f"{extractor_name}_{feature_name}"] = value
                     else:
