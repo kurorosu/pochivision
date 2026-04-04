@@ -6,7 +6,8 @@
 ## [Unreleased]
 
 ### Added
-- 例外クラスのテスト 21 件を追加. (NA.)
+- 例外クラスのテスト 21 件を追加. ([#339](https://github.com/kurorosu/pochivision/pull/339))
+- `PipelineExecutor.from_config()` のエラーケーステスト 5 件を追加. (NA.)
 
 ### Changed
 - 無し
