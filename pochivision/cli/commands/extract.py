@@ -8,7 +8,11 @@ from pochivision.exceptions.config import ConfigLoadError
 
 @click.command()
 @click.option(
-    "--config", "-c", type=str, default="extractor_config.json", help="設定ファイルパス"
+    "--config",
+    "-c",
+    type=str,
+    default="config/extractor_config.json",
+    help="設定ファイルパス",
 )
 @click.pass_context
 def extract(ctx: click.Context, config: str) -> None:

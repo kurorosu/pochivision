@@ -66,7 +66,7 @@ class CannyEdgeProcessor(BaseProcessor):
                 try:
                     dst = np.empty_like(gray_image, dtype=np.float64)
                     cv2.normalize(gray_image, dst, 0, 255, cv2.NORM_MINMAX)
-                    gray_image = dst.astype(np.uint8)
+                    gray_image = np.nan_to_num(dst, nan=0.0).astype(np.uint8)
                 except cv2.error as e:
                     raise ProcessorRuntimeError(
                         f"Failed to convert image to uint8 for Canny: {e}"

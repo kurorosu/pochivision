@@ -1,6 +1,6 @@
 # pochivision
 
-[![Version](https://img.shields.io/badge/version-0.3.0-green.svg)](https://github.com/kurorosu/pochivision/releases)
+[![Version](https://img.shields.io/badge/version-0.4.0-green.svg)](https://github.com/kurorosu/pochivision/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 
@@ -81,7 +81,7 @@ uv run pochi run --no-recording
 | `--camera` | `-c` | カメラデバイスインデックスを指定 (0, 1, 2...). 単独使用時はプロファイル "0" を使用 |
 | `--profile` | `-p` | config.json からカメラプロファイルを指定 |
 | `--list-profiles` | `-l` | 利用可能な全てのカメラプロファイルを表示 |
-| `--config` | | 設定ファイルのパスを指定 (デフォルト: config.json) |
+| `--config` | | 設定ファイルのパスを指定 (デフォルト: config/config.json) |
 | `--no-recording` | | 録画機能を無効にして起動 |
 
 ### `pochi extract` - 特徴量抽出
@@ -98,7 +98,7 @@ uv run pochi extract --config my_extractor_config.json
 
 | 引数 | 短縮形 | 説明 |
 |----------|-------|-------------|
-| `--config` | `-c` | 設定ファイルのパスを指定 (デフォルト: extractor_config.json) |
+| `--config` | `-c` | 設定ファイルのパスを指定 (デフォルト: config/extractor_config.json) |
 
 ### `pochi process` - プロファイル適用
 
@@ -117,7 +117,7 @@ uv run pochi process --list-profiles
 
 | 引数 | 短縮形 | 説明 |
 |----------|-------|-------------|
-| `--config` | `-c` | 設定ファイルのパスを指定 (デフォルト: config.json) |
+| `--config` | `-c` | 設定ファイルのパスを指定 (デフォルト: config/config.json) |
 | `--input` | `-i` | 入力画像ディレクトリ (必須) |
 | `--output` | `-o` | 出力ディレクトリ |
 | `--profile` | `-p` | 適用するカメラプロファイル名 (必須) |

@@ -11,7 +11,7 @@ from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
 
 @click.command()
 @click.option(
-    "--config", "-c", type=str, default="config.json", help="設定ファイルパス"
+    "--config", "-c", type=str, default="config/config.json", help="設定ファイルパス"
 )
 @click.option(
     "--input", "-i", "input_dir", type=str, required=True, help="入力ディレクトリ"

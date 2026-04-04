@@ -133,61 +133,67 @@ class RecordingManager:
         Returns:
             bool: 録画開始に成功した場合True、失敗した場合False
         """
-        if self.is_recording:
-            self.logger.warning("Recording is already in progress")
-            return False
-
-        # 設定された動画形式を使用
-        format_info = VideoFormat.get_format_info(self.video_format)
-        if format_info is None:
-            self.logger.error(f"Invalid video format: {self.video_format}")
-            return False
-
-        fourcc_str, extension, description = format_info
-
-        try:
-            # movieディレクトリを作成
-            movie_dir = output_dir / "movie"
-            movie_dir.mkdir(parents=True, exist_ok=True)
-
-            # 録画ファイル名を生成（タイムスタンプ付き）
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            video_filename = (
-                movie_dir / f"recording_{timestamp}_{self.video_format}{extension}"
-            )
-
-            # VideoWriterを初期化
-            fourcc_code = cv2.VideoWriter.fourcc(*fourcc_str)
-            self.video_writer = cv2.VideoWriter(
-                str(video_filename), fourcc_code, fps, frame_size
-            )
-
-            if not self.video_writer.isOpened():
-                self.logger.error(
-                    f"Failed to initialize VideoWriter with format {self.video_format}"
-                )
-                self.video_writer.release()
-                self.video_writer = None
+        with self.lock:
+            if self.is_recording:
+                self.logger.warning("Recording is already in progress")
                 return False
 
-            # 録画フラグを設定
-            with self.lock:
+            # フレームサイズの検証
+            if len(frame_size) != 2 or frame_size[0] <= 0 or frame_size[1] <= 0:
+                self.logger.error(f"Invalid frame size: {frame_size}")
+                return False
+
+            # 設定された動画形式を使用
+            format_info = VideoFormat.get_format_info(self.video_format)
+            if format_info is None:
+                self.logger.error(f"Invalid video format: {self.video_format}")
+                return False
+
+            fourcc_str, extension, description = format_info
+
+            try:
+                # movieディレクトリを作成
+                movie_dir = output_dir / "movie"
+                movie_dir.mkdir(parents=True, exist_ok=True)
+
+                # 録画ファイル名を生成（タイムスタンプ付き）
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                video_filename = (
+                    movie_dir / f"recording_{timestamp}_{self.video_format}{extension}"
+                )
+
+                # VideoWriterを初期化
+                fourcc_code = cv2.VideoWriter.fourcc(*fourcc_str)
+                self.video_writer = cv2.VideoWriter(
+                    str(video_filename), fourcc_code, fps, frame_size
+                )
+
+                if not self.video_writer.isOpened():
+                    self.logger.error(
+                        f"Failed to initialize VideoWriter "
+                        f"with format {self.video_format}"
+                    )
+                    self.video_writer.release()
+                    self.video_writer = None
+                    return False
+
+                # 録画フラグを設定
                 self.is_recording = True
                 self.frame_queue.clear()
                 self.frame_count = 0
                 self.recording_start_time = time.time()
 
-            self.logger.info(
-                f"Recording started: {video_filename} (Format: {description})"
-            )
-            return True
+                self.logger.info(
+                    f"Recording started: {video_filename} " f"(Format: {description})"
+                )
+                return True
 
-        except Exception as e:
-            self.logger.error(f"Error occurred while starting recording: {e}")
-            if self.video_writer is not None:
-                self.video_writer.release()
-                self.video_writer = None
-            return False
+            except Exception as e:
+                self.logger.error(f"Error occurred while starting recording: {e}")
+                if self.video_writer is not None:
+                    self.video_writer.release()
+                    self.video_writer = None
+                return False
 
     def stop_recording(self) -> bool:
         """
@@ -248,9 +254,6 @@ class RecordingManager:
         Returns:
             bool: フレーム追加に成功した場合True、失敗した場合False
         """
-        if not self.is_recording or self.video_writer is None:
-            return False
-
         try:
             with self.lock:
                 if self.is_recording and self.video_writer is not None:

@@ -1,6 +1,6 @@
 # pochivision
 
-[![Version](https://img.shields.io/badge/version-0.3.0-green.svg)](https://github.com/kurorosu/pochivision/releases)
+[![Version](https://img.shields.io/badge/version-0.4.0-green.svg)](https://github.com/kurorosu/pochivision/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 
@@ -90,7 +90,7 @@ uv run pochi run --no-recording
 | `--camera` | `-c` | Specify camera device index (0, 1, 2...). When used alone, will always use profile "0" |
 | `--profile` | `-p` | Specify camera profile from config.json |
 | `--list-profiles` | `-l` | Display all available camera profiles |
-| `--config` | | Specify a config file path (default: config.json) |
+| `--config` | | Specify a config file path (default: config/config.json) |
 | `--no-recording` | | Disable recording functionality |
 
 ### `pochi extract` - Extract features from images
@@ -98,7 +98,7 @@ uv run pochi run --no-recording
 Run feature extraction on images using the extractor configuration file.
 
 ```bash
-# Use default config (extractor_config.json)
+# Use default config (config/extractor_config.json)
 uv run pochi extract
 
 # Use a custom config file
@@ -107,7 +107,7 @@ uv run pochi extract --config my_extractor_config.json
 
 | Argument | Short | Description |
 |----------|-------|-------------|
-| `--config` | `-c` | Extractor config file path (default: extractor_config.json) |
+| `--config` | `-c` | Extractor config file path (default: config/extractor_config.json) |
 
 ### `pochi process` - Apply camera profile processing to images
 
@@ -129,7 +129,7 @@ uv run pochi process --input ./images --profile all_para --no-save-original
 
 | Argument | Short | Description |
 |----------|-------|-------------|
-| `--config` | `-c` | Config file path (default: config.json) |
+| `--config` | `-c` | Config file path (default: config/config.json) |
 | `--input` | `-i` | Input image directory (required) |
 | `--output` | `-o` | Output directory (default: auto-generated) |
 | `--profile` | `-p` | Camera profile name (required) |
