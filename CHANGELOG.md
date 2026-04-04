@@ -17,7 +17,8 @@
 ### Fixed
 - `RecordingManager.stop_recording()` の `is_recording` チェックをロック内に移動し race condition を修正. ([#334](https://github.com/kurorosu/pochivision/pull/334))
 - `_resize_for_preview()` でフレームサイズが 0 の場合に元フレームを返す防御コードを追加. ([#335](https://github.com/kurorosu/pochivision/pull/335))
-- `CircleCounterExtractor` の `circle_density` 計算で画像面積が 0 の場合に除算ゼロを防止. (NA.)
+- `CircleCounterExtractor` の `circle_density` 計算で画像面積が 0 の場合に除算ゼロを防止. ([#336](https://github.com/kurorosu/pochivision/pull/336))
+- `ResizeProcessor` の `aspect_ratio` 計算で元画像の高さが 0 の場合に除算ゼロを防止. (NA.)
 
 ### Removed
 - `RecordingManager` の未使用属性 `frame_queue`, `recording_thread` を削除. ([#320](https://github.com/kurorosu/pochivision/pull/320))
