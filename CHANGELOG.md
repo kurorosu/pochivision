@@ -8,7 +8,8 @@
 ### Added
 - 例外クラスのテスト 21 件を追加. ([#339](https://github.com/kurorosu/pochivision/pull/339))
 - `PipelineExecutor.from_config()` のエラーケーステスト 5 件を追加. ([#340](https://github.com/kurorosu/pochivision/pull/340))
-- `FeatureExtractionRunner._initialize_extractors()` のエラーケーステスト 3 件を追加. (NA.)
+- `FeatureExtractionRunner._initialize_extractors()` のエラーケーステスト 3 件を追加. ([#341](https://github.com/kurorosu/pochivision/pull/341))
+- `ProfileProcessor._process_image()` の parallel モード・エッジケーステスト 4 件を追加. (NA.)
 
 ### Changed
 - 無し

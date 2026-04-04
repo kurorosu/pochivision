@@ -156,3 +156,85 @@ class TestProfileProcessor:
 
         processed_images = list(tmp_path.rglob("processed/*.png"))
         assert len(processed_images) == 1
+
+
+class TestProcessImageEdgeCases:
+    """ProfileProcessor._process_image のエッジケーステスト."""
+
+    def test_unknown_mode_returns_none(self, tmp_path):
+        """不明な mode 値で _process_image が None を返す."""
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+        img_path = input_dir / "img1.png"
+        _create_test_image(img_path)
+
+        config_path = _create_config(tmp_path, mode="pipeline")
+        output_manager = OutputManager(str(tmp_path))
+        processor = ProfileProcessor(config_path, "test_profile", output_manager)
+        # mode を強制的に不正な値に変更
+        processor.profile_config["mode"] = "unknown_mode"
+
+        result = processor._process_image(img_path)
+        assert result is None
+
+    def test_empty_processors_pipeline_returns_original(self, tmp_path):
+        """プロセッサリストが空の pipeline モードで元画像が返る."""
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+        img_path = input_dir / "img1.png"
+        _create_test_image(img_path, width=100, height=80)
+
+        config_path = _create_config(tmp_path, processors=["resize"], mode="pipeline")
+        output_manager = OutputManager(str(tmp_path))
+        processor = ProfileProcessor(config_path, "test_profile", output_manager)
+        # プロセッサリストを空にする
+        processor.processors = []
+
+        result = processor._process_image(img_path)
+        assert result is not None
+        assert result.shape[:2] == (80, 100)
+
+    def test_empty_processors_parallel_returns_none(self, tmp_path):
+        """プロセッサリストが空の parallel モードで None が返る."""
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+        img_path = input_dir / "img1.png"
+        _create_test_image(img_path)
+
+        config_path = _create_config(tmp_path, processors=["resize"], mode="parallel")
+        output_manager = OutputManager(str(tmp_path))
+        processor = ProfileProcessor(config_path, "test_profile", output_manager)
+        processor.processors = []
+
+        result = processor._process_image(img_path)
+        assert result is None
+
+    def test_parallel_mode_multiple_processors(self, tmp_path):
+        """parallel モードで複数プロセッサの最後の結果が返る."""
+        input_dir = tmp_path / "input"
+        input_dir.mkdir()
+        img_path = input_dir / "img1.png"
+        _create_test_image(img_path, width=100, height=80)
+
+        profile = {
+            "width": 640,
+            "height": 480,
+            "fps": 30,
+            "backend": "any",
+            "processors": ["resize", "equalize"],
+            "mode": "parallel",
+            "resize": {"width": 50, "preserve_aspect_ratio": False},
+            "equalize": {"color_mode": "gray"},
+        }
+        config = {
+            "cameras": {"test_profile": profile},
+            "selected_camera_index": 0,
+        }
+        config_path = tmp_path / "config.json"
+        config_path.write_text(json.dumps(config), encoding="utf-8")
+
+        output_manager = OutputManager(str(tmp_path))
+        processor = ProfileProcessor(str(config_path), "test_profile", output_manager)
+
+        result = processor._process_image(img_path)
+        assert result is not None
