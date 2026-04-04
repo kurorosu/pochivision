@@ -85,6 +85,9 @@ class ResizeProcessor(BaseProcessor):
                 self.height if self.height is not None else orig_height,
             )
 
+        if orig_height == 0:
+            return orig_width, orig_height
+
         aspect_ratio = orig_width / orig_height
 
         if self.aspect_ratio_mode == "width" and self.width is not None:
