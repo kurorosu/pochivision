@@ -4,7 +4,6 @@ import logging
 import platform
 import sys
 from pathlib import Path
-from typing import Optional
 
 import cv2
 
@@ -40,7 +39,7 @@ class LogManager:
     シングルトンパターンを採用し、複数箇所から同じインスタンスにアクセスできるようにする.
     """
 
-    _instance: Optional["LogManager"] = None
+    _instance: "LogManager | None" = None
 
     def __new__(cls, *args, **kwargs):
         """LogManagerのシングルトンインスタンスを生成・返却する."""
@@ -121,7 +120,7 @@ class LogManager:
         camera_id: int,
         requested_width: int,
         requested_height: int,
-        profile_name: Optional[str] = None,
+        profile_name: str | None = None,
     ) -> None:
         """
         カメラの情報をログに記録する.
@@ -131,7 +130,7 @@ class LogManager:
             camera_id (int): カメラID
             requested_width (int): 要求した幅
             requested_height (int): 要求した高さ
-            profile_name (Optional[str]): 使用しているカメラプロファイル名
+            profile_name (str | None): 使用しているカメラプロファイル名
         """
         profile_info = f", Profile: {profile_name}" if profile_name else ""
         self._logger.info(

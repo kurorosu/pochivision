@@ -1,6 +1,6 @@
 """マスク合成プロセッサのバリデータを定義."""
 
-from typing import Any, Dict
+from typing import Any
 
 import cv2
 import numpy as np
@@ -12,12 +12,12 @@ from pochivision.processors.validators.base import BaseValidator
 class MaskCompositionValidator(BaseValidator):
     """マスク合成プロセッサの設定と入力画像を検証するバリデータ."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         MaskCompositionValidatorを初期化.
 
         Args:
-            config (Dict[str, Any]): 設定パラメータ.
+            config (dict[str, Any]): 設定パラメータ.
         """
         self.config = config
 

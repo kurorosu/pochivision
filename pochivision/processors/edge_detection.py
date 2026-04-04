@@ -1,6 +1,6 @@
 """Cannyエッジ検出プロセッサーを定義します."""
 
-from typing import Any, Dict
+from typing import Any
 
 import cv2
 import numpy as np
@@ -17,13 +17,13 @@ from .validators.edge_detection.canny import CannyEdgeValidator
 class CannyEdgeProcessor(BaseProcessor):
     """画像にCannyエッジ検出を適用します."""
 
-    def __init__(self, name: str, config: Dict[str, Any]):
+    def __init__(self, name: str, config: dict[str, Any]):
         """
         CannyEdgeProcessorを初期化.
 
         Args:
             name (str): プロセッサの名前.
-            config (Dict[str, Any]): Cannyエッジ検出の設定辞書.
+            config (dict[str, Any]): Cannyエッジ検出の設定辞書.
         """
         super().__init__(name, config)
         self.validator = CannyEdgeValidator(self.config)
@@ -87,12 +87,12 @@ class CannyEdgeProcessor(BaseProcessor):
         return edges
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         CannyEdgeProcessorのデフォルト設定を返します.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {
             "threshold1": 100.0,

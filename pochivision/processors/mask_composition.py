@@ -1,6 +1,6 @@
 """マスク合成プロセッサを提供するモジュール."""
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import cv2
 import numpy as np
@@ -41,13 +41,13 @@ class MaskCompositionProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         MaskCompositionProcessorを初期化.
 
         Args:
             name (str): プロセッサ名.
-            config (Dict[str, Any]): 設定パラメータ.
+            config (dict[str, Any]): 設定パラメータ.
 
         Raises:
             ProcessorRuntimeError: パラレルモードで実行しようとした場合.
@@ -69,7 +69,7 @@ class MaskCompositionProcessor(BaseProcessor):
         self.crop_margin = self.config.get("crop_margin", default_config["crop_margin"])
 
         # ターゲット画像（実行時に設定）
-        self.target_image: Optional[np.ndarray] = None
+        self.target_image: np.ndarray | None = None
 
         # リサイズプロセッサの準備（サイズはprocess内で動的設定）
         resize_config = ResizeProcessor.get_default_config()
@@ -103,9 +103,7 @@ class MaskCompositionProcessor(BaseProcessor):
                 "MaskCompositionProcessor can only be used in pipeline mode"
             )
 
-    def _find_crop_bounds(
-        self, mask: np.ndarray
-    ) -> Optional[Tuple[int, int, int, int]]:
+    def _find_crop_bounds(self, mask: np.ndarray) -> tuple[int, int, int, int] | None:
         """
         マスクの白ピクセル領域に基づいてトリミング範囲を計算.
 
@@ -113,7 +111,7 @@ class MaskCompositionProcessor(BaseProcessor):
             mask (np.ndarray): 2値化マスク画像（グレースケール）.
 
         Returns:
-            Optional[Tuple[int, int, int, int]]: トリミング範囲 (y_min, y_max, x_min, x_max)
+            tuple[int, int, int, int] | None: トリミング範囲 (y_min, y_max, x_min, x_max)
                                                 白ピクセルが見つからない場合はNone
         """
         # 白ピクセル（255）の座標を取得
@@ -141,14 +139,14 @@ class MaskCompositionProcessor(BaseProcessor):
         return (y_min, y_max, x_min, x_max)
 
     def _crop_image(
-        self, image: np.ndarray, bounds: Tuple[int, int, int, int]
+        self, image: np.ndarray, bounds: tuple[int, int, int, int]
     ) -> np.ndarray:
         """
         指定された範囲で画像をトリミング.
 
         Args:
             image (np.ndarray): トリミング対象の画像.
-            bounds (Tuple[int, int, int, int]): トリミング範囲 (y_min, y_max, x_min, x_max).
+            bounds (tuple[int, int, int, int]): トリミング範囲 (y_min, y_max, x_min, x_max).
 
         Returns:
             np.ndarray: トリミングされた画像.
@@ -233,12 +231,12 @@ class MaskCompositionProcessor(BaseProcessor):
             raise ProcessorRuntimeError(f"Unexpected error in {self.name}: {e}")
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         マスク合成プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {
             "target_image": "original",  # デフォルトはオリジナル画像

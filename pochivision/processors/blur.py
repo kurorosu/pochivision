@@ -1,6 +1,6 @@
 """各種ブラー（ぼかし）処理プロセッサの実装を提供するモジュール."""
 
-from typing import Any, Dict
+from typing import Any
 
 import cv2
 import numpy as np
@@ -34,13 +34,13 @@ class GaussianBlurProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         GaussianBlurProcessorを初期化.
 
         Args:
             name (str): プロセッサ名.
-            config (Dict[str, Any]): 設定パラメータ.
+            config (dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
         self.validator = GaussianBlurValidator(config)
@@ -81,12 +81,12 @@ class GaussianBlurProcessor(BaseProcessor):
             raise ProcessorRuntimeError(error_msg)
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         ガウシアンブラープロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"kernel_size": [15, 15], "sigma": 0}
 
@@ -108,13 +108,13 @@ class AverageBlurProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         AverageBlurProcessorを初期化します.
 
         Args:
             name (str): プロセッサ名.
-            config (Dict[str, Any]): 設定パラメータ.
+            config (dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
         self.validator = AverageBlurValidator(config)
@@ -150,12 +150,12 @@ class AverageBlurProcessor(BaseProcessor):
             raise ProcessorRuntimeError(error_msg)
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         平均値ブラープロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"kernel_size": [5, 5]}
 
@@ -178,13 +178,13 @@ class MedianBlurProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         MedianBlurProcessorを初期化します.
 
         Args:
             name (str): プロセッサ名.
-            config (Dict[str, Any]): 設定パラメータ.
+            config (dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
         self.validator = MedianBlurValidator(config)
@@ -219,12 +219,12 @@ class MedianBlurProcessor(BaseProcessor):
             raise ProcessorRuntimeError(error_msg)
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         メディアンブラープロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"kernel_size": 5}
 
@@ -248,13 +248,13 @@ class BilateralFilterProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]):
+    def __init__(self, name: str, config: dict[str, Any]):
         """
         BilateralFilterProcessorを初期化します.
 
         Args:
             name (str): プロセッサ名.
-            config (Dict[str, Any]): 設定パラメータ.
+            config (dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
         self.validator = BilateralFilterValidator(config)
@@ -293,12 +293,12 @@ class BilateralFilterProcessor(BaseProcessor):
             raise ProcessorRuntimeError(error_msg)
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         バイラテラルフィルタプロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"d": 9, "sigmaColor": 75, "sigmaSpace": 75}
 
@@ -320,13 +320,13 @@ class MotionBlurProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]):
+    def __init__(self, name: str, config: dict[str, Any]):
         """
         MotionBlurProcessorを初期化します.
 
         Args:
             name (str): プロセッサ名.
-            config (Dict[str, Any]): 設定パラメータ.
+            config (dict[str, Any]): 設定パラメータ.
         """
         super().__init__(name, config)
         self.validator = MotionBlurValidator(config)
@@ -374,11 +374,11 @@ class MotionBlurProcessor(BaseProcessor):
             raise ProcessorRuntimeError(error_msg)
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         モーションブラープロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"kernel_size": 15, "angle": 0}

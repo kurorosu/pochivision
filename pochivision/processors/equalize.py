@@ -1,6 +1,6 @@
 """ヒストグラム平坦化プロセッサーを提供するモジュール."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -35,13 +35,13 @@ class EqualizeProcessor(BaseProcessor):
         }
     """
 
-    def __init__(self, name: str, config: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, name: str, config: dict[str, Any] | None = None) -> None:
         """
         EqualizeProcessorの初期化.
 
         Args:
             name (str): プロセッサ名.
-            config (Optional[Dict[str, Any]], optional): 設定パラメータ. デフォルトはNone.
+            config (dict[str, Any] | None, optional): 設定パラメータ. デフォルトはNone.
                 - color_mode (str): カラー画像の処理方式 ('gray', 'lab', 'bgr')
         """
         super().__init__(name, config or {})
@@ -111,11 +111,11 @@ class EqualizeProcessor(BaseProcessor):
             raise ProcessorRuntimeError(error_msg)
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         ヒストグラム平坦化プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         return {"color_mode": "gray"}

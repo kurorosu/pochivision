@@ -4,7 +4,7 @@ import json
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import cv2
 import numpy as np
@@ -51,7 +51,7 @@ class ProfileProcessor:
         self.profile_config = self._get_profile_config(profile_name)
         self.processors = self._initialize_processors()
 
-    def _get_profile_config(self, profile_name: str) -> Dict[str, Any]:
+    def _get_profile_config(self, profile_name: str) -> dict[str, Any]:
         """指定されたプロファイルの設定を取得する.
 
         Args:
@@ -71,10 +71,10 @@ class ProfileProcessor:
                 f"利用可能なプロファイル: {available_profiles}"
             )
 
-        result: Dict[str, Any] = cameras[profile_name]
+        result: dict[str, Any] = cameras[profile_name]
         return result
 
-    def _initialize_processors(self) -> List[Any]:
+    def _initialize_processors(self) -> list[Any]:
         """プロファイル設定に基づいてプロセッサを初期化する.
 
         Returns:
@@ -99,7 +99,7 @@ class ProfileProcessor:
 
         return processors
 
-    def _get_image_files(self, input_dir: Path) -> List[Path]:
+    def _get_image_files(self, input_dir: Path) -> list[Path]:
         """入力ディレクトリから画像ファイルを取得する.
 
         Args:
@@ -132,7 +132,7 @@ class ProfileProcessor:
         """
         return self.output_manager.create_output_dir("processed")
 
-    def _process_image(self, image_path: Path) -> Optional[np.ndarray]:
+    def _process_image(self, image_path: Path) -> np.ndarray | None:
         """単一画像を処理する.
 
         Args:

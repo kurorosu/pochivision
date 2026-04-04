@@ -1,7 +1,6 @@
 """FFT ビジュアライザーのビジネスロジッククラス."""
 
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -28,9 +27,9 @@ class SimpleFFTVisualizer:
         """
         self.image_path = Path(image_path)
         self.logger = LogManager().get_logger()
-        self.img: Optional[np.ndarray] = None
-        self.fshift: Optional[np.ndarray] = None
-        self.spectrum_display: Optional[np.ndarray] = None
+        self.img: np.ndarray | None = None
+        self.fshift: np.ndarray | None = None
+        self.spectrum_display: np.ndarray | None = None
         self.window_name = "FFT Visualizer - Spectrum (left) and Filtered Image (right)"
         self.filter_mode = "original"
         self.filter_radius = 50

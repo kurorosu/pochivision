@@ -1,7 +1,7 @@
 """画像処理プロセッサの基底クラスを定義するモジュール."""
 
 import abc
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -15,7 +15,7 @@ class BaseProcessor(abc.ABC):
         config (dict): プロセッサ固有の設定.
     """
 
-    def __init__(self, name: str, config: Dict[str, Any]) -> None:
+    def __init__(self, name: str, config: dict[str, Any]) -> None:
         """
         BaseProcessorのコンストラクタ.
 
@@ -41,11 +41,11 @@ class BaseProcessor(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         プロセッサのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
         """
         pass

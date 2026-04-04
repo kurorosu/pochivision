@@ -1,6 +1,6 @@
 """輝度統計特徴量抽出を行うモジュール."""
 
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -45,7 +45,7 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         name: str = "brightness_statistics",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         """
         BrightnessStatisticsExtractorのコンストラクタ.
@@ -60,7 +60,7 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
         self.color_mode = self.config["color_mode"]
         self.exclude_zero_pixels = self.config["exclude_zero_pixels"]
 
-    def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
+    def extract(self, image: np.ndarray) -> dict[str, float | int]:
         """
         画像から輝度統計特徴量を抽出する.
 
@@ -68,7 +68,7 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
             image (np.ndarray): 入力画像.
 
         Returns:
-            Dict[str, Union[float, int]]: 抽出された特徴量の辞書.
+            dict[str, float | int]: 抽出された特徴量の辞書.
                 - mean: 輝度平均値
                 - median: 輝度中央値
                 - variance: 輝度分散
@@ -158,12 +158,12 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
             raise ExtractorValidationError(f"Unsupported image shape: {image.shape}")
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         BrightnessStatisticsExtractorのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
                 - color_mode: 輝度計算モード ("gray", "lab_l", "hsv_v")
                 - exclude_zero_pixels: 輝度値が0のピクセルを除外するかどうか
         """
@@ -197,11 +197,11 @@ class BrightnessStatisticsExtractor(BaseFeatureExtractor):
         return ["mean", "median", "variance", "std_dev", "cv"]
 
     @staticmethod
-    def get_feature_units() -> Dict[str, str]:
+    def get_feature_units() -> dict[str, str]:
         """
         特徴量の単位辞書を返す.
 
         Returns:
-            Dict[str, str]: 特徴量名と単位の対応辞書.
+            dict[str, str]: 特徴量名と単位の対応辞書.
         """
         return BrightnessStatisticsExtractor._FEATURE_UNITS.copy()

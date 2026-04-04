@@ -4,8 +4,6 @@
 各プロセッサのパラメータ構造を型安全に管理する.
 """
 
-from typing import List, Optional, Union
-
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -22,14 +20,14 @@ from pydantic import (
 class GaussianBlurParams(BaseModel):
     """ガウシアンブラーのパラメータスキーマ."""
 
-    kernel_size: List[StrictInt]
+    kernel_size: list[StrictInt]
     sigma: StrictFloat = Field(ge=0)
 
 
 class AverageBlurParams(BaseModel):
     """平均化ブラーのパラメータスキーマ."""
 
-    kernel_size: List[StrictInt]
+    kernel_size: list[StrictInt]
 
 
 class MedianBlurParams(BaseModel):
@@ -60,7 +58,7 @@ class GaussianAdaptiveBinarizationParams(BaseModel):
     """ガウシアン適応的2値化のパラメータスキーマ."""
 
     block_size: StrictInt = Field(ge=3)
-    c: Union[StrictInt, StrictFloat]
+    c: StrictInt | StrictFloat
 
     @field_validator("block_size")
     @classmethod
@@ -75,7 +73,7 @@ class MeanAdaptiveBinarizationParams(BaseModel):
     """平均適応的2値化のパラメータスキーマ."""
 
     block_size: StrictInt = Field(ge=3)
-    c: Union[StrictInt, StrictFloat]
+    c: StrictInt | StrictFloat
 
     @field_validator("block_size")
     @classmethod
@@ -106,10 +104,10 @@ class MotionBlurParams(BaseModel):
 class ResizeParams(BaseModel):
     """リサイズプロセッサーのパラメータスキーマ."""
 
-    width: Optional[StrictInt] = Field(default=None, gt=0)
-    height: Optional[StrictInt] = Field(default=None, gt=0)
-    preserve_aspect_ratio: Optional[StrictBool] = Field(default=False)
-    aspect_ratio_mode: Optional[StrictStr] = Field(
+    width: StrictInt | None = Field(default=None, gt=0)
+    height: StrictInt | None = Field(default=None, gt=0)
+    preserve_aspect_ratio: StrictBool | None = Field(default=False)
+    aspect_ratio_mode: StrictStr | None = Field(
         default="width", pattern="^(width|height)$"
     )
 
@@ -117,15 +115,15 @@ class ResizeParams(BaseModel):
 class EqualizeParams(BaseModel):
     """ヒストグラム平坦化のパラメータスキーマ."""
 
-    color_mode: Optional[StrictStr] = Field(default="gray", pattern="^(gray|lab|bgr)$")
+    color_mode: StrictStr | None = Field(default="gray", pattern="^(gray|lab|bgr)$")
 
 
 class CLAHEParams(BaseModel):
     """CLAHE のパラメータスキーマ."""
 
-    color_mode: Optional[StrictStr] = Field(default="gray", pattern="^(gray|lab|bgr)$")
-    clip_limit: Optional[StrictFloat] = Field(default=2.0, gt=0)
-    tile_grid_size: Optional[List[StrictInt]] = Field(
+    color_mode: StrictStr | None = Field(default="gray", pattern="^(gray|lab|bgr)$")
+    clip_limit: StrictFloat | None = Field(default=2.0, gt=0)
+    tile_grid_size: list[StrictInt] | None = Field(
         default=[8, 8], min_length=2, max_length=2
     )
 
@@ -135,8 +133,8 @@ class CannyEdgeParams(BaseModel):
 
     threshold1: StrictFloat = Field(ge=0)
     threshold2: StrictFloat = Field(ge=0)
-    aperture_size: Optional[StrictInt] = Field(default=3, ge=3, le=7)
-    l2_gradient: Optional[StrictBool] = Field(default=False)
+    aperture_size: StrictInt | None = Field(default=3, ge=3, le=7)
+    l2_gradient: StrictBool | None = Field(default=False)
 
     @field_validator("aperture_size")
     @classmethod
@@ -160,19 +158,19 @@ class CannyEdgeParams(BaseModel):
 class ContourParams(BaseModel):
     """輪郭抽出プロセッサのパラメータスキーマ."""
 
-    retrieval_mode: Optional[StrictStr] = Field(
+    retrieval_mode: StrictStr | None = Field(
         default="list", pattern="^(external|list|ccomp|tree|floodfill)$"
     )
-    approximation_method: Optional[StrictStr] = Field(
+    approximation_method: StrictStr | None = Field(
         default="simple", pattern="^(none|simple|tc89_l1|tc89_kcos)$"
     )
-    min_area: Optional[StrictInt] = Field(default=100, ge=0)
-    select_mode: Optional[StrictStr] = Field(default="rank", pattern="^(rank|all)$")
-    contour_rank: Optional[StrictInt] = Field(default=0, ge=0)
-    outside_color: Optional[List[StrictInt]] = Field(
+    min_area: StrictInt | None = Field(default=100, ge=0)
+    select_mode: StrictStr | None = Field(default="rank", pattern="^(rank|all)$")
+    contour_rank: StrictInt | None = Field(default=0, ge=0)
+    outside_color: list[StrictInt] | None = Field(
         default=[0, 0, 0], min_length=3, max_length=3
     )
-    inside_color: Optional[List[StrictInt]] = Field(
+    inside_color: list[StrictInt] | None = Field(
         default=[255, 255, 255], min_length=3, max_length=3
     )
 
@@ -180,10 +178,10 @@ class ContourParams(BaseModel):
 class MaskCompositionParams(BaseModel):
     """マスク合成プロセッサのパラメータスキーマ."""
 
-    target_image: Optional[StrictStr] = Field(default="original")
-    use_white_pixels: Optional[StrictBool] = Field(default=True)
-    enable_cropping: Optional[StrictBool] = Field(default=False)
-    crop_margin: Optional[StrictInt] = Field(default=0, ge=0)
+    target_image: StrictStr | None = Field(default="original")
+    use_white_pixels: StrictBool | None = Field(default=True)
+    enable_cropping: StrictBool | None = Field(default=False)
+    crop_margin: StrictInt | None = Field(default=0, ge=0)
 
 
 # プロセッサ名とスキーマクラスのマッピング

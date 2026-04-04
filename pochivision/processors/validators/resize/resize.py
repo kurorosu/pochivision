@@ -1,6 +1,6 @@
 """リサイズプロセッサー用バリデータの実装モジュール."""
 
-from typing import Any, Dict
+from typing import Any
 
 import numpy as np
 
@@ -10,12 +10,12 @@ from pochivision.processors.validators.base import BaseValidator
 class ResizeConfigValidator(BaseValidator):
     """リサイズプロセッサー用のバリデータ."""
 
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: dict[str, Any]) -> None:
         """
         ResizeConfigValidatorのコンストラクタ.
 
         Args:
-            config (Dict[str, Any]): バリデーション対象の設定辞書.
+            config (dict[str, Any]): バリデーション対象の設定辞書.
         """
         self.config = config
 

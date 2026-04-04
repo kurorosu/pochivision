@@ -1,7 +1,6 @@
 """画像処理に関する共通ユーティリティ関数を提供するモジュール."""
 
 from pathlib import Path
-from typing import List, Optional
 
 import cv2
 import numpy as np
@@ -9,7 +8,7 @@ import numpy as np
 DEFAULT_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"]
 
 
-def load_image(image_path: Path) -> Optional[np.ndarray]:
+def load_image(image_path: Path) -> np.ndarray | None:
     """画像ファイルを読み込む.
 
     Args:
@@ -26,9 +25,9 @@ def load_image(image_path: Path) -> Optional[np.ndarray]:
 
 def get_image_files(
     directory: Path,
-    extensions: Optional[List[str]] = None,
+    extensions: list[str] | None = None,
     case_sensitive: bool = False,
-) -> List[Path]:
+) -> list[Path]:
     """ディレクトリから画像ファイルのパスリストを取得する.
 
     Args:
@@ -42,7 +41,7 @@ def get_image_files(
     if extensions is None:
         extensions = DEFAULT_IMAGE_EXTENSIONS
 
-    image_files: List[Path] = []
+    image_files: list[Path] = []
     for ext in extensions:
         if case_sensitive:
             image_files.extend(directory.glob(f"*{ext}"))

@@ -1,6 +1,6 @@
 """HLAC（Higher-order Local Auto-Correlation）テクスチャ特徴量抽出を行うモジュール."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -53,7 +53,7 @@ class HLACTextureExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         name: str = "hlac_texture",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         """
         HLACTextureExtractorのコンストラクタ.
@@ -105,12 +105,12 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             self.binarizer = OtsuBinarizationProcessor(name="otsu_for_hlac", config={})
 
         # スケールリサイザーのキャッシュ (初回呼び出し時に生成)
-        self._scale_resizers: Dict[tuple, ResizeProcessor] = {}
+        self._scale_resizers: dict[tuple, ResizeProcessor] = {}
 
         # HLACカーネルの事前生成
         self.kernels = self._generate_hlac_kernels()
 
-    def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
+    def extract(self, image: np.ndarray) -> dict[str, float | int]:
         """
         画像からHLACテクスチャ特徴量を抽出する.
 
@@ -118,7 +118,7 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             image (np.ndarray): 入力画像（BGR形式）.
 
         Returns:
-            Dict[str, Union[float, int]]: 抽出された特徴量の辞書.
+            dict[str, float | int]: 抽出された特徴量の辞書.
                 - hlac_feature_{i}: 各HLAC特徴量（i=0,1,2,...）
 
         Raises:
@@ -169,12 +169,12 @@ class HLACTextureExtractor(BaseFeatureExtractor):
             LogManager().get_logger().exception("HLAC feature extraction failed")
             raise
 
-    def _generate_hlac_kernels(self) -> List[np.ndarray]:
+    def _generate_hlac_kernels(self) -> list[np.ndarray]:
         """
         HLACのパターンカーネルを生成する.
 
         Returns:
-            List[np.ndarray]: HLACカーネルのリスト.
+            list[np.ndarray]: HLACカーネルのリスト.
         """
         patterns = []
 
@@ -204,7 +204,7 @@ class HLACTextureExtractor(BaseFeatureExtractor):
 
         # 回転不変性の処理
         if self.rotate_invariant:
-            unique_patterns: List[np.ndarray] = []
+            unique_patterns: list[np.ndarray] = []
             for pattern in patterns:
                 # 4方向の回転を生成
                 rotations = [np.rot90(pattern, k) for k in range(4)]
@@ -280,12 +280,12 @@ class HLACTextureExtractor(BaseFeatureExtractor):
 
         return total_features
 
-    def _get_default_results(self) -> Dict[str, float]:
+    def _get_default_results(self) -> dict[str, float]:
         """
         エラー時のデフォルト結果を返す.
 
         Returns:
-            Dict[str, float]: デフォルト特徴量の辞書.
+            dict[str, float]: デフォルト特徴量の辞書.
         """
         num_features = (
             len(self.kernels)
@@ -295,12 +295,12 @@ class HLACTextureExtractor(BaseFeatureExtractor):
         return {f"hlac_feature_{i:02d}": 0.0 for i in range(num_features)}
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         HLACTextureExtractorのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
                 - order: 自己相関の次数（1または2）
                 - rotate_invariant: 回転不変性の有効/無効
                 - normalize: 特徴量の正規化の有効/無効
@@ -321,12 +321,12 @@ class HLACTextureExtractor(BaseFeatureExtractor):
         }
 
     @staticmethod
-    def get_feature_names() -> List[str]:
+    def get_feature_names() -> list[str]:
         """
         この特徴量抽出器が出力する特徴量名のリストを返す（単位付き）.
 
         Returns:
-            List[str]: 特徴量名のリスト（単位付き）.
+            list[str]: 特徴量名のリスト（単位付き）.
         """
         base_names = HLACTextureExtractor.get_base_feature_names()
         return [
@@ -335,12 +335,12 @@ class HLACTextureExtractor(BaseFeatureExtractor):
         ]
 
     @staticmethod
-    def get_base_feature_names() -> List[str]:
+    def get_base_feature_names() -> list[str]:
         """
         この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
 
         Returns:
-            List[str]: 基本特徴量名のリスト.
+            list[str]: 基本特徴量名のリスト.
         """
         # デフォルト設定での特徴量名を返す
         default_config = HLACTextureExtractor.get_default_config()
@@ -357,12 +357,12 @@ class HLACTextureExtractor(BaseFeatureExtractor):
         return [f"hlac_feature_{i:02d}" for i in range(num_features)]
 
     @staticmethod
-    def get_feature_units() -> Dict[str, str]:
+    def get_feature_units() -> dict[str, str]:
         """
         特徴量の単位辞書を返す.
 
         Returns:
-            Dict[str, str]: 特徴量名と単位の対応辞書.
+            dict[str, str]: 特徴量名と単位の対応辞書.
         """
         # 基本特徴量名を取得
         base_names = HLACTextureExtractor.get_base_feature_names()

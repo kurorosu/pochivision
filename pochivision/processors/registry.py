@@ -10,7 +10,7 @@
         ...
 """
 
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable
 
 from pochivision.capturelib.log_manager import LogManager
 
@@ -20,12 +20,12 @@ from .base import BaseProcessor
 from .schema import PROCESSOR_SCHEMA_MAP
 
 # 名前とクラスのマッピングを保持する辞書
-PROCESSOR_REGISTRY: Dict[str, Type[BaseProcessor]] = {}
+PROCESSOR_REGISTRY: dict[str, type[BaseProcessor]] = {}
 
 
 def register_processor(
     name: str,
-) -> Callable[[Type[BaseProcessor]], Type[BaseProcessor]]:
+) -> Callable[[type[BaseProcessor]], type[BaseProcessor]]:
     """
     画像処理プロセッサクラスを名前付きで登録するためのデコレータ.
 
@@ -36,7 +36,7 @@ def register_processor(
         Callable: デコレートされたクラスをそのまま返す.
     """
 
-    def decorator(cls: Type[BaseProcessor]) -> Type[BaseProcessor]:
+    def decorator(cls: type[BaseProcessor]) -> type[BaseProcessor]:
         if name in PROCESSOR_REGISTRY:
             logger.warning(
                 f"Processor '{name}' is already registered "
@@ -49,13 +49,13 @@ def register_processor(
     return decorator
 
 
-def get_processor(name: str, config: Dict[str, Any]) -> BaseProcessor:
+def get_processor(name: str, config: dict[str, Any]) -> BaseProcessor:
     """
     指定された名前のプロセッサクラスを取得し、設定を使用してインスタンス化します.
 
     Args:
         name (str): 取得するプロセッサの名前.
-        config (Dict[str, Any]): プロセッサの初期化に使用する設定.
+        config (dict[str, Any]): プロセッサの初期化に使用する設定.
 
     Returns:
         BaseProcessor: 指定されたプロセッサのインスタンス.

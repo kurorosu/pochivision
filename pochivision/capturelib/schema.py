@@ -5,8 +5,6 @@
 プロセッサパラメータは processors/schema.py を参照.
 """
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field, StrictInt, StrictStr
 
 from pochivision.processors.schema import (
@@ -35,25 +33,25 @@ class CameraProfile(BaseModel):
     height: StrictInt
     fps: StrictInt
     backend: StrictStr
-    processors: List[StrictStr]
+    processors: list[StrictStr]
     mode: StrictStr
-    id_interval: Optional[StrictInt] = Field(default=None)
+    id_interval: StrictInt | None = Field(default=None)
 
-    gaussian_blur: Optional[GaussianBlurParams] = None
-    average_blur: Optional[AverageBlurParams] = None
-    median_blur: Optional[MedianBlurParams] = None
-    grayscale: Optional[GrayscaleParams] = None
-    std_bin: Optional[StandardBinarizationParams] = None
-    otsu_bin: Optional[OtsuBinarizationParams] = None
-    gauss_adapt_bin: Optional[GaussianAdaptiveBinarizationParams] = None
-    mean_adapt_bin: Optional[MeanAdaptiveBinarizationParams] = None
-    bilateral_filter: Optional[BilateralFilterParams] = None
-    motion_blur: Optional[MotionBlurParams] = None
-    resize: Optional[ResizeParams] = None
-    equalize: Optional[EqualizeParams] = None
-    clahe: Optional[CLAHEParams] = None
-    canny_edge: Optional[CannyEdgeParams] = None
-    contour: Optional[ContourParams] = None
+    gaussian_blur: GaussianBlurParams | None = None
+    average_blur: AverageBlurParams | None = None
+    median_blur: MedianBlurParams | None = None
+    grayscale: GrayscaleParams | None = None
+    std_bin: StandardBinarizationParams | None = None
+    otsu_bin: OtsuBinarizationParams | None = None
+    gauss_adapt_bin: GaussianAdaptiveBinarizationParams | None = None
+    mean_adapt_bin: MeanAdaptiveBinarizationParams | None = None
+    bilateral_filter: BilateralFilterParams | None = None
+    motion_blur: MotionBlurParams | None = None
+    resize: ResizeParams | None = None
+    equalize: EqualizeParams | None = None
+    clahe: CLAHEParams | None = None
+    canny_edge: CannyEdgeParams | None = None
+    contour: ContourParams | None = None
 
 
 class PreviewConfig(BaseModel):
@@ -66,7 +64,7 @@ class PreviewConfig(BaseModel):
 class ConfigModel(BaseModel):
     """全体設定 (カメラ一覧・選択インデックス) のスキーマ."""
 
-    cameras: Dict[str, CameraProfile]
+    cameras: dict[str, CameraProfile]
     selected_camera_index: StrictInt
-    id_interval: Optional[StrictInt] = Field(default=None)
-    preview: Optional[PreviewConfig] = Field(default=None)
+    id_interval: StrictInt | None = Field(default=None)
+    preview: PreviewConfig | None = Field(default=None)

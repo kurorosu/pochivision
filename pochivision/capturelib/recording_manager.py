@@ -9,7 +9,6 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -31,7 +30,7 @@ class VideoFormat:
     """
 
     # 形式名: (fourcc, 拡張子, 説明)
-    FORMATS: Dict[str, Tuple[str, str, str]] = {
+    FORMATS: dict[str, tuple[str, str, str]] = {
         "mp4v": ("mp4v", ".mp4", "MP4 - Standard compression"),
         "xvid": ("XVID", ".avi", "XVID - Balanced compression"),
         "mjpg": ("MJPG", ".avi", "Motion JPEG - Low compression, high quality"),
@@ -41,12 +40,12 @@ class VideoFormat:
     }
 
     @classmethod
-    def get_available_formats(cls) -> Dict[str, str]:
+    def get_available_formats(cls) -> dict[str, str]:
         """利用可能な形式の一覧を取得."""
         return {name: info[2] for name, info in cls.FORMATS.items()}
 
     @classmethod
-    def get_format_info(cls, format_name: str) -> Optional[Tuple[str, str, str]]:
+    def get_format_info(cls, format_name: str) -> tuple[str, str, str] | None:
         """指定された形式の情報を取得."""
         return cls.FORMATS.get(format_name.lower())
 
@@ -61,11 +60,11 @@ class RecordingManager:
 
     Attributes:
         is_recording (bool): 録画中かどうかのフラグ
-        video_writer (Optional[cv2.VideoWriter]): 動画書き込みオブジェクト
+        video_writer (cv2.VideoWriter | None): 動画書き込みオブジェクト
         lock (threading.Lock): スレッドセーフ用のロック
         video_format (str): 使用する動画形式
         frame_count (int): 録画中のフレーム数
-        recording_start_time (Optional[float]): 録画開始時間
+        recording_start_time (float | None): 録画開始時間
     """
 
     def __init__(self, default_format: str = "mjpg") -> None:
@@ -76,13 +75,13 @@ class RecordingManager:
             default_format (str): 使用する動画形式
         """
         self.is_recording = False
-        self.video_writer: Optional[cv2.VideoWriter] = None
+        self.video_writer: cv2.VideoWriter | None = None
         self.lock = threading.Lock()
         self.logger = LogManager().get_logger()
 
         # フレーム数カウント用
         self.frame_count = 0
-        self.recording_start_time: Optional[float] = None
+        self.recording_start_time: float | None = None
 
         # 動画形式を設定
         format_info = VideoFormat.get_format_info(default_format)

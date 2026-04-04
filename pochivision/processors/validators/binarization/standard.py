@@ -1,7 +1,5 @@
 """標準2値化バリデータの実装モジュール."""
 
-from typing import Dict
-
 import numpy as np
 
 from pochivision.exceptions import ProcessorValidationError
@@ -19,7 +17,7 @@ class StandardBinarizationValidator(BaseValidator):
         ProcessorValidationError: 不正なパラメータが検出された場合.
     """
 
-    def __init__(self, config: Dict[str, int]) -> None:
+    def __init__(self, config: dict[str, int]) -> None:
         """
         StandardBinarizationValidatorのコンストラクタ.
 

@@ -1,6 +1,6 @@
 """LBP（Local Binary Pattern）テクスチャ特徴量抽出を行うモジュール."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -48,7 +48,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         name: str = "lbp_texture",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         """
         LBPTextureExtractorのコンストラクタ.
@@ -86,7 +86,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
                 name="resize_for_lbp", config=resize_config
             )
 
-    def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
+    def extract(self, image: np.ndarray) -> dict[str, float | int]:
         """
         画像からLBPテクスチャ特徴量を抽出する.
 
@@ -94,7 +94,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             image (np.ndarray): 入力画像（BGR形式）.
 
         Returns:
-            Dict[str, Union[float, int]]: 抽出された特徴量の辞書.
+            dict[str, float | int]: 抽出された特徴量の辞書.
                 - lbp_mean: LBPヒストグラムの平均
                 - lbp_std: LBPヒストグラムの標準偏差
                 - lbp_skewness: LBPヒストグラムの歪度
@@ -179,7 +179,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
 
     def _calculate_statistics(
         self, hist: np.ndarray, lbp: np.ndarray
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         LBP 画像とヒストグラムから統計量を計算する.
 
@@ -191,7 +191,7 @@ class LBPTextureExtractor(BaseFeatureExtractor):
             lbp (np.ndarray): LBP画像
 
         Returns:
-            Dict[str, float]: 統計量の辞書
+            dict[str, float]: 統計量の辞書
         """
         results = {}
 
@@ -237,12 +237,12 @@ class LBPTextureExtractor(BaseFeatureExtractor):
 
         return results
 
-    def _get_default_results(self) -> Dict[str, float]:
+    def _get_default_results(self) -> dict[str, float]:
         """
         エラー時のデフォルト結果を返す.
 
         Returns:
-            Dict[str, float]: デフォルト値の辞書
+            dict[str, float]: デフォルト値の辞書
         """
         results = {
             "lbp_mean": 0.0,
@@ -267,12 +267,12 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         return results
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         LBPTextureExtractorのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
                 - P: 近傍点数
                 - R: 半径
                 - method: LBP手法
@@ -290,12 +290,12 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         }
 
     @staticmethod
-    def get_feature_names() -> List[str]:
+    def get_feature_names() -> list[str]:
         """
         この特徴量抽出器が出力する特徴量名のリストを返す（単位付き）.
 
         Returns:
-            List[str]: 特徴量名のリスト（単位付き）.
+            list[str]: 特徴量名のリスト（単位付き）.
         """
         base_names = LBPTextureExtractor.get_base_feature_names()
         return [
@@ -304,12 +304,12 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         ]
 
     @staticmethod
-    def get_base_feature_names() -> List[str]:
+    def get_base_feature_names() -> list[str]:
         """
         この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
 
         Returns:
-            List[str]: 基本特徴量名のリスト.
+            list[str]: 基本特徴量名のリスト.
         """
         # 基本統計量
         feature_names = [
@@ -342,12 +342,12 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         return feature_names
 
     @staticmethod
-    def get_feature_units() -> Dict[str, str]:
+    def get_feature_units() -> dict[str, str]:
         """
         特徴量の単位辞書を返す.
 
         Returns:
-            Dict[str, str]: 特徴量名と単位の対応辞書.
+            dict[str, str]: 特徴量名と単位の対応辞書.
         """
         # 基本特徴量名を取得
         base_names = LBPTextureExtractor.get_base_feature_names()
@@ -378,12 +378,12 @@ class LBPTextureExtractor(BaseFeatureExtractor):
         return LBPTextureExtractor._FEATURE_UNITS.get(feature_name, "unknown")
 
     # インスタンスメソッド版（後方互換性のため残す）
-    def get_feature_names_instance(self) -> List[str]:
+    def get_feature_names_instance(self) -> list[str]:
         """
         この特徴量抽出器が出力する特徴量名のリストを返す（単位付き、インスタンス設定反映）.
 
         Returns:
-            List[str]: 特徴量名のリスト（単位付き）.
+            list[str]: 特徴量名のリスト（単位付き）.
         """
         # 基本統計量（単位付き）
         feature_names = []
@@ -420,12 +420,12 @@ class LBPTextureExtractor(BaseFeatureExtractor):
 
         return feature_names
 
-    def get_base_feature_names_instance(self) -> List[str]:
+    def get_base_feature_names_instance(self) -> list[str]:
         """
         この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし、インスタンス設定反映）.
 
         Returns:
-            List[str]: 基本特徴量名のリスト.
+            list[str]: 基本特徴量名のリスト.
         """
         # 基本統計量
         feature_names = [
@@ -456,12 +456,12 @@ class LBPTextureExtractor(BaseFeatureExtractor):
 
         return feature_names
 
-    def get_feature_units_instance(self) -> Dict[str, str]:
+    def get_feature_units_instance(self) -> dict[str, str]:
         """
         この特徴量抽出器が出力する特徴量の単位を返す（インスタンス設定反映）.
 
         Returns:
-            Dict[str, str]: 特徴量名と単位の辞書.
+            dict[str, str]: 特徴量名と単位の辞書.
         """
         units = self._FEATURE_UNITS.copy()
 

@@ -1,6 +1,6 @@
 """GLCM（Gray-Level Co-occurrence Matrix）テクスチャ特徴量抽出を行うモジュール."""
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -53,7 +53,7 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
     def __init__(
         self,
         name: str = "glcm_texture",
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ) -> None:
         """
         GLCMTextureExtractorのコンストラクタ.
@@ -91,7 +91,7 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
                 name="resize_for_glcm", config=resize_config
             )
 
-    def _parse_angles(self, angles_config: List[Union[int, float]]) -> List[float]:
+    def _parse_angles(self, angles_config: list[int | float]) -> list[float]:
         """
         角度設定を解析してラジアン値のリストに変換する.
 
@@ -99,7 +99,7 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
             angles_config: 角度設定（度数のリスト）
 
         Returns:
-            List[float]: ラジアン値のリスト
+            list[float]: ラジアン値のリスト
 
         Raises:
             ValueError: 無効な角度設定の場合
@@ -118,7 +118,7 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
         # 度数をラジアンに変換
         return [np.radians(float(angle)) for angle in angles_config]
 
-    def extract(self, image: np.ndarray) -> Dict[str, Union[float, int]]:
+    def extract(self, image: np.ndarray) -> dict[str, float | int]:
         """
         画像からGLCMテクスチャ特徴量を抽出する.
 
@@ -126,7 +126,7 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
             image (np.ndarray): 入力画像（BGR形式）.
 
         Returns:
-            Dict[str, Union[float, int]]: 抽出された特徴量の辞書.
+            dict[str, float | int]: 抽出された特徴量の辞書.
                 各プロパティ、距離、角度の組み合わせについて:
                 - {property}_{distance}_{angle_deg}: 特徴量値
 
@@ -226,12 +226,12 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
         return results
 
     @staticmethod
-    def get_default_config() -> Dict[str, Any]:
+    def get_default_config() -> dict[str, Any]:
         """
         GLCMTextureExtractorのデフォルト設定を返す.
 
         Returns:
-            Dict[str, Any]: デフォルト設定.
+            dict[str, Any]: デフォルト設定.
                 - distances: ピクセル間距離のリスト
                 - angles: 角度のリスト（度数）
                 - levels: グレーレベル数
@@ -259,12 +259,12 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
         }
 
     @staticmethod
-    def get_feature_names() -> List[str]:
+    def get_feature_names() -> list[str]:
         """
         この特徴量抽出器が出力する特徴量名のリストを返す（単位付き）.
 
         Returns:
-            List[str]: 特徴量名のリスト（単位付き）.
+            list[str]: 特徴量名のリスト（単位付き）.
         """
         base_names = GLCMTextureExtractor.get_base_feature_names()
         return [
@@ -273,12 +273,12 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
         ]
 
     @staticmethod
-    def get_base_feature_names() -> List[str]:
+    def get_base_feature_names() -> list[str]:
         """
         この特徴量抽出器が出力する基本特徴量名のリストを返す（単位なし）.
 
         Returns:
-            List[str]: 基本特徴量名のリスト.
+            list[str]: 基本特徴量名のリスト.
         """
         # デフォルト設定を使用して特徴量名を生成
         default_config = GLCMTextureExtractor.get_default_config()
@@ -297,12 +297,12 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
         return feature_names
 
     @staticmethod
-    def get_feature_units() -> Dict[str, str]:
+    def get_feature_units() -> dict[str, str]:
         """
         特徴量の単位辞書を返す.
 
         Returns:
-            Dict[str, str]: 特徴量名と単位の対応辞書.
+            dict[str, str]: 特徴量名と単位の対応辞書.
         """
         # 基本特徴量名を取得
         base_names = GLCMTextureExtractor.get_base_feature_names()
