@@ -10,10 +10,11 @@
         ...
 """
 
-import logging
 from typing import Any, Callable, Dict, Type
 
-logger = logging.getLogger(__name__)
+from pochivision.capturelib.log_manager import LogManager
+
+logger = LogManager().get_logger()
 
 from .base import BaseProcessor
 from .schema import PROCESSOR_SCHEMA_MAP
