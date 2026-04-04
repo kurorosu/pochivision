@@ -93,7 +93,7 @@ class LivePreviewRunner:
                 cv2.waitKey(1)
 
         actual_duration = time.time() - start_time
-        measured_fps = frame_count / actual_duration
+        measured_fps = frame_count / actual_duration if actual_duration > 0 else 0.0
 
         self.logger.info(
             f"Measured FPS: {measured_fps:.2f} "
