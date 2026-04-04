@@ -7,7 +7,8 @@
 
 ### Added
 - ライブプレビューに `h` キーでトグルするヘルプオーバーレイ表示機能を追加. 黒文字 + 白縁で表示し, 保存画像には影響しない. ([#295](https://github.com/kurorosu/pochivision/pull/295))
-- `FeatureExtractionRunner` の統合テスト 7 件を追加. (NA.)
+- `FeatureExtractionRunner` の統合テスト 7 件を追加. ([#314](https://github.com/kurorosu/pochivision/pull/314))
+- `ProfileProcessor` のテスト 7 件を追加. (NA.)
 
 ### Changed
 - 設定ファイル (`config.json`, `extractor_config.json`) を `config/` ディレクトリに移動し, CLI のデフォルトパスを更新. ([#294](https://github.com/kurorosu/pochivision/pull/294))
