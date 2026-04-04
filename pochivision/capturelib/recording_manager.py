@@ -157,7 +157,7 @@ class RecordingManager:
             )
 
             # VideoWriterを初期化
-            fourcc_code = cv2.VideoWriter_fourcc(*fourcc_str)
+            fourcc_code = cv2.VideoWriter.fourcc(*fourcc_str)
             self.video_writer = cv2.VideoWriter(
                 str(video_filename), fourcc_code, fps, frame_size
             )
@@ -166,6 +166,8 @@ class RecordingManager:
                 self.logger.error(
                     f"Failed to initialize VideoWriter with format {self.video_format}"
                 )
+                self.video_writer.release()
+                self.video_writer = None
                 return False
 
             # 録画フラグを設定
@@ -182,6 +184,9 @@ class RecordingManager:
 
         except Exception as e:
             self.logger.error(f"Error occurred while starting recording: {e}")
+            if self.video_writer is not None:
+                self.video_writer.release()
+                self.video_writer = None
             return False
 
     def stop_recording(self) -> bool:

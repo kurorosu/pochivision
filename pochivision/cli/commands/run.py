@@ -1,12 +1,16 @@
 """run サブコマンド: ライブプレビュー起動."""
 
+from typing import cast
+
 import click
+import cv2
 
 from pochivision.capture_runner import LivePreviewRunner
 from pochivision.capturelib.camera_setup import CameraSetup
 from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
+from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
 from pochivision.core import PipelineExecutor
 from pochivision.exceptions.config import ConfigValidationError
 from pochivision.workspace import OutputManager
@@ -113,7 +117,7 @@ def _setup_camera(
             profile_name=profile or "0",
         )
         camera_setup.load_camera_config()
-        cap = camera_setup.initialize_camera()
+        cap = cast(cv2.VideoCapture, camera_setup.initialize_camera())
 
         if not cap.isOpened():
             logger.error(f"Failed to open camera {camera_setup.camera_index}.")
@@ -182,11 +186,11 @@ def _run_preview(
 
         preview_config = config_data.get("preview", {})
         preview_size = (
-            preview_config.get("width", 1280),
-            preview_config.get("height", 720),
+            preview_config.get("width", DEFAULT_PREVIEW_WIDTH),
+            preview_config.get("height", DEFAULT_PREVIEW_HEIGHT),
         )
 
-        app = LivePreviewRunner(cap, pipeline, recording_manager, preview_size)
+        app = LivePreviewRunner(cap, pipeline, recording_manager, preview_size)  # type: ignore[arg-type]
         app.run()
 
     except Exception as e:

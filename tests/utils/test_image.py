@@ -1,9 +1,16 @@
 """utils.imageモジュールのユニットテスト."""
 
+import cv2
 import numpy as np
 import pytest
 
-from pochivision.utils.image import to_bgr, to_grayscale, to_rgb
+from pochivision.utils.image import (
+    get_image_files,
+    load_image,
+    to_bgr,
+    to_grayscale,
+    to_rgb,
+)
 
 
 def test_to_grayscale():
@@ -165,3 +172,83 @@ def test_grayscale_consistency():
     assert np.all(rgb_from_2d[:, :, 0] == gray_value)  # R
     assert np.all(rgb_from_2d[:, :, 1] == gray_value)  # G
     assert np.all(rgb_from_2d[:, :, 2] == gray_value)  # B
+
+
+class TestGetImageFiles:
+    """get_image_files のテスト."""
+
+    def test_find_jpg_files(self, tmp_path):
+        """jpg ファイルを検出できる."""
+        (tmp_path / "image1.jpg").touch()
+        (tmp_path / "image2.jpg").touch()
+        (tmp_path / "readme.txt").touch()
+
+        result = get_image_files(tmp_path)
+        assert len(result) == 2
+
+    def test_find_multiple_extensions(self, tmp_path):
+        """複数拡張子を検出できる."""
+        (tmp_path / "a.jpg").touch()
+        (tmp_path / "b.png").touch()
+        (tmp_path / "c.bmp").touch()
+
+        result = get_image_files(tmp_path)
+        assert len(result) == 3
+
+    def test_case_insensitive(self, tmp_path):
+        """大文字小文字を区別しない (デフォルト)."""
+        (tmp_path / "image.JPG").touch()
+
+        result = get_image_files(tmp_path)
+        assert len(result) == 1
+
+    def test_custom_extensions(self, tmp_path):
+        """カスタム拡張子リストで検出できる."""
+        (tmp_path / "a.jpg").touch()
+        (tmp_path / "b.png").touch()
+
+        result = get_image_files(tmp_path, extensions=[".png"])
+        assert len(result) == 1
+        assert result[0].name == "b.png"
+
+    def test_empty_directory(self, tmp_path):
+        """空のディレクトリで空リストを返す."""
+        result = get_image_files(tmp_path)
+        assert result == []
+
+    def test_sorted_output(self, tmp_path):
+        """結果がソートされている."""
+        (tmp_path / "c.jpg").touch()
+        (tmp_path / "a.jpg").touch()
+        (tmp_path / "b.jpg").touch()
+
+        result = get_image_files(tmp_path)
+        names = [p.name for p in result]
+        assert names == sorted(names)
+
+
+class TestLoadImage:
+    """load_image のテスト."""
+
+    def test_load_valid_image(self, tmp_path):
+        """有効な画像を読み込める."""
+        img_path = tmp_path / "test.png"
+        image = np.zeros((10, 10, 3), dtype=np.uint8)
+        cv2.imwrite(str(img_path), image)
+
+        result = load_image(img_path)
+        assert result is not None
+        assert result.shape == (10, 10, 3)
+
+    def test_load_nonexistent_file(self, tmp_path):
+        """存在しないファイルで None を返す."""
+        result = load_image(tmp_path / "nonexistent.png")
+        assert result is None
+
+    def test_load_invalid_file(self, tmp_path):
+        """画像でないファイルで None を返す."""
+        txt_path = tmp_path / "not_image.png"
+        txt_path.write_text("this is not an image")
+
+        result = load_image(txt_path)
+        assert result is None

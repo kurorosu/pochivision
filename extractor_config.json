@@ -1,6 +1,5 @@
 {
-  "input_directory": "image_aggregated/20250603_0/pipeline",
-  "output_directory": "extraction_results",
+  "input_directory": "data",
   "output_format": "csv",
   "extractors": [
     "brightness",
@@ -100,7 +99,6 @@
     "case_sensitive": false
   },
   "output_settings": {
-    "include_filename": true,
     "include_timestamp": true,
     "csv_separator": ",",
     "output_filename": "features.csv",
