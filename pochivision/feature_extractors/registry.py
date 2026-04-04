@@ -10,13 +10,14 @@
         ...
 """
 
-import logging
 from typing import Any, Callable, Dict, Optional, Type
+
+from pochivision.capturelib.log_manager import LogManager
 
 from .base import BaseFeatureExtractor
 from .schema import EXTRACTOR_SCHEMA_MAP
 
-logger = logging.getLogger(__name__)
+logger = LogManager().get_logger()
 
 # 名前とクラスのマッピングを保持する辞書
 FEATURE_EXTRACTOR_REGISTRY: Dict[str, Type[BaseFeatureExtractor]] = {}
