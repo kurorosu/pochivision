@@ -18,7 +18,8 @@
 - `ImageSaver.save()` のログ出力でグレースケール画像の幅/高さが正しく取得されるよう `image.shape[:2]` に修正. ([#293](https://github.com/kurorosu/pochivision/pull/293))
 - `run.py` の `SystemExit(1)` を `click.ClickException` に統一, `logger` パラメータ型と `_setup_camera()` 戻り値型を修正. ([#309](https://github.com/kurorosu/pochivision/pull/309))
 - `FeatureExtractionRunner` の特徴量ユニット名取得失敗時に警告ログを出力するよう修正. ([#310](https://github.com/kurorosu/pochivision/pull/310))
-- `_measure_actual_fps()` の除算ゼロリスクに防御コードを追加. (NA.)
+- `_measure_actual_fps()` の除算ゼロリスクに防御コードを追加. ([#311](https://github.com/kurorosu/pochivision/pull/311))
+- `RecordingManager.start_recording()` の `is_recording` チェックをロック内に移動し race condition を修正. (NA.)
 
 ### Removed
 - `feature_extractors/__init__.py` から未使用の Params クラス 9 件のエクスポートを削除. ([#296](https://github.com/kurorosu/pochivision/pull/296))
