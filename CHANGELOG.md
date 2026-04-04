@@ -22,6 +22,7 @@
 ### Fixed
 - `ConfigHandler.save()` の `strftime` フォーマットを `%Y-%m%d-%H%M-%S` から `%Y%m%d_%H%M%S` に修正. ([#263](https://github.com/kurorosu/pochivision/pull/263))
 - `RecordingManager.start_recording()` で `VideoWriter` 初期化失敗時に `video_writer` を `None` にクリアするよう修正. ([#264](https://github.com/kurorosu/pochivision/pull/264))
+- mypy 型エラー 17 件を修正. `types-tqdm`, `scipy-stubs` を dev 依存に追加, `cv2.normalize` の `dst` 引数修正, `mask_composition.py` の `signedinteger` 変換修正など. (NA.)
 
 ### Removed
 - 未使用の `ExtractorRuntimeError` 例外クラスを削除. ([#265](https://github.com/kurorosu/pochivision/pull/265))
