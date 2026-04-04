@@ -15,7 +15,8 @@
 - 型アノテーションを Python 3.12+ 新スタイル (`dict`, `list`, `tuple`, `X | None`) に統一. ([#333](https://github.com/kurorosu/pochivision/pull/333))
 
 ### Fixed
-- `RecordingManager.stop_recording()` の `is_recording` チェックをロック内に移動し race condition を修正. (NA.)
+- `RecordingManager.stop_recording()` の `is_recording` チェックをロック内に移動し race condition を修正. ([#334](https://github.com/kurorosu/pochivision/pull/334))
+- `_resize_for_preview()` でフレームサイズが 0 の場合に元フレームを返す防御コードを追加. (NA.)
 
 ### Removed
 - `RecordingManager` の未使用属性 `frame_queue`, `recording_thread` を削除. ([#320](https://github.com/kurorosu/pochivision/pull/320))
