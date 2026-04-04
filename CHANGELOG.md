@@ -16,7 +16,7 @@
 - 無し
 
 ### Removed
-- 無し
+- `RecordingManager` の未使用属性 `frame_queue`, `recording_thread` を削除. ([#320](https://github.com/kurorosu/pochivision/pull/320))
 
 ## [0.4.0] - 2026-04-04
 

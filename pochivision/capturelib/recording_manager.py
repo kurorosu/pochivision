@@ -62,8 +62,6 @@ class RecordingManager:
     Attributes:
         is_recording (bool): 録画中かどうかのフラグ
         video_writer (Optional[cv2.VideoWriter]): 動画書き込みオブジェクト
-        recording_thread (Optional[threading.Thread]): 録画用スレッド
-        frame_queue (list): フレームキュー（スレッド間でのフレーム受け渡し用）
         lock (threading.Lock): スレッドセーフ用のロック
         video_format (str): 使用する動画形式
         frame_count (int): 録画中のフレーム数
@@ -79,8 +77,6 @@ class RecordingManager:
         """
         self.is_recording = False
         self.video_writer: Optional[cv2.VideoWriter] = None
-        self.recording_thread: Optional[threading.Thread] = None
-        self.frame_queue: list = []
         self.lock = threading.Lock()
         self.logger = LogManager().get_logger()
 
@@ -179,7 +175,6 @@ class RecordingManager:
 
                 # 録画フラグを設定
                 self.is_recording = True
-                self.frame_queue.clear()
                 self.frame_count = 0
                 self.recording_start_time = time.time()
 
