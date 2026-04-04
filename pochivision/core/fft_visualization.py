@@ -88,9 +88,9 @@ class SimpleFFTVisualizer:
         self.fshift = np.fft.fftshift(f)
         magnitude_spectrum = 20 * np.log(np.abs(self.fshift) + 1)
 
-        self.spectrum_display = cv2.normalize(
-            magnitude_spectrum, None, 0, 255, cv2.NORM_MINMAX
-        ).astype(np.uint8)
+        dst = np.empty_like(magnitude_spectrum, dtype=np.float64)
+        cv2.normalize(magnitude_spectrum, dst, 0, 255, cv2.NORM_MINMAX)
+        self.spectrum_display = dst.astype(np.uint8)
 
     def apply_filter(self) -> np.ndarray:
         """現在のフィルタモードに応じて画像をフィルタリングする."""
@@ -120,10 +120,12 @@ class SimpleFFTVisualizer:
             ]
 
         f_ishift = np.fft.ifftshift(mask)
-        img_back = np.fft.ifft2(f_ishift)
-        img_back = np.abs(img_back)
+        img_back_complex = np.fft.ifft2(f_ishift)
+        img_back: np.ndarray = np.abs(img_back_complex).astype(np.float64)
 
-        return cv2.normalize(img_back, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+        dst = np.empty_like(img_back)
+        cv2.normalize(img_back, dst, 0, 255, cv2.NORM_MINMAX)
+        return dst.astype(np.uint8)
 
     def update_display(self) -> None:
         """表示を更新する."""

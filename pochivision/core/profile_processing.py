@@ -182,7 +182,8 @@ class ProfileProcessor:
                         results[processor_name] = result
 
                 if results:
-                    return list(results.values())[-1]
+                    last_result: np.ndarray = list(results.values())[-1]
+                    return last_result
                 return None
 
             else:

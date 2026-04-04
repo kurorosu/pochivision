@@ -124,19 +124,19 @@ class MaskCompositionProcessor(BaseProcessor):
             return None
 
         # Y軸（行）の最小・最大値
-        y_min = np.min(white_pixels[0])
-        y_max = np.max(white_pixels[0])
+        raw_y_min = int(np.min(white_pixels[0]))
+        raw_y_max = int(np.max(white_pixels[0]))
 
         # X軸（列）の最小・最大値
-        x_min = np.min(white_pixels[1])
-        x_max = np.max(white_pixels[1])
+        raw_x_min = int(np.min(white_pixels[1]))
+        raw_x_max = int(np.max(white_pixels[1]))
 
         # マージンを適用（画像境界を超えないように調整）
         height, width = mask.shape
-        y_min = max(0, y_min - self.crop_margin)
-        y_max = min(height - 1, y_max + self.crop_margin)
-        x_min = max(0, x_min - self.crop_margin)
-        x_max = min(width - 1, x_max + self.crop_margin)
+        y_min = max(0, raw_y_min - self.crop_margin)
+        y_max = min(height - 1, raw_y_max + self.crop_margin)
+        x_min = max(0, raw_x_min - self.crop_margin)
+        x_max = min(width - 1, raw_x_max + self.crop_margin)
 
         return (y_min, y_max, x_min, x_max)
 

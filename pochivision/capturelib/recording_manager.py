@@ -157,7 +157,7 @@ class RecordingManager:
             )
 
             # VideoWriterを初期化
-            fourcc_code = cv2.VideoWriter_fourcc(*fourcc_str)
+            fourcc_code = cv2.VideoWriter.fourcc(*fourcc_str)
             self.video_writer = cv2.VideoWriter(
                 str(video_filename), fourcc_code, fps, frame_size
             )

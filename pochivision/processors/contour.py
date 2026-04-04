@@ -123,9 +123,11 @@ class ContourProcessor(BaseProcessor):
 
         # 指定されたランク（0から始まる）の輪郭を選択
         if self._contour_rank < len(sorted_contours):
-            return sorted_contours[self._contour_rank]
+            result: np.ndarray = sorted_contours[self._contour_rank]
+            return result
         elif sorted_contours:
-            return sorted_contours[0]  # ランクが範囲外の場合は最大輪郭を返す
+            result = sorted_contours[0]  # ランクが範囲外の場合は最大輪郭を返す
+            return result
         else:
             return None
 
@@ -166,7 +168,7 @@ class ContourProcessor(BaseProcessor):
 
             if self._select_mode == "rank":
                 # ランクによる選択
-                selected_contour = self._select_contour_by_rank(contours)
+                selected_contour = self._select_contour_by_rank(list(contours))
                 if selected_contour is not None:
                     contours = [selected_contour]
                 else:
