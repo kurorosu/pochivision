@@ -6,6 +6,7 @@ from typing import Optional
 import cv2
 import numpy as np
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.constants import (
     FFT_FILTER_RADIUS_MAX,
     FFT_FILTER_RADIUS_MIN,
@@ -26,6 +27,7 @@ class SimpleFFTVisualizer:
             image_path: 画像ファイルのパス.
         """
         self.image_path = Path(image_path)
+        self.logger = LogManager().get_logger()
         self.img: Optional[np.ndarray] = None
         self.fshift: Optional[np.ndarray] = None
         self.spectrum_display: Optional[np.ndarray] = None
@@ -36,13 +38,13 @@ class SimpleFFTVisualizer:
     def load_image(self) -> bool:
         """画像を読み込む."""
         if not self.image_path.exists():
-            print(f"エラー: 画像ファイルが見つかりません: {self.image_path}")
+            self.logger.error(f"画像ファイルが見つかりません: {self.image_path}")
             return False
 
         original_img = load_image(self.image_path)
 
         if original_img is None:
-            print(f"エラー: 画像ファイルを読み込めません: {self.image_path}")
+            self.logger.error(f"画像ファイルを読み込めません: {self.image_path}")
             return False
 
         if len(original_img.shape) == 3:
@@ -50,14 +52,14 @@ class SimpleFFTVisualizer:
         elif len(original_img.shape) == 2:
             self.img = original_img.copy()
         else:
-            print(
-                f"エラー: 対応していない画像形式です. 画像の次元: {original_img.shape}"
+            self.logger.error(
+                f"対応していない画像形式です. 画像の次元: {original_img.shape}"
             )
             return False
 
         original_height, original_width = self.img.shape
-        print(f"画像を読み込みました: {self.image_path}")
-        print(f"元画像サイズ: {original_width} x {original_height}")
+        self.logger.info(f"画像を読み込みました: {self.image_path}")
+        self.logger.info(f"元画像サイズ: {original_width} x {original_height}")
 
         if original_width > FHD_WIDTH or original_height > FHD_HEIGHT:
             scale_w = FHD_WIDTH / original_width
@@ -70,12 +72,12 @@ class SimpleFFTVisualizer:
             self.img = cv2.resize(
                 self.img, (new_width, new_height), interpolation=cv2.INTER_AREA
             )
-            print(
+            self.logger.info(
                 f"FHDサイズにリサイズしました: {new_width} x {new_height} "
                 f"(元: {original_width} x {original_height})"
             )
         else:
-            print("リサイズは不要です (FHD以下)")
+            self.logger.info("リサイズは不要です (FHD以下)")
 
         return True
 
@@ -250,14 +252,14 @@ class SimpleFFTVisualizer:
                     int(display_height * scale),
                 )
 
-        print("\n=== Simple FFT Visualizer ===")
-        print("左側: 周波数スペクトラム")
-        print("右側: フィルタリングされた画像")
-        print("操作:")
-        print("  'f': フィルタ切り替え (Original → LowPass → HighPass)")
-        print("  '+': フィルタ半径を増加")
-        print("  '-': フィルタ半径を減少")
-        print("  'q': 終了")
+        self.logger.info("=== Simple FFT Visualizer ===")
+        self.logger.info("左側: 周波数スペクトラム")
+        self.logger.info("右側: フィルタリングされた画像")
+        self.logger.info("操作:")
+        self.logger.info("  'f': フィルタ切り替え (Original → LowPass → HighPass)")
+        self.logger.info("  '+': フィルタ半径を増加")
+        self.logger.info("  '-': フィルタ半径を減少")
+        self.logger.info("  'q': 終了")
 
         self.update_display()
 
@@ -275,21 +277,21 @@ class SimpleFFTVisualizer:
                     self.filter_mode = "highpass"
                 else:
                     self.filter_mode = "original"
-                print(f"フィルタモード: {self.filter_mode}")
+                self.logger.info(f"フィルタモード: {self.filter_mode}")
                 self.update_display()
             elif key == ord("+") or key == ord("="):
                 self.filter_radius = min(
                     FFT_FILTER_RADIUS_MAX,
                     self.filter_radius + FFT_FILTER_RADIUS_STEP,
                 )
-                print(f"フィルタ半径: {self.filter_radius}")
+                self.logger.info(f"フィルタ半径: {self.filter_radius}")
                 self.update_display()
             elif key == ord("-"):
                 self.filter_radius = max(
                     FFT_FILTER_RADIUS_MIN,
                     self.filter_radius - FFT_FILTER_RADIUS_STEP,
                 )
-                print(f"フィルタ半径: {self.filter_radius}")
+                self.logger.info(f"フィルタ半径: {self.filter_radius}")
                 self.update_display()
 
         cv2.destroyAllWindows()
