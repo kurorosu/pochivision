@@ -1,11 +1,11 @@
 """2値化処理プロセッサの実装を提供するモジュール."""
 
-import logging
 from typing import Any, Dict
 
 import cv2
 import numpy as np
 
+from pochivision.capturelib.log_manager import LogManager
 from pochivision.exceptions import ProcessorRuntimeError
 from pochivision.processors import BaseProcessor
 from pochivision.processors.registry import register_processor
@@ -51,7 +51,7 @@ class StandardBinarizationProcessor(BaseProcessor):
             config (dict, optional): 設定パラメータ. デフォルトはNone.
         """
         super().__init__(name, config)
-        self.logger = logging.getLogger(__name__)
+        self.logger = LogManager().get_logger()
         self.validator = StandardBinarizationValidator(self.config)
         self.threshold: int = self.config.get("threshold", 128)
 
@@ -124,7 +124,7 @@ class OtsuBinarizationProcessor(BaseProcessor):
             config (dict, optional): 設定パラメータ.
         """
         super().__init__(name, config)
-        self.logger = logging.getLogger(__name__)
+        self.logger = LogManager().get_logger()
         self.validator = OtsuBinarizationValidator(self.config)
 
     def process(self, image: np.ndarray) -> np.ndarray:
@@ -197,7 +197,7 @@ class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
             config (dict, optional): 設定パラメータ.
         """
         super().__init__(name, config)
-        self.logger = logging.getLogger(__name__)
+        self.logger = LogManager().get_logger()
         self.validator = GaussianAdaptiveBinarizationValidator(self.config)
         self.block_size: int = self.config.get("block_size", 11)
         self.c_value: int | float = self.config.get("c", 2)
@@ -282,7 +282,7 @@ class MeanAdaptiveBinarizationProcessor(BaseProcessor):
             config (dict, optional): 設定パラメータ.
         """
         super().__init__(name, config)
-        self.logger = logging.getLogger(__name__)
+        self.logger = LogManager().get_logger()
         self.validator = MeanAdaptiveBinarizationValidator(self.config)
         self.block_size: int = self.config.get("block_size", 11)
         self.c_value: int | float = self.config.get("c", 2)
