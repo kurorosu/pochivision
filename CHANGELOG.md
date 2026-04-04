@@ -6,7 +6,7 @@
 ## [Unreleased]
 
 ### Added
-- 無し
+- 例外クラスのテスト 21 件を追加. (NA.)
 
 ### Changed
 - 無し
