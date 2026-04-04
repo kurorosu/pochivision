@@ -257,7 +257,9 @@ class CircleCounterExtractor(BaseFeatureExtractor):
             results["large_circle_count"] = large_count
 
             # 密度計算
-            results["circle_density"] = float(total_count / image_area)
+            results["circle_density"] = (
+                float(total_count / image_area) if image_area > 0 else 0.0
+            )
 
             # 半径統計
             results["avg_circle_radius"] = float(np.mean(radii))
