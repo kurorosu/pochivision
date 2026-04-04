@@ -6,19 +6,20 @@
 ## [Unreleased]
 
 ### Added
-- ライブプレビューに `h` キーでトグルするヘルプオーバーレイ表示機能を追加. 黒文字 + 白縁で表示し, 保存画像には影響しない. (NA.)
+- ライブプレビューに `h` キーでトグルするヘルプオーバーレイ表示機能を追加. 黒文字 + 白縁で表示し, 保存画像には影響しない. ([#295](https://github.com/kurorosu/pochivision/pull/295))
 
 ### Changed
-- 設定ファイル (`config.json`, `extractor_config.json`) を `config/` ディレクトリに移動し, CLI のデフォルトパスを更新. (NA.)
-- `FeatureExtractionRunner` の CSV 出力を `FeatureCSVWriter` に, クラス名抽出を `extract_class_from_filename()` に分離. (NA.)
+- 設定ファイル (`config.json`, `extractor_config.json`) を `config/` ディレクトリに移動し, CLI のデフォルトパスを更新. ([#294](https://github.com/kurorosu/pochivision/pull/294))
+- `FeatureExtractionRunner` の CSV 出力を `FeatureCSVWriter` に, クラス名抽出を `extract_class_from_filename()` に分離. ([#297](https://github.com/kurorosu/pochivision/pull/297))
 
 ### Fixed
 - `ImageSaver.save()` で `cv2.imwrite()` の戻り値を検証し, 保存失敗時に警告ログを出力するよう修正. ([#291](https://github.com/kurorosu/pochivision/pull/291))
 - `RecordingManager.add_frame()` のロック外チェックを削除しスレッド安全性を改善. `start_recording()` にフレームサイズ検証を追加. ([#292](https://github.com/kurorosu/pochivision/pull/292))
 - `ImageSaver.save()` のログ出力でグレースケール画像の幅/高さが正しく取得されるよう `image.shape[:2]` に修正. ([#293](https://github.com/kurorosu/pochivision/pull/293))
+- `run.py` の `SystemExit(1)` を `click.ClickException` に統一, `logger` パラメータ型と `_setup_camera()` 戻り値型を修正. (NA.)
 
 ### Removed
-- `feature_extractors/__init__.py` から未使用の Params クラス 9 件のエクスポートを削除. (NA.)
+- `feature_extractors/__init__.py` から未使用の Params クラス 9 件のエクスポートを削除. ([#296](https://github.com/kurorosu/pochivision/pull/296))
 
 ## [0.3.0] - 2026-04-04
 
