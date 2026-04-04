@@ -6,7 +6,8 @@
 ## [Unreleased]
 
 ### Added
-- `PipelineExecutor`, `ImageSaver`, `RecordingManager`, `CameraSetup`, `ImageAggregator`, `ProcessorFolderFinder`, `get_image_files`, `load_image` のユニットテストを追加 (54件). (NA.)
+- `PipelineExecutor`, `ImageSaver`, `RecordingManager`, `CameraSetup`, `ImageAggregator`, `ProcessorFolderFinder`, `get_image_files`, `load_image` のユニットテストを追加. ([#279](https://github.com/kurorosu/pochivision/pull/279))
+- CLI サブコマンドの実行テストを追加 (extract, process, aggregate, output-root 伝播). (NA.)
 
 ### Changed
 - `FeatureExtractionRunner` と `ProfileProcessor` の `_load_config()` を `ConfigHandler.load_json()` に統合. ([#267](https://github.com/kurorosu/pochivision/pull/267))
