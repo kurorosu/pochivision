@@ -9,12 +9,12 @@
 - 無し
 
 ### Changed
-- 無し
+- 設定ファイル (`config.json`, `extractor_config.json`) を `config/` ディレクトリに移動し, CLI のデフォルトパスを更新. (NA.)
 
 ### Fixed
 - `ImageSaver.save()` で `cv2.imwrite()` の戻り値を検証し, 保存失敗時に警告ログを出力するよう修正. ([#291](https://github.com/kurorosu/pochivision/pull/291))
 - `RecordingManager.add_frame()` のロック外チェックを削除しスレッド安全性を改善. `start_recording()` にフレームサイズ検証を追加. ([#292](https://github.com/kurorosu/pochivision/pull/292))
-- `ImageSaver.save()` のログ出力でグレースケール画像の幅/高さが正しく取得されるよう `image.shape[:2]` に修正. (NA.)
+- `ImageSaver.save()` のログ出力でグレースケール画像の幅/高さが正しく取得されるよう `image.shape[:2]` に修正. ([#293](https://github.com/kurorosu/pochivision/pull/293))
 
 ### Removed
 - 無し
