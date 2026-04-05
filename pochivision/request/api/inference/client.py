@@ -61,7 +61,7 @@ class InferenceClient:
         try:
             response = self._client.post(url, json=payload)
             response.raise_for_status()
-        except httpx.ConnectError as e:
+        except (httpx.ConnectError, httpx.ConnectTimeout) as e:
             raise InferenceConnectionError(
                 f"推論 API サーバーに接続できません: {self.base_url}"
             ) from e
