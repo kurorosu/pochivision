@@ -30,11 +30,13 @@ class InferConfig:
         url: pochitrain 推論 API のベース URL.
         format: 画像送信形式 ("raw" or "jpeg").
         resize: リサイズ設定 (None の場合はリサイズなし).
+        save_frame: 推論実行時にフレーム画像を保存するかどうか.
     """
 
     url: str
     format: str = "jpeg"
     resize: ResizeConfig | None = None
+    save_frame: bool = False
 
 
 _VALID_FORMATS = {"raw", "jpeg"}
@@ -83,7 +85,15 @@ def _build_infer_config(data: dict[str, Any]) -> InferConfig:
 
     resize = _build_resize_config(data.get("resize"))
 
-    return InferConfig(url=data["url"], format=fmt, resize=resize)
+    save_frame = data.get("save_frame", False)
+    if not isinstance(save_frame, bool):
+        raise ConfigValidationError(
+            f"'save_frame' は bool である必要があります: {save_frame!r}"
+        )
+
+    return InferConfig(
+        url=data["url"], format=fmt, resize=resize, save_frame=save_frame
+    )
 
 
 def _build_resize_config(

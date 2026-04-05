@@ -11,10 +11,11 @@
   - 推論結果オーバーレイ (`InferenceOverlay`)
   - 推論例外クラス (`InferenceError`, `InferenceConnectionError`)
   - テスト 25 件
+- 推論実行時にリサイズ+パディング後のフレーム画像を保存する機能を追加. `infer_config.json` の `save_frame` で有効/無効を制御. (NA.)
 
 ### Changed
 - 推論オーバーレイにクライアント側ネットワーク往復時間 (RTT) の表示を追加. ([#350](https://github.com/kurorosu/pochivision/pull/350))
-- 推論設定を `infer_config.json` に集約し, CLI オプション `--inference-url` / `--inference-format` を `--infer-config` に統合. 送信前のフレームリサイズ+パディング (アスペクト比維持) をサポート. (NA.)
+- 推論設定を `infer_config.json` に集約し, CLI オプション `--inference-url` / `--inference-format` を `--infer-config` に統合. 送信前のフレームリサイズ+パディング (アスペクト比維持) をサポート. ([#353](https://github.com/kurorosu/pochivision/pull/353))
 
 ### Fixed
 - 推論実行時にプレビューがブロックされる問題を修正. `_run_inference` をバックグラウンドスレッドで実行するよう変更し, 推論中の二重送信防止と "Inferring..." 表示を追加. ([#348](https://github.com/kurorosu/pochivision/pull/348))

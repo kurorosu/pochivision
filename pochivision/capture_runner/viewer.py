@@ -3,6 +3,8 @@
 import platform
 import threading
 import time
+from datetime import datetime
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -227,6 +229,7 @@ class LivePreviewRunner:
             frame: 推論対象のフレーム.
         """
         try:
+            self._save_inference_frame(frame)
             result = self.inference_client.predict(frame)  # type: ignore[union-attr]
             self.inference_overlay.update(result)
             self.logger.info(
@@ -244,6 +247,31 @@ class LivePreviewRunner:
         finally:
             self.inference_overlay.set_inferring(False)
             self._inferring = False
+
+    def _save_inference_frame(self, frame: np.ndarray) -> None:
+        """推論フレームをリサイズ+パディング後に画像ファイルとして保存する.
+
+        Args:
+            frame: 推論対象のフレーム.
+        """
+        client = self.inference_client
+        if client is None or not client.save_frame:
+            return
+
+        try:
+            processed = client.resize_frame(frame)
+            inference_dir = Path(self.pipeline.output_dir) / "inference"
+            inference_dir.mkdir(parents=True, exist_ok=True)
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            save_path = inference_dir / f"infer_{timestamp}.png"
+            success = cv2.imwrite(str(save_path), processed)
+            if success:
+                self.logger.info(f"Inference frame saved: {save_path}")
+            else:
+                self.logger.warning(f"Failed to save inference frame: {save_path}")
+        except (OSError, cv2.error) as e:
+            self.logger.warning(f"Error saving inference frame: {e}")
 
     def _start_recording(self, frame) -> None:
         """

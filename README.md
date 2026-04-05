@@ -100,6 +100,7 @@ uv run pochi run --infer-config config/infer_config.json
 | `resize.width` | No | なし (リサイズなし) | 送信画像の幅 |
 | `resize.height` | No | なし (リサイズなし) | 送信画像の高さ |
 | `resize.padding_color` | No | `[0, 0, 0]` | パディング色 (BGR) |
+| `save_frame` | No | `false` | 推論実行時にフレーム画像を保存するか |
 
 ### `pochi extract` - 特徴量抽出
 
