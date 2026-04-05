@@ -1,6 +1,7 @@
 """pochitrain 推論 API クライアントモジュール."""
 
 import base64
+from typing import Any
 
 import cv2
 import httpx
@@ -101,7 +102,7 @@ class InferenceClient:
                 f"推論レスポンスに必要なフィールドがありません: {e}"
             ) from e
 
-    def _build_payload(self, frame: np.ndarray) -> dict:
+    def _build_payload(self, frame: np.ndarray) -> dict[str, Any]:
         """API リクエストのペイロードを構築する.
 
         Args:
@@ -114,7 +115,7 @@ class InferenceClient:
             return self._encode_jpeg(frame)
         return self._encode_raw(frame)
 
-    def _encode_raw(self, frame: np.ndarray) -> dict:
+    def _encode_raw(self, frame: np.ndarray) -> dict[str, Any]:
         """Raw 形式で base64 エンコードしてペイロードを構築する.
 
         Args:
@@ -131,7 +132,7 @@ class InferenceClient:
             "dtype": str(frame.dtype),
         }
 
-    def _encode_jpeg(self, frame: np.ndarray) -> dict:
+    def _encode_jpeg(self, frame: np.ndarray) -> dict[str, Any]:
         """JPEG 圧縮後に base64 エンコードしてペイロードを構築する.
 
         Args:
