@@ -1,17 +1,24 @@
 """カメラプレビュー・キャプチャ用のコントローラークラスを提供するモジュール."""
 
 import platform
+import threading
 import time
+from datetime import datetime
+from pathlib import Path
 
 import cv2
 import numpy as np
 
 from pochivision.capture_runner.help_overlay import HelpOverlay
+from pochivision.capture_runner.inference_overlay import InferenceOverlay
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
 from pochivision.core import PipelineExecutor
-from pochivision.exceptions import VisionCaptureError
+from pochivision.exceptions import InferenceError, VisionCaptureError
+from pochivision.request.api.inference.client import InferenceClient
+from pochivision.request.api.inference.csv_writer import InferenceCsvWriter
+from pochivision.request.api.inference.models import PredictResponse
 
 
 class LivePreviewRunner:
@@ -32,6 +39,7 @@ class LivePreviewRunner:
         pipeline: PipelineExecutor,
         recording_manager: RecordingManager | None = None,
         preview_size: tuple[int, int] = (DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT),
+        inference_client: InferenceClient | None = None,
     ) -> None:
         """
         LivePreviewRunnerを初期化する.
@@ -41,14 +49,20 @@ class LivePreviewRunner:
             pipeline: .run(image) を持つ画像処理パイプラインインスタンス.
             recording_manager: 録画機能を管理するマネージャー（オプション）.
             preview_size: プレビューウィンドウの表示サイズ (width, height).
+            inference_client: pochitrain 推論 API クライアント（オプション）.
         """
         self.cap = cap
         self.pipeline = pipeline
         self.recording_manager = recording_manager
         self.preview_size = preview_size
+        self.inference_client = inference_client
         self.os_name = platform.system()
         self.logger = LogManager().get_logger()
         self.help_overlay = HelpOverlay()
+        self.inference_overlay = InferenceOverlay()
+        self._inferring = False
+        self._inferring_lock = threading.Lock()
+        self._inference_thread: threading.Thread | None = None
 
     def _resize_for_preview(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -112,6 +126,7 @@ class LivePreviewRunner:
         - 'r': 録画開始
         - 't': 録画停止
         - 's': カメラ設定
+        - 'i': 推論実行
         - 'h': ヘルプオーバーレイ表示/非表示
         - 'q': 終了
 
@@ -139,6 +154,7 @@ class LivePreviewRunner:
 
                 # プレビュー表示 (リサイズ後にオーバーレイを描画)
                 preview = self._resize_for_preview(frame)
+                self.inference_overlay.draw(preview)
                 self.help_overlay.draw(preview)
                 cv2.imshow("Live View", preview)
 
@@ -162,6 +178,9 @@ class LivePreviewRunner:
                             f"Camera settings dialog is only supported on Windows. "
                             f"Current OS: {self.os_name}"
                         )
+                elif key == ord("i"):
+                    # 推論実行
+                    self._run_inference(frame)
                 elif key == ord("h"):
                     # ヘルプオーバーレイのトグル
                     self.help_overlay.toggle()
@@ -177,6 +196,119 @@ class LivePreviewRunner:
         finally:
             # クリーンアップ処理
             self._cleanup()
+
+    def _run_inference(self, frame: np.ndarray) -> None:
+        """推論 API にフレームをバックグラウンドで送信する.
+
+        推論中の二重送信を防止し, 別スレッドで実行する.
+
+        Args:
+            frame: 現在のフレーム.
+        """
+        if self.inference_client is None:
+            self.logger.warning(
+                "Inference is not available (--infer-config not loaded)"
+            )
+            return
+
+        # Lock で check-then-act を保護し, 二重起動を確実に防止する.
+        with self._inferring_lock:
+            if self._inferring:
+                self.logger.info("Inference already in progress, skipping")
+                return
+            self._inferring = True
+
+        self.inference_overlay.set_inferring(True)
+        snapshot = frame.copy()
+        self._inference_thread = threading.Thread(
+            target=self._inference_worker,
+            args=(snapshot,),
+            daemon=True,
+        )
+        self._inference_thread.start()
+
+    def _inference_worker(self, frame: np.ndarray) -> None:
+        """バックグラウンドで推論を実行するワーカー.
+
+        Args:
+            frame: 推論対象のフレーム.
+        """
+        try:
+            image_file = self._save_inference_frame(frame)
+            result = self.inference_client.predict(frame)  # type: ignore[union-attr]
+            self.inference_overlay.update(result)
+            self.logger.info(
+                f"Inference: {result.class_name} "
+                f"({result.confidence * 100:.1f}%, "
+                f"{result.e2e_time_ms:.1f}ms, "
+                f"RTT: {result.rtt_ms:.1f}ms)"
+            )
+            self._save_inference_csv(result, image_file)
+        except InferenceError as e:
+            self.inference_overlay.clear()
+            self.logger.error(f"Inference failed: {e}")
+        except Exception as e:
+            self.inference_overlay.clear()
+            self.logger.error(f"Unexpected inference error: {e}")
+        finally:
+            self.inference_overlay.set_inferring(False)
+            with self._inferring_lock:
+                self._inferring = False
+
+    def _save_inference_frame(self, frame: np.ndarray) -> str | None:
+        """推論フレームをリサイズ+パディング後に画像ファイルとして保存する.
+
+        Args:
+            frame: 推論対象のフレーム.
+
+        Returns:
+            保存されたファイル名, または保存しなかった場合は None.
+        """
+        client = self.inference_client
+        if client is None or not client.save_frame:
+            return None
+
+        try:
+            processed = client.resize_frame(frame)
+            inference_dir = Path(self.pipeline.output_dir) / "inference"
+            inference_dir.mkdir(parents=True, exist_ok=True)
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            filename = f"infer_{timestamp}.png"
+            save_path = inference_dir / filename
+            success = cv2.imwrite(str(save_path), processed)
+            if success:
+                self.logger.info(f"Inference frame saved: {save_path}")
+                return filename
+            else:
+                self.logger.warning(f"Failed to save inference frame: {save_path}")
+                return None
+        except (OSError, cv2.error) as e:
+            self.logger.warning(f"Error saving inference frame: {e}")
+            return None
+
+    def _save_inference_csv(
+        self,
+        result: PredictResponse,
+        image_file: str | None,
+    ) -> None:
+        """推論結果を CSV ファイルに追記する.
+
+        Args:
+            result: 推論レスポンス.
+            image_file: 保存された画像ファイル名 (None の場合は空文字).
+        """
+        client = self.inference_client
+        if client is None or not client.save_csv:
+            return
+
+        try:
+            inference_dir = Path(self.pipeline.output_dir) / "inference"
+            writer = InferenceCsvWriter(inference_dir)
+            writer.write_row(result, image_file)
+            self.logger.info(f"Inference result saved to CSV: {writer.csv_path}")
+        except OSError as e:
+            self.logger.warning(f"Error saving inference CSV: {e}")
 
     def _start_recording(self, frame) -> None:
         """
@@ -246,6 +378,14 @@ class LivePreviewRunner:
         # 録画マネージャーのクリーンアップ
         if self.recording_manager:
             self.recording_manager.cleanup()
+
+        # 推論ワーカースレッドの完了待機
+        if self._inference_thread is not None:
+            self._inference_thread.join(timeout=5.0)
+
+        # 推論クライアントのクリーンアップ
+        if self.inference_client:
+            self.inference_client.close()
 
         # カメラリソースの解放
         self.cap.release()

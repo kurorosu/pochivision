@@ -1,6 +1,7 @@
 """run サブコマンド: ライブプレビュー起動."""
 
 import logging
+from pathlib import Path
 
 import click
 import cv2
@@ -10,9 +11,14 @@ from pochivision.capturelib.camera_setup import CameraSetup
 from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
-from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
+from pochivision.constants import (
+    DEFAULT_INFER_CONFIG_PATH,
+    DEFAULT_PREVIEW_HEIGHT,
+    DEFAULT_PREVIEW_WIDTH,
+)
 from pochivision.core import PipelineExecutor
 from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
+from pochivision.request.api.inference import InferenceClient, load_infer_config
 from pochivision.workspace import OutputManager
 
 
@@ -24,6 +30,12 @@ from pochivision.workspace import OutputManager
     "--config", type=str, default="config/config.json", help="設定ファイルパス"
 )
 @click.option("--no-recording", is_flag=True, help="録画機能を無効化")
+@click.option(
+    "--infer-config",
+    type=str,
+    default=DEFAULT_INFER_CONFIG_PATH,
+    help=f"推論設定ファイルのパス (デフォルト: {DEFAULT_INFER_CONFIG_PATH})",
+)
 @click.pass_context
 def run(
     ctx: click.Context,
@@ -32,6 +44,7 @@ def run(
     list_profiles: bool,
     config: str,
     no_recording: bool,
+    infer_config: str,
 ) -> None:
     """ライブプレビューを起動する (従来の pochi コマンド)."""
     log_manager = LogManager()
@@ -50,7 +63,13 @@ def run(
 
     cap, camera_setup = _setup_camera(config_data, log_manager, camera, profile)
     _run_preview(
-        config_data, log_manager, cap, camera_setup, no_recording, output_manager
+        config_data,
+        log_manager,
+        cap,
+        camera_setup,
+        no_recording,
+        output_manager,
+        infer_config,
     )
 
 
@@ -74,7 +93,7 @@ def _load_config(config_path: str, logger: logging.Logger) -> dict:
     except ConfigValidationError as e:
         logger.error(str(e))
         raise click.ClickException(
-            "設定ファイルに誤りがあります. 詳細はログ��確認してください."
+            "設定ファイルに誤りがあります. 詳細はログを確認してください."
         )
     except (ConfigLoadError, Exception) as e:
         logger.error(f"Failed to load configuration: {e}")
@@ -131,7 +150,7 @@ def _setup_camera(
         if cap is None or not cap.isOpened():
             logger.error(f"Failed to open camera {camera_setup.camera_index}.")
             raise click.ClickException(
-                f"カメラ {camera_setup.camera_index} を開けませ���でした."
+                f"カメラ {camera_setup.camera_index} を開けませんでした."
             )
 
         log_manager.log_camera_info(
@@ -157,6 +176,7 @@ def _run_preview(
     camera_setup: CameraSetup,
     no_recording: bool,
     output_manager: OutputManager,
+    infer_config_path: str,
 ) -> None:
     """プレビューを実行する.
 
@@ -167,6 +187,7 @@ def _run_preview(
         camera_setup: カメラセットアップ.
         no_recording: 録画無効フラグ.
         output_manager: 出力ディレクトリの統一管理クラス.
+        infer_config_path: 推論設定ファイルのパス.
     """
     logger = log_manager.get_logger()
     try:
@@ -201,7 +222,24 @@ def _run_preview(
             preview_config.get("height", DEFAULT_PREVIEW_HEIGHT),
         )
 
-        app = LivePreviewRunner(cap, pipeline, recording_manager, preview_size)
+        inference_client = None
+        if Path(infer_config_path).exists():
+            try:
+                infer_cfg = load_infer_config(infer_config_path)
+                inference_client = InferenceClient(
+                    base_url=infer_cfg.url,
+                    image_format=infer_cfg.format,
+                    resize=infer_cfg.resize,
+                    save_frame=infer_cfg.save_frame,
+                    save_csv=infer_cfg.save_csv,
+                )
+                logger.info(f"Inference API enabled: {infer_cfg.url}")
+            except (ConfigLoadError, ConfigValidationError, ValueError) as e:
+                logger.warning(f"Inference config not loaded, skipping: {e}")
+
+        app = LivePreviewRunner(
+            cap, pipeline, recording_manager, preview_size, inference_client
+        )
         app.run()
 
     except Exception as e:

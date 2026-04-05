@@ -1,6 +1,6 @@
 # pochivision
 
-[![Version](https://img.shields.io/badge/version-0.4.2-green.svg)](https://github.com/kurorosu/pochivision/releases)
+[![Version](https://img.shields.io/badge/version-0.5.0-green.svg)](https://github.com/kurorosu/pochivision/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 
@@ -74,6 +74,12 @@ uv run pochi run --list-profiles
 
 # 録画機能を無効にして起動
 uv run pochi run --no-recording
+
+# pochitrain 推論 API と連携 (i キーで推論実行, デフォルト: config/infer_config.json)
+uv run pochi run
+
+# 推論設定ファイルを明示的に指定
+uv run pochi run --infer-config config/infer_config.json
 ```
 
 | 引数 | 短縮形 | 説明 |
@@ -83,6 +89,19 @@ uv run pochi run --no-recording
 | `--list-profiles` | `-l` | 利用可能な全てのカメラプロファイルを表示 |
 | `--config` | | 設定ファイルのパスを指定 (デフォルト: config/config.json) |
 | `--no-recording` | | 録画機能を無効にして起動 |
+| `--infer-config` | | 推論設定ファイルのパス (デフォルト: config/infer_config.json) |
+
+#### 推論設定 (`infer_config.json`)
+
+| キー | 必須 | デフォルト | 説明 |
+|------|------|-----------|------|
+| `url` | Yes | - | pochitrain 推論 API のベース URL |
+| `format` | No | `"jpeg"` | 画像送信形式 (`"raw"` / `"jpeg"`) |
+| `resize.width` | No | なし (リサイズなし) | 送信画像の幅 |
+| `resize.height` | No | なし (リサイズなし) | 送信画像の高さ |
+| `resize.padding_color` | No | `[0, 0, 0]` | パディング色 (BGR) |
+| `save_frame` | No | `false` | 推論実行時にフレーム画像を保存するか |
+| `save_csv` | No | `false` | 推論結果を CSV ファイルに出力するか |
 
 ### `pochi extract` - 特徴量抽出
 

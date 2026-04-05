@@ -1,6 +1,6 @@
 # pochivision
 
-[![Version](https://img.shields.io/badge/version-0.4.2-green.svg)](https://github.com/kurorosu/pochivision/releases)
+[![Version](https://img.shields.io/badge/version-0.5.0-green.svg)](https://github.com/kurorosu/pochivision/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 
@@ -83,6 +83,12 @@ uv run pochi run --config "my_config.json"
 
 # Disable recording
 uv run pochi run --no-recording
+
+# Connect to pochitrain inference API (press 'i' to run inference, default: config/infer_config.json)
+uv run pochi run
+
+# Specify inference config file explicitly
+uv run pochi run --infer-config config/infer_config.json
 ```
 
 | Argument | Short | Description |
@@ -92,6 +98,19 @@ uv run pochi run --no-recording
 | `--list-profiles` | `-l` | Display all available camera profiles |
 | `--config` | | Specify a config file path (default: config/config.json) |
 | `--no-recording` | | Disable recording functionality |
+| `--infer-config` | | Inference config file path (default: config/infer_config.json) |
+
+#### Inference Config (`infer_config.json`)
+
+| Key | Required | Default | Description |
+|-----|----------|---------|-------------|
+| `url` | Yes | - | pochitrain inference API base URL |
+| `format` | No | `"jpeg"` | Image format (`"raw"` / `"jpeg"`) |
+| `resize.width` | No | None (no resize) | Target image width |
+| `resize.height` | No | None (no resize) | Target image height |
+| `resize.padding_color` | No | `[0, 0, 0]` | Padding color (BGR) |
+| `save_frame` | No | `false` | Save inference frame image to disk |
+| `save_csv` | No | `false` | Save inference results to CSV file |
 
 ### `pochi extract` - Extract features from images
 
