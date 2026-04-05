@@ -13,7 +13,8 @@
   - テスト 25 件
 
 ### Changed
-- 推論オーバーレイにクライアント側ネットワーク往復時間 (RTT) の表示を追加. (NA.)
+- 推論オーバーレイにクライアント側ネットワーク往復時間 (RTT) の表示を追加. ([#350](https://github.com/kurorosu/pochivision/pull/350))
+- 推論設定を `infer_config.json` に集約し, CLI オプション `--inference-url` / `--inference-format` を `--infer-config` に統合. 送信前のフレームリサイズ+パディング (アスペクト比維持) をサポート. (NA.)
 
 ### Fixed
 - 推論実行時にプレビューがブロックされる問題を修正. `_run_inference` をバックグラウンドスレッドで実行するよう変更し, 推論中の二重送信防止と "Inferring..." 表示を追加. ([#348](https://github.com/kurorosu/pochivision/pull/348))

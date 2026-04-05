@@ -75,11 +75,11 @@ uv run pochi run --list-profiles
 # 録画機能を無効にして起動
 uv run pochi run --no-recording
 
-# pochitrain 推論 API と連携 (i キーで推論実行)
-uv run pochi run --inference-url http://localhost:8000
+# pochitrain 推論 API と連携 (i キーで推論実行, デフォルト: config/infer_config.json)
+uv run pochi run
 
-# LAN 内の別マシンの推論サーバーを指定
-uv run pochi run --inference-url http://192.168.1.100:8000 --inference-format raw
+# 推論設定ファイルを明示的に指定
+uv run pochi run --infer-config config/infer_config.json
 ```
 
 | 引数 | 短縮形 | 説明 |
@@ -89,8 +89,17 @@ uv run pochi run --inference-url http://192.168.1.100:8000 --inference-format ra
 | `--list-profiles` | `-l` | 利用可能な全てのカメラプロファイルを表示 |
 | `--config` | | 設定ファイルのパスを指定 (デフォルト: config/config.json) |
 | `--no-recording` | | 録画機能を無効にして起動 |
-| `--inference-url` | | pochitrain 推論 API の URL (デフォルト: http://localhost:8000) |
-| `--inference-format` | | 推論 API への画像送信フォーマット: `raw` または `jpeg` (デフォルト: jpeg) |
+| `--infer-config` | | 推論設定ファイルのパス (デフォルト: config/infer_config.json) |
+
+#### 推論設定 (`infer_config.json`)
+
+| キー | 必須 | デフォルト | 説明 |
+|------|------|-----------|------|
+| `url` | Yes | - | pochitrain 推論 API のベース URL |
+| `format` | No | `"jpeg"` | 画像送信形式 (`"raw"` / `"jpeg"`) |
+| `resize.width` | No | なし (リサイズなし) | 送信画像の幅 |
+| `resize.height` | No | なし (リサイズなし) | 送信画像の高さ |
+| `resize.padding_color` | No | `[0, 0, 0]` | パディング色 (BGR) |
 
 ### `pochi extract` - 特徴量抽出
 

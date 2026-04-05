@@ -14,7 +14,7 @@ FHD_WIDTH = 1920
 FHD_HEIGHT = 1080
 
 # 推論 API 設定 (inference)
-DEFAULT_INFERENCE_URL = "http://localhost:8000"
+DEFAULT_INFER_CONFIG_PATH = "config/infer_config.json"
 DEFAULT_INFERENCE_TIMEOUT = 5.0
 DEFAULT_INFERENCE_FORMAT = "jpeg"
 

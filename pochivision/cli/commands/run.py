@@ -1,6 +1,7 @@
 """run サブコマンド: ライブプレビュー起動."""
 
 import logging
+from pathlib import Path
 
 import click
 import cv2
@@ -11,13 +12,13 @@ from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import (
-    DEFAULT_INFERENCE_URL,
+    DEFAULT_INFER_CONFIG_PATH,
     DEFAULT_PREVIEW_HEIGHT,
     DEFAULT_PREVIEW_WIDTH,
 )
 from pochivision.core import PipelineExecutor
 from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
-from pochivision.request.api.inference.client import InferenceClient
+from pochivision.request.api.inference import InferenceClient, load_infer_config
 from pochivision.workspace import OutputManager
 
 
@@ -30,16 +31,10 @@ from pochivision.workspace import OutputManager
 )
 @click.option("--no-recording", is_flag=True, help="録画機能を無効化")
 @click.option(
-    "--inference-url",
+    "--infer-config",
     type=str,
-    default=None,
-    help=f"pochitrain 推論 API の URL (デフォルト: {DEFAULT_INFERENCE_URL})",
-)
-@click.option(
-    "--inference-format",
-    type=click.Choice(["raw", "jpeg"]),
-    default="jpeg",
-    help="推論 API への画像送信フォーマット",
+    default=DEFAULT_INFER_CONFIG_PATH,
+    help=f"推論設定ファイルのパス (デフォルト: {DEFAULT_INFER_CONFIG_PATH})",
 )
 @click.pass_context
 def run(
@@ -49,8 +44,7 @@ def run(
     list_profiles: bool,
     config: str,
     no_recording: bool,
-    inference_url: str | None,
-    inference_format: str,
+    infer_config: str,
 ) -> None:
     """ライブプレビューを起動する (従来の pochi コマンド)."""
     log_manager = LogManager()
@@ -75,8 +69,7 @@ def run(
         camera_setup,
         no_recording,
         output_manager,
-        inference_url,
-        inference_format,
+        infer_config,
     )
 
 
@@ -183,8 +176,7 @@ def _run_preview(
     camera_setup: CameraSetup,
     no_recording: bool,
     output_manager: OutputManager,
-    inference_url: str | None,
-    inference_format: str,
+    infer_config_path: str,
 ) -> None:
     """プレビューを実行する.
 
@@ -195,8 +187,7 @@ def _run_preview(
         camera_setup: カメラセットアップ.
         no_recording: 録画無効フラグ.
         output_manager: 出力ディレクトリの統一管理クラス.
-        inference_url: pochitrain 推論 API の URL (None で無効).
-        inference_format: 画像送信フォーマット ("raw" or "jpeg").
+        infer_config_path: 推論設定ファイルのパス.
     """
     logger = log_manager.get_logger()
     try:
@@ -232,12 +223,17 @@ def _run_preview(
         )
 
         inference_client = None
-        if inference_url:
-            inference_client = InferenceClient(
-                base_url=inference_url,
-                image_format=inference_format,
-            )
-            logger.info(f"Inference API enabled: {inference_url}")
+        if Path(infer_config_path).exists():
+            try:
+                infer_cfg = load_infer_config(infer_config_path)
+                inference_client = InferenceClient(
+                    base_url=infer_cfg.url,
+                    image_format=infer_cfg.format,
+                    resize=infer_cfg.resize,
+                )
+                logger.info(f"Inference API enabled: {infer_cfg.url}")
+            except (ConfigLoadError, ConfigValidationError, ValueError) as e:
+                logger.warning(f"Inference config not loaded, skipping: {e}")
 
         app = LivePreviewRunner(
             cap, pipeline, recording_manager, preview_size, inference_client

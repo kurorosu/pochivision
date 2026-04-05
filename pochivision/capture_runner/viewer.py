@@ -202,7 +202,7 @@ class LivePreviewRunner:
         """
         if self.inference_client is None:
             self.logger.warning(
-                "Inference is not available (--inference-url not specified)"
+                "Inference is not available (--infer-config not loaded)"
             )
             return
 
