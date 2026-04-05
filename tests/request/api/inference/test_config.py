@@ -61,6 +61,19 @@ class TestLoadInferConfigSuccess:
         config = load_infer_config(path)
         assert config.save_frame is True
 
+    def test_save_csv_enabled(self, tmp_path):
+        path = _write_config(
+            tmp_path,
+            {"url": "http://localhost:8000", "save_csv": True},
+        )
+        config = load_infer_config(path)
+        assert config.save_csv is True
+
+    def test_save_csv_default_false(self, tmp_path):
+        path = _write_config(tmp_path, {"url": "http://localhost:8000"})
+        config = load_infer_config(path)
+        assert config.save_csv is False
+
     def test_resize_without_padding_color(self, tmp_path):
         path = _write_config(
             tmp_path,
@@ -236,6 +249,14 @@ class TestLoadInferConfigError:
             {"url": "http://localhost:8000", "save_frame": "yes"},
         )
         with pytest.raises(ConfigValidationError, match="save_frame"):
+            load_infer_config(path)
+
+    def test_save_csv_invalid_type(self, tmp_path):
+        path = _write_config(
+            tmp_path,
+            {"url": "http://localhost:8000", "save_csv": "yes"},
+        )
+        with pytest.raises(ConfigValidationError, match="save_csv"):
             load_infer_config(path)
 
     def test_resize_padding_color_wrong_length(self, tmp_path):

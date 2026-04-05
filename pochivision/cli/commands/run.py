@@ -231,6 +231,7 @@ def _run_preview(
                     image_format=infer_cfg.format,
                     resize=infer_cfg.resize,
                     save_frame=infer_cfg.save_frame,
+                    save_csv=infer_cfg.save_csv,
                 )
                 logger.info(f"Inference API enabled: {infer_cfg.url}")
             except (ConfigLoadError, ConfigValidationError, ValueError) as e:
