@@ -120,6 +120,7 @@ class TestPredictResponse:
             "probabilities": [0.15, 0.85],
             "e2e_time_ms": 10.5,
             "backend": "onnx",
+            "rtt_ms": 50.0,
         }
         resp = PredictResponse(**data)
         assert resp.class_id == 1
@@ -128,6 +129,7 @@ class TestPredictResponse:
         assert resp.probabilities == [0.15, 0.85]
         assert resp.e2e_time_ms == 10.5
         assert resp.backend == "onnx"
+        assert resp.rtt_ms == 50.0
 
     def test_frozen(self):
         resp = PredictResponse(
@@ -137,6 +139,7 @@ class TestPredictResponse:
             probabilities=[0.9, 0.1],
             e2e_time_ms=5.0,
             backend="onnx",
+            rtt_ms=30.0,
         )
         with pytest.raises(AttributeError):
             resp.class_name = "dog"  # type: ignore[misc]
@@ -157,6 +160,7 @@ class TestPredict:
         assert result.class_name == "class_a"
         assert result.confidence == 0.95
         assert result.e2e_time_ms == 12.3
+        assert result.rtt_ms > 0
         client.close()
 
     def test_http_status_error(self):

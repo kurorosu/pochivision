@@ -232,7 +232,8 @@ class LivePreviewRunner:
             self.logger.info(
                 f"Inference: {result.class_name} "
                 f"({result.confidence * 100:.1f}%, "
-                f"{result.e2e_time_ms:.1f}ms)"
+                f"{result.e2e_time_ms:.1f}ms, "
+                f"RTT: {result.rtt_ms:.1f}ms)"
             )
         except InferenceError as e:
             self.inference_overlay.clear()
