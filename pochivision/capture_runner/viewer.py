@@ -1,6 +1,7 @@
 """カメラプレビュー・キャプチャ用のコントローラークラスを提供するモジュール."""
 
 import platform
+import threading
 import time
 
 import cv2
@@ -55,6 +56,8 @@ class LivePreviewRunner:
         self.logger = LogManager().get_logger()
         self.help_overlay = HelpOverlay()
         self.inference_overlay = InferenceOverlay()
+        self._inferring = False
+        self._inference_thread: threading.Thread | None = None
 
     def _resize_for_preview(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -190,7 +193,9 @@ class LivePreviewRunner:
             self._cleanup()
 
     def _run_inference(self, frame: np.ndarray) -> None:
-        """推論 API にフレームを送信して結果をオーバーレイに反映する.
+        """推論 API にフレームをバックグラウンドで送信する.
+
+        推論中の二重送信を防止し, 別スレッドで実行する.
 
         Args:
             frame: 現在のフレーム.
@@ -201,17 +206,43 @@ class LivePreviewRunner:
             )
             return
 
+        if self._inferring:
+            self.logger.info("Inference already in progress, skipping")
+            return
+
+        self._inferring = True
+        self.inference_overlay.set_inferring(True)
+        snapshot = frame.copy()
+        self._inference_thread = threading.Thread(
+            target=self._inference_worker,
+            args=(snapshot,),
+            daemon=True,
+        )
+        self._inference_thread.start()
+
+    def _inference_worker(self, frame: np.ndarray) -> None:
+        """バックグラウンドで推論を実行するワーカー.
+
+        Args:
+            frame: 推論対象のフレーム.
+        """
         try:
-            result = self.inference_client.predict(frame)
+            result = self.inference_client.predict(frame)  # type: ignore[union-attr]
             self.inference_overlay.update(result)
             self.logger.info(
                 f"Inference: {result.class_name} "
                 f"({result.confidence * 100:.1f}%, "
-                f"{result.processing_time_ms:.1f}ms)"
+                f"{result.e2e_time_ms:.1f}ms)"
             )
         except InferenceError as e:
             self.inference_overlay.clear()
             self.logger.error(f"Inference failed: {e}")
+        except Exception as e:
+            self.inference_overlay.clear()
+            self.logger.error(f"Unexpected inference error: {e}")
+        finally:
+            self.inference_overlay.set_inferring(False)
+            self._inferring = False
 
     def _start_recording(self, frame) -> None:
         """
@@ -281,6 +312,10 @@ class LivePreviewRunner:
         # 録画マネージャーのクリーンアップ
         if self.recording_manager:
             self.recording_manager.cleanup()
+
+        # 推論ワーカースレッドの完了待機
+        if self._inference_thread is not None:
+            self._inference_thread.join(timeout=5.0)
 
         # 推論クライアントのクリーンアップ
         if self.inference_client:

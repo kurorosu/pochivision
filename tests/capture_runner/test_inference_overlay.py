@@ -15,7 +15,7 @@ def _make_result(
         class_name=class_name,
         confidence=confidence,
         probabilities=[confidence, 1.0 - confidence],
-        processing_time_ms=12.3,
+        e2e_time_ms=12.3,
         backend="onnx",
     )
 
@@ -26,6 +26,7 @@ class TestInferenceOverlay:
     def test_initial_state(self):
         overlay = InferenceOverlay()
         assert overlay.result is None
+        assert overlay._inferring is False
 
     def test_update(self):
         overlay = InferenceOverlay()
@@ -99,3 +100,38 @@ class TestInferenceOverlay:
         overlay.draw(frame2)
 
         assert not np.array_equal(first_draw, frame2)
+
+    def test_set_inferring(self):
+        overlay = InferenceOverlay()
+        overlay.set_inferring(True)
+        assert overlay._inferring is True
+        overlay.set_inferring(False)
+        assert overlay._inferring is False
+
+    def test_draw_inferring_no_result(self):
+        overlay = InferenceOverlay()
+        overlay.set_inferring(True)
+        frame = np.zeros((100, 300, 3), dtype=np.uint8)
+        result = overlay.draw(frame)
+        assert frame.sum() > 0
+        assert result is frame
+
+    def test_draw_inferring_with_result(self):
+        overlay = InferenceOverlay()
+        overlay.update(_make_result(confidence=0.9, class_name="dog"))
+        overlay.set_inferring(True)
+        frame = np.zeros((100, 300, 3), dtype=np.uint8)
+        overlay.draw(frame)
+        # result がある場合は前回の結果が表示される (Inferring... ではない)
+        frame_result_only = np.zeros((100, 300, 3), dtype=np.uint8)
+        overlay.set_inferring(False)
+        overlay.draw(frame_result_only)
+        np.testing.assert_array_equal(frame, frame_result_only)
+
+    def test_draw_not_inferring_no_result(self):
+        overlay = InferenceOverlay()
+        overlay.set_inferring(False)
+        frame = np.zeros((100, 200, 3), dtype=np.uint8)
+        original = frame.copy()
+        overlay.draw(frame)
+        np.testing.assert_array_equal(frame, original)
