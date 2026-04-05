@@ -72,15 +72,24 @@ class InferenceClient:
         except httpx.HTTPError as e:
             raise InferenceError(f"推論リクエスト中にエラーが発生しました: {e}") from e
 
-        data = response.json()
-        return PredictResponse(
-            class_id=data["class_id"],
-            class_name=data["class_name"],
-            confidence=data["confidence"],
-            probabilities=data["probabilities"],
-            processing_time_ms=data["processing_time_ms"],
-            backend=data["backend"],
-        )
+        try:
+            data = response.json()
+        except ValueError as e:
+            raise InferenceError("推論レスポンスの JSON パースに失敗しました") from e
+
+        try:
+            return PredictResponse(
+                class_id=data["class_id"],
+                class_name=data["class_name"],
+                confidence=data["confidence"],
+                probabilities=data["probabilities"],
+                processing_time_ms=data["processing_time_ms"],
+                backend=data["backend"],
+            )
+        except KeyError as e:
+            raise InferenceError(
+                f"推論レスポンスに必要なフィールドがありません: {e}"
+            ) from e
 
     def _build_payload(self, frame: np.ndarray) -> dict:
         """API リクエストのペイロードを構築する.
