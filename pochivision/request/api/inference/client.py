@@ -153,3 +153,11 @@ class InferenceClient:
     def close(self) -> None:
         """HTTP クライアントを閉じる."""
         self._client.close()
+
+    def __enter__(self) -> "InferenceClient":
+        """コンテキストマネージャのエントリ."""
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        """コンテキストマネージャのイグジット."""
+        self.close()
