@@ -57,6 +57,7 @@ class LivePreviewRunner:
         self.help_overlay = HelpOverlay()
         self.inference_overlay = InferenceOverlay()
         self._inferring = False
+        self._inference_thread: threading.Thread | None = None
 
     def _resize_for_preview(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -212,12 +213,12 @@ class LivePreviewRunner:
         self._inferring = True
         self.inference_overlay.set_inferring(True)
         snapshot = frame.copy()
-        thread = threading.Thread(
+        self._inference_thread = threading.Thread(
             target=self._inference_worker,
             args=(snapshot,),
             daemon=True,
         )
-        thread.start()
+        self._inference_thread.start()
 
     def _inference_worker(self, frame: np.ndarray) -> None:
         """バックグラウンドで推論を実行するワーカー.
@@ -236,6 +237,9 @@ class LivePreviewRunner:
         except InferenceError as e:
             self.inference_overlay.clear()
             self.logger.error(f"Inference failed: {e}")
+        except Exception as e:
+            self.inference_overlay.clear()
+            self.logger.error(f"Unexpected inference error: {e}")
         finally:
             self.inference_overlay.set_inferring(False)
             self._inferring = False
@@ -308,6 +312,10 @@ class LivePreviewRunner:
         # 録画マネージャーのクリーンアップ
         if self.recording_manager:
             self.recording_manager.cleanup()
+
+        # 推論ワーカースレッドの完了待機
+        if self._inference_thread is not None:
+            self._inference_thread.join(timeout=5.0)
 
         # 推論クライアントのクリーンアップ
         if self.inference_client:
