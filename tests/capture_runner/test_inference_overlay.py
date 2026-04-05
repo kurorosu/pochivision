@@ -68,6 +68,22 @@ class TestInferenceOverlay:
         color = overlay._get_color(0.2)
         assert color == (0, 0, 200)  # 赤
 
+    def test_color_boundary_high(self):
+        overlay = InferenceOverlay()
+        assert overlay._get_color(0.7) == (0, 200, 0)  # ちょうど HIGH
+
+    def test_color_boundary_low(self):
+        overlay = InferenceOverlay()
+        assert overlay._get_color(0.4) == (0, 200, 200)  # ちょうど LOW
+
+    def test_color_zero(self):
+        overlay = InferenceOverlay()
+        assert overlay._get_color(0.0) == (0, 0, 200)  # 赤
+
+    def test_color_one(self):
+        overlay = InferenceOverlay()
+        assert overlay._get_color(1.0) == (0, 200, 0)  # 緑
+
     def test_draw_updates_after_new_result(self):
         overlay = InferenceOverlay()
         frame = np.zeros((100, 300, 3), dtype=np.uint8)
