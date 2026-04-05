@@ -10,6 +10,7 @@ import pytest
 
 from pochivision.exceptions import InferenceConnectionError, InferenceError
 from pochivision.request.api.inference.client import InferenceClient
+from pochivision.request.api.inference.config import ResizeConfig
 from pochivision.request.api.inference.models import PredictResponse
 
 _VALID_RESPONSE = {
@@ -198,7 +199,7 @@ class TestPredict:
 
 
 class TestPredictConnectionError:
-    """接続エラーのテスト."""
+    """接続エ���ーのテスト."""
 
     def test_connection_refused(self):
         with InferenceClient(
@@ -207,3 +208,78 @@ class TestPredictConnectionError:
         ) as client:
             with pytest.raises(InferenceConnectionError):
                 client.predict(_make_frame())
+
+
+class TestResizeWithPadding:
+    """_resize_with_padding のテ��ト."""
+
+    def test_no_resize(self):
+        """resize=None の場合は元のフレームがそのまま返る."""
+        with InferenceClient(base_url="http://localhost:8000") as client:
+            frame = _make_frame(480, 640)
+            result = client._resize_with_padding(frame)
+            np.testing.assert_array_equal(frame, result)
+
+    def test_square_to_square(self):
+        """正方形フレームを正方形にリサイズ."""
+        resize = ResizeConfig(width=100, height=100)
+        with InferenceClient(base_url="http://localhost:8000", resize=resize) as client:
+            frame = _make_frame(200, 200)
+            result = client._resize_with_padding(frame)
+            assert result.shape == (100, 100, 3)
+
+    def test_landscape_to_square(self):
+        """横長フレームを正方形にリサイズ: 上下にパディング."""
+        resize = ResizeConfig(width=100, height=100)
+        with InferenceClient(base_url="http://localhost:8000", resize=resize) as client:
+            frame = _make_frame(150, 300)
+            result = client._resize_with_padding(frame)
+            assert result.shape == (100, 100, 3)
+            # 上端のパディング行は黒 (0,0,0)
+            assert np.all(result[0, :] == 0)
+
+    def test_portrait_to_square(self):
+        """縦長フレームを正方形にリサイズ: 左右にパディング."""
+        resize = ResizeConfig(width=100, height=100)
+        with InferenceClient(base_url="http://localhost:8000", resize=resize) as client:
+            frame = _make_frame(300, 150)
+            result = client._resize_with_padding(frame)
+            assert result.shape == (100, 100, 3)
+            # 左端のパディング列は黒 (0,0,0)
+            assert np.all(result[:, 0] == 0)
+
+    def test_custom_padding_color(self):
+        """カスタムパディング色が適用される."""
+        resize = ResizeConfig(width=100, height=100, padding_color=(255, 0, 0))
+        with InferenceClient(base_url="http://localhost:8000", resize=resize) as client:
+            # 横長 → 上下にパディング
+            frame = np.zeros((50, 100, 3), dtype=np.uint8)
+            result = client._resize_with_padding(frame)
+            assert result.shape == (100, 100, 3)
+            # 上端のパディング行は (255, 0, 0)
+            np.testing.assert_array_equal(result[0, 0], [255, 0, 0])
+
+    def test_aspect_ratio_preserved(self):
+        """アスペクト比が維持される."""
+        resize = ResizeConfig(width=224, height=224)
+        with InferenceClient(base_url="http://localhost:8000", resize=resize) as client:
+            # 4:3 フレーム (640x480)
+            frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            result = client._resize_with_padding(frame)
+            assert result.shape == (224, 224, 3)
+            # 中央の画像部分: 224x168 (4:3), 上下に (224-168)//2=28 px パディング
+            # 上端28行, 下端28行は黒パディング
+            assert np.all(result[:28, :] == 0)
+            assert np.all(result[196:, :] == 0)
+
+    def test_build_payload_with_resize(self):
+        """_build_payload でリサイズが適用される."""
+        resize = ResizeConfig(width=64, height=64)
+        with InferenceClient(
+            base_url="http://localhost:8000",
+            image_format="raw",
+            resize=resize,
+        ) as client:
+            frame = _make_frame(480, 640)
+            payload = client._build_payload(frame)
+            assert payload["shape"] == [64, 64, 3]

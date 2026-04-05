@@ -12,6 +12,7 @@ from pochivision.capturelib.log_manager import LogManager
 from pochivision.constants import DEFAULT_INFERENCE_FORMAT, DEFAULT_INFERENCE_TIMEOUT
 from pochivision.exceptions import InferenceConnectionError, InferenceError
 
+from .config import ResizeConfig
 from .models import PredictResponse
 
 
@@ -31,6 +32,7 @@ class InferenceClient:
         base_url: str,
         timeout: float = DEFAULT_INFERENCE_TIMEOUT,
         image_format: str = DEFAULT_INFERENCE_FORMAT,
+        resize: ResizeConfig | None = None,
     ) -> None:
         """クライアントを初期化する.
 
@@ -38,6 +40,7 @@ class InferenceClient:
             base_url: pochitrain API サーバーの URL (例: "http://localhost:8000").
             timeout: リクエストタイムアウト (秒).
             image_format: 画像送信形式 ("raw" or "jpeg").
+            resize: リサイズ設定 (None の場合はリサイズなし).
         """
         if not base_url.startswith(("http://", "https://")):
             raise ValueError(
@@ -51,6 +54,7 @@ class InferenceClient:
                 f"{image_format!r}"
             )
         self.image_format = image_format
+        self.resize = resize
         self.logger = LogManager().get_logger()
         self._client = httpx.Client(timeout=timeout)
 
@@ -110,15 +114,48 @@ class InferenceClient:
     def _build_payload(self, frame: np.ndarray) -> dict[str, Any]:
         """API リクエストのペイロードを構築する.
 
+        リサイズ設定がある場合, エンコード前にリサイズ+パディングを適用する.
+
         Args:
             frame: BGR 形式の numpy 配列.
 
         Returns:
             API リクエスト用の辞書.
         """
+        processed = self._resize_with_padding(frame)
         if self.image_format == "jpeg":
-            return self._encode_jpeg(frame)
-        return self._encode_raw(frame)
+            return self._encode_jpeg(processed)
+        return self._encode_raw(processed)
+
+    def _resize_with_padding(self, frame: np.ndarray) -> np.ndarray:
+        """アスペクト比を維持してリサイズし, パディングで埋める.
+
+        Args:
+            frame: BGR 形式の numpy 配列.
+
+        Returns:
+            リサイズ+パディング済みのフレーム, または resize が None の場合は元のフレーム.
+        """
+        if self.resize is None:
+            return frame
+
+        src_h, src_w = frame.shape[:2]
+        target_w, target_h = self.resize.width, self.resize.height
+
+        scale = min(target_w / src_w, target_h / src_h)
+        new_w = int(src_w * scale)
+        new_h = int(src_h * scale)
+
+        resized = cv2.resize(frame, (new_w, new_h))
+
+        canvas = np.full(
+            (target_h, target_w, 3), self.resize.padding_color, dtype=np.uint8
+        )
+        offset_y = (target_h - new_h) // 2
+        offset_x = (target_w - new_w) // 2
+        canvas[offset_y : offset_y + new_h, offset_x : offset_x + new_w] = resized
+
+        return canvas
 
     def _encode_raw(self, frame: np.ndarray) -> dict[str, Any]:
         """Raw 形式で base64 エンコードしてペイロードを構築する.
