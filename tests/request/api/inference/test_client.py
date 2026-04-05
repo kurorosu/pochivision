@@ -17,7 +17,7 @@ _VALID_RESPONSE = {
     "class_name": "class_a",
     "confidence": 0.95,
     "probabilities": [0.95, 0.05],
-    "processing_time_ms": 12.3,
+    "e2e_time_ms": 12.3,
     "backend": "onnx",
 }
 
@@ -118,7 +118,7 @@ class TestPredictResponse:
             "class_name": "dog",
             "confidence": 0.85,
             "probabilities": [0.15, 0.85],
-            "processing_time_ms": 10.5,
+            "e2e_time_ms": 10.5,
             "backend": "onnx",
         }
         resp = PredictResponse(**data)
@@ -126,7 +126,7 @@ class TestPredictResponse:
         assert resp.class_name == "dog"
         assert resp.confidence == 0.85
         assert resp.probabilities == [0.15, 0.85]
-        assert resp.processing_time_ms == 10.5
+        assert resp.e2e_time_ms == 10.5
         assert resp.backend == "onnx"
 
     def test_frozen(self):
@@ -135,7 +135,7 @@ class TestPredictResponse:
             class_name="cat",
             confidence=0.9,
             probabilities=[0.9, 0.1],
-            processing_time_ms=5.0,
+            e2e_time_ms=5.0,
             backend="onnx",
         )
         with pytest.raises(AttributeError):
@@ -156,7 +156,7 @@ class TestPredict:
         assert result.class_id == 0
         assert result.class_name == "class_a"
         assert result.confidence == 0.95
-        assert result.processing_time_ms == 12.3
+        assert result.e2e_time_ms == 12.3
         client.close()
 
     def test_http_status_error(self):

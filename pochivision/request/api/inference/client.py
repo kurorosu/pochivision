@@ -94,7 +94,7 @@ class InferenceClient:
                 class_name=data["class_name"],
                 confidence=data["confidence"],
                 probabilities=data["probabilities"],
-                processing_time_ms=data["processing_time_ms"],
+                e2e_time_ms=data["e2e_time_ms"],
                 backend=data["backend"],
             )
         except KeyError as e:

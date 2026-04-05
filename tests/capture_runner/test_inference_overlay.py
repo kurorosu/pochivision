@@ -15,7 +15,7 @@ def _make_result(
         class_name=class_name,
         confidence=confidence,
         probabilities=[confidence, 1.0 - confidence],
-        processing_time_ms=12.3,
+        e2e_time_ms=12.3,
         backend="onnx",
     )
 
