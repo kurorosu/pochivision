@@ -114,3 +114,14 @@ class TestSaveInferenceCsv:
         assert rows[1]["class_name"] == "dog"
 
         runner.inference_client.close()
+
+    def test_oserror_does_not_raise(self, tmp_path):
+        """CSV 書き込み失敗時に例外が発生しない."""
+        runner = _make_runner(tmp_path, save_csv=True)
+        result = _make_result()
+
+        # output_dir を存在しないドライブに向けて OSError を誘発
+        runner.pipeline.output_dir = "Z:\\nonexistent\\path"
+        runner._save_inference_csv(result, None)
+
+        # 例外が発生せず正常に戻ることを確認

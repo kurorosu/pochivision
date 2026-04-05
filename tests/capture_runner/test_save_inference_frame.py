@@ -119,3 +119,35 @@ class TestSaveInferenceFrame:
         assert (tmp_path / "inference").exists()
 
         runner.inference_client.close()
+
+    def test_returns_filename(self, tmp_path):
+        """save_frame=True のとき保存されたファイル名を返す."""
+        runner = _make_runner(tmp_path, save_frame=True)
+        frame = _make_frame()
+
+        result = runner._save_inference_frame(frame)
+        assert result is not None
+        assert result.startswith("infer_")
+        assert result.endswith(".png")
+
+        runner.inference_client.close()
+
+    def test_returns_none_when_disabled(self, tmp_path):
+        """save_frame=False のとき None を返す."""
+        runner = _make_runner(tmp_path, save_frame=False)
+        frame = _make_frame()
+
+        result = runner._save_inference_frame(frame)
+        assert result is None
+
+        runner.inference_client.close()
+
+    def test_returns_none_when_no_client(self, tmp_path):
+        """inference_client=None のとき None を返す."""
+        cap = MagicMock()
+        pipeline = MagicMock()
+        pipeline.output_dir = tmp_path
+
+        runner = LivePreviewRunner(cap, pipeline)
+        result = runner._save_inference_frame(_make_frame())
+        assert result is None

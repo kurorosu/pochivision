@@ -48,12 +48,13 @@ class InferenceCsvWriter:
             result: 推論レスポンス.
             image_file: 保存された推論フレームのファイル名 (None の場合は空文字).
         """
-        write_header = not self.csv_path.exists()
         self.csv_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(self.csv_path, "a", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=_CSV_COLUMNS)
-            if write_header:
+            # exists() と open() の間のレースコンディションを避けるため,
+            # ファイルを開いた状態で tell() == 0 (空ファイル) を判定する.
+            if f.tell() == 0:
                 writer.writeheader()
             writer.writerow(
                 {
