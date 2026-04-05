@@ -46,25 +46,31 @@ class InferenceOverlay:
     def draw(self, frame: np.ndarray) -> np.ndarray:
         """フレーム左上に推論結果を描画する.
 
+        推論中かつ結果未取得の場合は "Inferring..." を表示する.
+        推論中でも前回の結果がある場合は前回の結果を表示し続ける.
+
         Args:
             frame: 描画先のフレーム. このフレームを直接変更する.
 
         Returns:
             推論結果が描画されたフレーム.
         """
-        if self._inferring and self.result is None:
+        inferring = self._inferring
+        result = self.result
+
+        if inferring and result is None:
             self._draw_text(frame, self.INFERRING_TEXT, (200, 200, 200))
             return frame
 
-        if self.result is None:
+        if result is None:
             return frame
 
         text = (
-            f"{self.result.class_name}  "
-            f"{self.result.confidence * 100:.1f}%  "
-            f"{self.result.e2e_time_ms:.1f}ms"
+            f"{result.class_name}  "
+            f"{result.confidence * 100:.1f}%  "
+            f"{result.e2e_time_ms:.1f}ms"
         )
-        color = self._get_color(self.result.confidence)
+        color = self._get_color(result.confidence)
         self._draw_text(frame, text, color)
 
         return frame
