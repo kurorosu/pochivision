@@ -16,75 +16,81 @@ def _make_frame(height: int = 48, width: int = 64) -> np.ndarray:
     return np.random.randint(0, 256, (height, width, 3), dtype=np.uint8)
 
 
+@pytest.fixture
+def raw_client():
+    """Raw 形式の InferenceClient を提供する."""
+    with InferenceClient(
+        base_url="http://localhost:8000", image_format="raw"
+    ) as client:
+        yield client
+
+
+@pytest.fixture
+def jpeg_client():
+    """JPEG 形式の InferenceClient を提供する."""
+    with InferenceClient(
+        base_url="http://localhost:8000", image_format="jpeg"
+    ) as client:
+        yield client
+
+
 class TestEncodeRaw:
     """_encode_raw のテスト."""
 
-    def test_payload_format(self):
-        client = InferenceClient(base_url="http://localhost:8000", image_format="raw")
+    def test_payload_format(self, raw_client):
         frame = _make_frame()
-        payload = client._encode_raw(frame)
+        payload = raw_client._encode_raw(frame)
 
         assert payload["format"] == "raw"
         assert payload["shape"] == [48, 64, 3]
         assert payload["dtype"] == "uint8"
         assert isinstance(payload["image_data"], str)
-        client.close()
 
-    def test_roundtrip(self):
-        client = InferenceClient(base_url="http://localhost:8000", image_format="raw")
+    def test_roundtrip(self, raw_client):
         frame = _make_frame()
-        payload = client._encode_raw(frame)
+        payload = raw_client._encode_raw(frame)
 
         decoded = np.frombuffer(
             base64.b64decode(payload["image_data"]),
             dtype=np.uint8,
         ).reshape(payload["shape"])
         np.testing.assert_array_equal(frame, decoded)
-        client.close()
 
 
 class TestEncodeJpeg:
     """_encode_jpeg のテスト."""
 
-    def test_payload_format(self):
-        client = InferenceClient(base_url="http://localhost:8000", image_format="jpeg")
+    def test_payload_format(self, jpeg_client):
         frame = _make_frame()
-        payload = client._encode_jpeg(frame)
+        payload = jpeg_client._encode_jpeg(frame)
 
         assert payload["format"] == "jpeg"
         assert "shape" not in payload
         assert isinstance(payload["image_data"], str)
-        client.close()
 
-    def test_decodable(self):
-        client = InferenceClient(base_url="http://localhost:8000", image_format="jpeg")
+    def test_decodable(self, jpeg_client):
         frame = _make_frame()
-        payload = client._encode_jpeg(frame)
+        payload = jpeg_client._encode_jpeg(frame)
 
         jpeg_bytes = base64.b64decode(payload["image_data"])
         arr = np.frombuffer(jpeg_bytes, dtype=np.uint8)
         decoded = cv2.imdecode(arr, cv2.IMREAD_COLOR)
         assert decoded is not None
         assert decoded.shape[2] == 3
-        client.close()
 
 
 class TestBuildPayload:
     """_build_payload のテスト."""
 
-    def test_jpeg_format(self):
-        client = InferenceClient(base_url="http://localhost:8000", image_format="jpeg")
+    def test_jpeg_format(self, jpeg_client):
         frame = _make_frame()
-        payload = client._build_payload(frame)
+        payload = jpeg_client._build_payload(frame)
         assert payload["format"] == "jpeg"
-        client.close()
 
-    def test_raw_format(self):
-        client = InferenceClient(base_url="http://localhost:8000", image_format="raw")
+    def test_raw_format(self, raw_client):
         frame = _make_frame()
-        payload = client._build_payload(frame)
+        payload = raw_client._build_payload(frame)
         assert payload["format"] == "raw"
-        client.close()
 
 
 class TestPredictResponse:
@@ -124,10 +130,9 @@ class TestPredictConnectionError:
     """接続エラーのテスト."""
 
     def test_connection_refused(self):
-        client = InferenceClient(
+        with InferenceClient(
             base_url="http://127.0.0.1:19999",
             timeout=1.0,
-        )
-        with pytest.raises(InferenceConnectionError):
-            client.predict(_make_frame())
-        client.close()
+        ) as client:
+            with pytest.raises(InferenceConnectionError):
+                client.predict(_make_frame())
