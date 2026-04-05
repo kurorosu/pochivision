@@ -89,6 +89,11 @@ class TestEncodeJpeg:
         assert decoded is not None
         assert decoded.shape[2] == 3
 
+    def test_encode_empty_frame(self, jpeg_client):
+        frame = np.array([], dtype=np.uint8).reshape(0, 0, 3)
+        with pytest.raises(InferenceError, match="JPEG"):
+            jpeg_client._encode_jpeg(frame)
+
 
 class TestBuildPayload:
     """_build_payload のテスト."""

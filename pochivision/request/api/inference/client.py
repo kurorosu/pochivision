@@ -141,7 +141,12 @@ class InferenceClient:
         Returns:
             jpeg 形式のペイロード辞書.
         """
-        success, encoded = cv2.imencode(".jpg", frame)
+        try:
+            success, encoded = cv2.imencode(".jpg", frame)
+        except cv2.error as e:
+            raise InferenceError(
+                f"フレームの JPEG エンコードに失敗しました: {e}"
+            ) from e
         if not success:
             raise InferenceError("フレームの JPEG エンコードに失敗しました")
         image_data = base64.b64encode(encoded.tobytes()).decode("ascii")
