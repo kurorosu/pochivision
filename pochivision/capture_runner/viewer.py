@@ -209,6 +209,7 @@ class LivePreviewRunner:
                 f"{result.processing_time_ms:.1f}ms)"
             )
         except InferenceError as e:
+            self.inference_overlay.clear()
             self.logger.error(f"Inference failed: {e}")
 
     def _start_recording(self, frame) -> None:
