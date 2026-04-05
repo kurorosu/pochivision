@@ -37,6 +37,10 @@ class InferenceClient:
             timeout: リクエストタイムアウト (秒).
             image_format: 画像送信形式 ("raw" or "jpeg").
         """
+        if not base_url.startswith(("http://", "https://")):
+            raise ValueError(
+                f"base_url は http:// または https:// で始まる必要があります: {base_url}"
+            )
         self.base_url = base_url.rstrip("/")
         self.image_format = image_format
         self.logger = LogManager().get_logger()
