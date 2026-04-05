@@ -10,7 +10,11 @@ from pochivision.capturelib.camera_setup import CameraSetup
 from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
-from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
+from pochivision.constants import (
+    DEFAULT_INFERENCE_URL,
+    DEFAULT_PREVIEW_HEIGHT,
+    DEFAULT_PREVIEW_WIDTH,
+)
 from pochivision.core import PipelineExecutor
 from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
 from pochivision.request.api.inference.client import InferenceClient
@@ -29,7 +33,7 @@ from pochivision.workspace import OutputManager
     "--inference-url",
     type=str,
     default=None,
-    help="pochitrain 推論 API の URL (例: http://192.168.1.100:8000)",
+    help=f"pochitrain 推論 API の URL (デフォルト: {DEFAULT_INFERENCE_URL})",
 )
 @click.option(
     "--inference-format",
