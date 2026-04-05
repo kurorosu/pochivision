@@ -110,6 +110,7 @@ uv run pochi run --infer-config config/infer_config.json
 | `resize.height` | No | None (no resize) | Target image height |
 | `resize.padding_color` | No | `[0, 0, 0]` | Padding color (BGR) |
 | `save_frame` | No | `false` | Save inference frame image to disk |
+| `save_csv` | No | `false` | Save inference results to CSV file |
 
 ### `pochi extract` - Extract features from images
 

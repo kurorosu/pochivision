@@ -17,6 +17,8 @@ from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
 from pochivision.core import PipelineExecutor
 from pochivision.exceptions import InferenceError, VisionCaptureError
 from pochivision.request.api.inference.client import InferenceClient
+from pochivision.request.api.inference.csv_writer import InferenceCsvWriter
+from pochivision.request.api.inference.models import PredictResponse
 
 
 class LivePreviewRunner:
@@ -229,7 +231,7 @@ class LivePreviewRunner:
             frame: 推論対象のフレーム.
         """
         try:
-            self._save_inference_frame(frame)
+            image_file = self._save_inference_frame(frame)
             result = self.inference_client.predict(frame)  # type: ignore[union-attr]
             self.inference_overlay.update(result)
             self.logger.info(
@@ -238,6 +240,7 @@ class LivePreviewRunner:
                 f"{result.e2e_time_ms:.1f}ms, "
                 f"RTT: {result.rtt_ms:.1f}ms)"
             )
+            self._save_inference_csv(result, image_file)
         except InferenceError as e:
             self.inference_overlay.clear()
             self.logger.error(f"Inference failed: {e}")
@@ -248,15 +251,18 @@ class LivePreviewRunner:
             self.inference_overlay.set_inferring(False)
             self._inferring = False
 
-    def _save_inference_frame(self, frame: np.ndarray) -> None:
+    def _save_inference_frame(self, frame: np.ndarray) -> str | None:
         """推論フレームをリサイズ+パディング後に画像ファイルとして保存する.
 
         Args:
             frame: 推論対象のフレーム.
+
+        Returns:
+            保存されたファイル名, または保存しなかった場合は None.
         """
         client = self.inference_client
         if client is None or not client.save_frame:
-            return
+            return None
 
         try:
             processed = client.resize_frame(frame)
@@ -264,14 +270,41 @@ class LivePreviewRunner:
             inference_dir.mkdir(parents=True, exist_ok=True)
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            save_path = inference_dir / f"infer_{timestamp}.png"
+            filename = f"infer_{timestamp}.png"
+            save_path = inference_dir / filename
             success = cv2.imwrite(str(save_path), processed)
             if success:
                 self.logger.info(f"Inference frame saved: {save_path}")
+                return filename
             else:
                 self.logger.warning(f"Failed to save inference frame: {save_path}")
+                return None
         except (OSError, cv2.error) as e:
             self.logger.warning(f"Error saving inference frame: {e}")
+            return None
+
+    def _save_inference_csv(
+        self,
+        result: PredictResponse,
+        image_file: str | None,
+    ) -> None:
+        """推論結果を CSV ファイルに追記する.
+
+        Args:
+            result: 推論レスポンス.
+            image_file: 保存された画像ファイル名 (None の場合は空文字).
+        """
+        client = self.inference_client
+        if client is None or not client.save_csv:
+            return
+
+        try:
+            inference_dir = Path(self.pipeline.output_dir) / "inference"
+            writer = InferenceCsvWriter(inference_dir)
+            writer.write_row(result, image_file)
+            self.logger.info(f"Inference result saved to CSV: {writer.csv_path}")
+        except OSError as e:
+            self.logger.warning(f"Error saving inference CSV: {e}")
 
     def _start_recording(self, frame) -> None:
         """

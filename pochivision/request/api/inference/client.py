@@ -34,6 +34,7 @@ class InferenceClient:
         image_format: str = DEFAULT_INFERENCE_FORMAT,
         resize: ResizeConfig | None = None,
         save_frame: bool = False,
+        save_csv: bool = False,
     ) -> None:
         """クライアントを初期化する.
 
@@ -43,6 +44,7 @@ class InferenceClient:
             image_format: 画像送信形式 ("raw" or "jpeg").
             resize: リサイズ設定 (None の場合はリサイズなし).
             save_frame: 推論実行時にフレーム画像を保存するかどうか.
+            save_csv: 推論結果を CSV に出力するかどうか.
         """
         if not base_url.startswith(("http://", "https://")):
             raise ValueError(
@@ -58,6 +60,7 @@ class InferenceClient:
         self.image_format = image_format
         self.resize = resize
         self.save_frame = save_frame
+        self.save_csv = save_csv
         self.logger = LogManager().get_logger()
         self._client = httpx.Client(timeout=timeout)
 

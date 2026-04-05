@@ -31,12 +31,14 @@ class InferConfig:
         format: 画像送信形式 ("raw" or "jpeg").
         resize: リサイズ設定 (None の場合はリサイズなし).
         save_frame: 推論実行時にフレーム画像を保存するかどうか.
+        save_csv: 推論結果を CSV ファイルに出力するかどうか.
     """
 
     url: str
     format: str = "jpeg"
     resize: ResizeConfig | None = None
     save_frame: bool = False
+    save_csv: bool = False
 
 
 _VALID_FORMATS = {"raw", "jpeg"}
@@ -91,8 +93,18 @@ def _build_infer_config(data: dict[str, Any]) -> InferConfig:
             f"'save_frame' は bool である必要があります: {save_frame!r}"
         )
 
+    save_csv = data.get("save_csv", False)
+    if not isinstance(save_csv, bool):
+        raise ConfigValidationError(
+            f"'save_csv' は bool である必要があります: {save_csv!r}"
+        )
+
     return InferConfig(
-        url=data["url"], format=fmt, resize=resize, save_frame=save_frame
+        url=data["url"],
+        format=fmt,
+        resize=resize,
+        save_frame=save_frame,
+        save_csv=save_csv,
     )
 
 
