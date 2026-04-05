@@ -42,6 +42,12 @@ class InferenceClient:
                 f"base_url は http:// または https:// で始まる必要があります: {base_url}"
             )
         self.base_url = base_url.rstrip("/")
+        valid_formats = {"raw", "jpeg"}
+        if image_format not in valid_formats:
+            raise ValueError(
+                f"image_format は {valid_formats} のいずれかである必要があります: "
+                f"{image_format!r}"
+            )
         self.image_format = image_format
         self.logger = LogManager().get_logger()
         self._client = httpx.Client(timeout=timeout)
