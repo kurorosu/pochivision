@@ -1,14 +1,25 @@
 """InferenceClient のテスト."""
 
 import base64
+import json
 
 import cv2
+import httpx
 import numpy as np
 import pytest
 
 from pochivision.exceptions import InferenceConnectionError, InferenceError
 from pochivision.request.api.inference.client import InferenceClient
 from pochivision.request.api.inference.models import PredictResponse
+
+_VALID_RESPONSE = {
+    "class_id": 0,
+    "class_name": "class_a",
+    "confidence": 0.95,
+    "probabilities": [0.95, 0.05],
+    "processing_time_ms": 12.3,
+    "backend": "onnx",
+}
 
 
 def _make_frame(height: int = 48, width: int = 64) -> np.ndarray:
@@ -124,6 +135,57 @@ class TestPredictResponse:
         )
         with pytest.raises(AttributeError):
             resp.class_name = "dog"  # type: ignore[misc]
+
+
+class TestPredict:
+    """predict() のテスト."""
+
+    def test_success(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_VALID_RESPONSE)
+
+        client = InferenceClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        result = client.predict(_make_frame())
+        assert result.class_id == 0
+        assert result.class_name == "class_a"
+        assert result.confidence == 0.95
+        assert result.processing_time_ms == 12.3
+        client.close()
+
+    def test_http_status_error(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(500, json={"detail": "server error"})
+
+        client = InferenceClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        with pytest.raises(InferenceError, match="status=500"):
+            client.predict(_make_frame())
+        client.close()
+
+    def test_invalid_json_response(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, content=b"not json")
+
+        client = InferenceClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        with pytest.raises(InferenceError, match="JSON"):
+            client.predict(_make_frame())
+        client.close()
+
+    def test_missing_response_field(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"class_id": 0})
+
+        client = InferenceClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        with pytest.raises(InferenceError, match="フィールドがありません"):
+            client.predict(_make_frame())
+        client.close()
 
 
 class TestPredictConnectionError:
