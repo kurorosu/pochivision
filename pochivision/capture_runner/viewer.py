@@ -61,6 +61,7 @@ class LivePreviewRunner:
         self.help_overlay = HelpOverlay()
         self.inference_overlay = InferenceOverlay()
         self._inferring = False
+        self._inferring_lock = threading.Lock()
         self._inference_thread: threading.Thread | None = None
 
     def _resize_for_preview(self, frame: np.ndarray) -> np.ndarray:
@@ -210,11 +211,13 @@ class LivePreviewRunner:
             )
             return
 
-        if self._inferring:
-            self.logger.info("Inference already in progress, skipping")
-            return
+        # Lock で check-then-act を保護し, 二重起動を確実に防止する.
+        with self._inferring_lock:
+            if self._inferring:
+                self.logger.info("Inference already in progress, skipping")
+                return
+            self._inferring = True
 
-        self._inferring = True
         self.inference_overlay.set_inferring(True)
         snapshot = frame.copy()
         self._inference_thread = threading.Thread(
@@ -249,7 +252,8 @@ class LivePreviewRunner:
             self.logger.error(f"Unexpected inference error: {e}")
         finally:
             self.inference_overlay.set_inferring(False)
-            self._inferring = False
+            with self._inferring_lock:
+                self._inferring = False
 
     def _save_inference_frame(self, frame: np.ndarray) -> str | None:
         """推論フレームをリサイズ+パディング後に画像ファイルとして保存する.

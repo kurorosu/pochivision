@@ -12,7 +12,7 @@
   - 推論例外クラス (`InferenceError`, `InferenceConnectionError`)
   - テスト 25 件
 - 推論実行時にリサイズ+パディング後のフレーム画像を保存する機能を追加. `infer_config.json` の `save_frame` で有効/無効を制御. ([#355](https://github.com/kurorosu/pochivision/pull/355))
-- 推論結果を CSV ファイルに蓄積する機能を追加. `infer_config.json` の `save_csv` で有効/無効を制御. (NA.)
+- 推論結果を CSV ファイルに蓄積する機能を追加. `infer_config.json` の `save_csv` で有効/無効を制御. ([#356](https://github.com/kurorosu/pochivision/pull/356))
 
 ### Changed
 - 推論オーバーレイにクライアント側ネットワーク往復時間 (RTT) の表示を追加. ([#350](https://github.com/kurorosu/pochivision/pull/350))
@@ -20,6 +20,7 @@
 
 ### Fixed
 - 推論実行時にプレビューがブロックされる問題を修正. `_run_inference` をバックグラウンドスレッドで実行するよう変更し, 推論中の二重送信防止と "Inferring..." 表示を追加. ([#348](https://github.com/kurorosu/pochivision/pull/348))
+- `_inferring` フラグの check-then-act を `threading.Lock` で保護し, 推論の二重起動を確実に防止. (NA.)
 
 ### Removed
 - 無し
