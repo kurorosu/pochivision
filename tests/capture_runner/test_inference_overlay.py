@@ -43,15 +43,17 @@ class TestInferenceOverlay:
         overlay = InferenceOverlay()
         frame = np.zeros((100, 200, 3), dtype=np.uint8)
         original = frame.copy()
-        overlay.draw(frame)
+        result = overlay.draw(frame)
         np.testing.assert_array_equal(frame, original)
+        assert result is frame
 
     def test_draw_with_result(self):
         overlay = InferenceOverlay()
         overlay.update(_make_result())
         frame = np.zeros((100, 200, 3), dtype=np.uint8)
-        overlay.draw(frame)
+        result = overlay.draw(frame)
         assert frame.sum() > 0
+        assert result is frame
 
     def test_color_high_confidence(self):
         overlay = InferenceOverlay()
