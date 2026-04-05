@@ -6,6 +6,20 @@
 ## [Unreleased]
 
 ### Added
+- 無し
+
+### Changed
+- 無し
+
+### Fixed
+- 無し
+
+### Removed
+- 無し
+
+## [0.5.0] - 2026-04-06
+
+### Added
 - pochitrain 推論 API と連携するリアルタイム推論オーバーレイ機能を追加. `i` キーで現在のフレームを API に送信し, クラス名・信頼度・推論時間をプレビュー上に表示する. CLI に `--inference-url`, `--inference-format` オプションを追加. ([#345](https://github.com/kurorosu/pochivision/pull/345))
   - 推論 API クライアント (`pochivision/request/api/inference/`)
   - 推論結果オーバーレイ (`InferenceOverlay`)
@@ -20,24 +34,7 @@
 
 ### Fixed
 - 推論実行時にプレビューがブロックされる問題を修正. `_run_inference` をバックグラウンドスレッドで実行するよう変更し, 推論中の二重送信防止と "Inferring..." 表示を追加. ([#348](https://github.com/kurorosu/pochivision/pull/348))
-- `_inferring` フラグの check-then-act を `threading.Lock` で保護し, 推論の二重起動を確実に防止. (NA.)
-
-### Removed
-- 無し
-
-## [0.4.2] - 2026-04-04
-
-### Added
-- 例外クラスのテスト 21 件を追加. ([#339](https://github.com/kurorosu/pochivision/pull/339))
-- `PipelineExecutor.from_config()` のエラーケーステスト 5 件を追加. ([#340](https://github.com/kurorosu/pochivision/pull/340))
-- `FeatureExtractionRunner._initialize_extractors()` のエラーケーステスト 3 件を追加. ([#341](https://github.com/kurorosu/pochivision/pull/341))
-- `ProfileProcessor._process_image()` の parallel モード・エッジケーステスト 4 件を追加. ([#342](https://github.com/kurorosu/pochivision/pull/342))
-
-### Changed
-- 無し
-
-### Fixed
-- 無し
+- `_inferring` フラグの check-then-act を `threading.Lock` で保護し, 推論の二重起動を確実に防止. ([#357](https://github.com/kurorosu/pochivision/pull/357))
 
 ### Removed
 - 無し
