@@ -6,7 +6,11 @@
 ## [Unreleased]
 
 ### Added
-- 無し
+- pochitrain 推論 API と連携するリアルタイム推論オーバーレイ機能を追加. `i` キーで現在のフレームを API に送信し, クラス名・信頼度・推論時間をプレビュー上に表示する. CLI に `--inference-url`, `--inference-format` オプションを追加. (NA.)
+  - 推論 API クライアント (`pochivision/request/api/inference/`)
+  - 推論結果オーバーレイ (`InferenceOverlay`)
+  - 推論例外クラス (`InferenceError`, `InferenceConnectionError`)
+  - テスト 25 件
 
 ### Changed
 - 無し
