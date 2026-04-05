@@ -1,6 +1,7 @@
 """run サブコマンド: ライブプレビュー起動."""
 
 import logging
+from pathlib import Path
 
 import click
 import cv2
@@ -43,7 +44,7 @@ def run(
     list_profiles: bool,
     config: str,
     no_recording: bool,
-    infer_config: str | None,
+    infer_config: str,
 ) -> None:
     """ライブプレビューを起動する (従来の pochi コマンド)."""
     log_manager = LogManager()
@@ -175,7 +176,7 @@ def _run_preview(
     camera_setup: CameraSetup,
     no_recording: bool,
     output_manager: OutputManager,
-    infer_config_path: str | None,
+    infer_config_path: str,
 ) -> None:
     """プレビューを実行する.
 
@@ -186,7 +187,7 @@ def _run_preview(
         camera_setup: カメラセットアップ.
         no_recording: 録画無効フラグ.
         output_manager: 出力ディレクトリの統一管理クラス.
-        infer_config_path: 推論設定ファイルのパス (None で無効).
+        infer_config_path: 推論設定ファイルのパス.
     """
     logger = log_manager.get_logger()
     try:
@@ -222,7 +223,7 @@ def _run_preview(
         )
 
         inference_client = None
-        if infer_config_path:
+        if Path(infer_config_path).exists():
             try:
                 infer_cfg = load_infer_config(infer_config_path)
                 inference_client = InferenceClient(
@@ -231,7 +232,7 @@ def _run_preview(
                     resize=infer_cfg.resize,
                 )
                 logger.info(f"Inference API enabled: {infer_cfg.url}")
-            except (ConfigLoadError, ConfigValidationError) as e:
+            except (ConfigLoadError, ConfigValidationError, ValueError) as e:
                 logger.warning(f"Inference config not loaded, skipping: {e}")
 
         app = LivePreviewRunner(
