@@ -211,13 +211,13 @@ class TestPredictConnectionError:
 
 
 class TestResizeWithPadding:
-    """_resize_with_padding のテ��ト."""
+    """resize_frame のテ��ト."""
 
     def test_no_resize(self):
         """resize=None の場合は元のフレームがそのまま返る."""
         with InferenceClient(base_url="http://localhost:8000") as client:
             frame = _make_frame(480, 640)
-            result = client._resize_with_padding(frame)
+            result = client.resize_frame(frame)
             np.testing.assert_array_equal(frame, result)
 
     def test_square_to_square(self):
@@ -225,7 +225,7 @@ class TestResizeWithPadding:
         resize = ResizeConfig(width=100, height=100)
         with InferenceClient(base_url="http://localhost:8000", resize=resize) as client:
             frame = _make_frame(200, 200)
-            result = client._resize_with_padding(frame)
+            result = client.resize_frame(frame)
             assert result.shape == (100, 100, 3)
 
     def test_landscape_to_square(self):
@@ -233,7 +233,7 @@ class TestResizeWithPadding:
         resize = ResizeConfig(width=100, height=100)
         with InferenceClient(base_url="http://localhost:8000", resize=resize) as client:
             frame = _make_frame(150, 300)
-            result = client._resize_with_padding(frame)
+            result = client.resize_frame(frame)
             assert result.shape == (100, 100, 3)
             # 上端のパディング行は黒 (0,0,0)
             assert np.all(result[0, :] == 0)
@@ -243,7 +243,7 @@ class TestResizeWithPadding:
         resize = ResizeConfig(width=100, height=100)
         with InferenceClient(base_url="http://localhost:8000", resize=resize) as client:
             frame = _make_frame(300, 150)
-            result = client._resize_with_padding(frame)
+            result = client.resize_frame(frame)
             assert result.shape == (100, 100, 3)
             # 左端のパディング列は黒 (0,0,0)
             assert np.all(result[:, 0] == 0)
@@ -254,7 +254,7 @@ class TestResizeWithPadding:
         with InferenceClient(base_url="http://localhost:8000", resize=resize) as client:
             # 横長 → 上下にパディング
             frame = np.zeros((50, 100, 3), dtype=np.uint8)
-            result = client._resize_with_padding(frame)
+            result = client.resize_frame(frame)
             assert result.shape == (100, 100, 3)
             # 上端のパディング行は (255, 0, 0)
             np.testing.assert_array_equal(result[0, 0], [255, 0, 0])
@@ -265,7 +265,7 @@ class TestResizeWithPadding:
         with InferenceClient(base_url="http://localhost:8000", resize=resize) as client:
             # 4:3 フレーム (640x480)
             frame = np.zeros((480, 640, 3), dtype=np.uint8)
-            result = client._resize_with_padding(frame)
+            result = client.resize_frame(frame)
             assert result.shape == (224, 224, 3)
             # 中央の画像部分: 224x168 (4:3), 上下に (224-168)//2=28 px パディング
             # 上端28行, 下端28行は黒パディング

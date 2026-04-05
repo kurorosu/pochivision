@@ -33,6 +33,7 @@ class InferenceClient:
         timeout: float = DEFAULT_INFERENCE_TIMEOUT,
         image_format: str = DEFAULT_INFERENCE_FORMAT,
         resize: ResizeConfig | None = None,
+        save_frame: bool = False,
     ) -> None:
         """クライアントを初期化する.
 
@@ -41,6 +42,7 @@ class InferenceClient:
             timeout: リクエストタイムアウト (秒).
             image_format: 画像送信形式 ("raw" or "jpeg").
             resize: リサイズ設定 (None の場合はリサイズなし).
+            save_frame: 推論実行時にフレーム画像を保存するかどうか.
         """
         if not base_url.startswith(("http://", "https://")):
             raise ValueError(
@@ -55,6 +57,7 @@ class InferenceClient:
             )
         self.image_format = image_format
         self.resize = resize
+        self.save_frame = save_frame
         self.logger = LogManager().get_logger()
         self._client = httpx.Client(timeout=timeout)
 
@@ -122,13 +125,15 @@ class InferenceClient:
         Returns:
             API リクエスト用の辞書.
         """
-        processed = self._resize_with_padding(frame)
+        processed = self.resize_frame(frame)
         if self.image_format == "jpeg":
             return self._encode_jpeg(processed)
         return self._encode_raw(processed)
 
-    def _resize_with_padding(self, frame: np.ndarray) -> np.ndarray:
+    def resize_frame(self, frame: np.ndarray) -> np.ndarray:
         """アスペクト比を維持してリサイズし, パディングで埋める.
+
+        resize 設定がない場合は元のフレームをそのまま返す.
 
         Args:
             frame: BGR 形式の numpy 配列.

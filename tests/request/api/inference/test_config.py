@@ -51,6 +51,15 @@ class TestLoadInferConfigSuccess:
         assert config.url == "http://localhost:8000"
         assert config.format == "jpeg"
         assert config.resize is None
+        assert config.save_frame is False
+
+    def test_save_frame_enabled(self, tmp_path):
+        path = _write_config(
+            tmp_path,
+            {"url": "http://localhost:8000", "save_frame": True},
+        )
+        config = load_infer_config(path)
+        assert config.save_frame is True
 
     def test_resize_without_padding_color(self, tmp_path):
         path = _write_config(
@@ -219,6 +228,14 @@ class TestLoadInferConfigError:
             },
         )
         with pytest.raises(ConfigValidationError, match="padding_color"):
+            load_infer_config(path)
+
+    def test_save_frame_invalid_type(self, tmp_path):
+        path = _write_config(
+            tmp_path,
+            {"url": "http://localhost:8000", "save_frame": "yes"},
+        )
+        with pytest.raises(ConfigValidationError, match="save_frame"):
             load_infer_config(path)
 
     def test_resize_padding_color_wrong_length(self, tmp_path):
