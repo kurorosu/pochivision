@@ -83,6 +83,12 @@ uv run pochi run --config "my_config.json"
 
 # Disable recording
 uv run pochi run --no-recording
+
+# Connect to pochitrain inference API (press 'i' to run inference)
+uv run pochi run --inference-url http://localhost:8000
+
+# Specify a remote inference server on LAN
+uv run pochi run --inference-url http://192.168.1.100:8000 --inference-format raw
 ```
 
 | Argument | Short | Description |
@@ -92,6 +98,8 @@ uv run pochi run --no-recording
 | `--list-profiles` | `-l` | Display all available camera profiles |
 | `--config` | | Specify a config file path (default: config/config.json) |
 | `--no-recording` | | Disable recording functionality |
+| `--inference-url` | | pochitrain inference API URL (default: http://localhost:8000) |
+| `--inference-format` | | Image format for inference API: `raw` or `jpeg` (default: jpeg) |
 
 ### `pochi extract` - Extract features from images
 

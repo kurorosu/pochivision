@@ -7,11 +7,13 @@ import cv2
 import numpy as np
 
 from pochivision.capture_runner.help_overlay import HelpOverlay
+from pochivision.capture_runner.inference_overlay import InferenceOverlay
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
 from pochivision.core import PipelineExecutor
-from pochivision.exceptions import VisionCaptureError
+from pochivision.exceptions import InferenceError, VisionCaptureError
+from pochivision.request.api.inference.client import InferenceClient
 
 
 class LivePreviewRunner:
@@ -32,6 +34,7 @@ class LivePreviewRunner:
         pipeline: PipelineExecutor,
         recording_manager: RecordingManager | None = None,
         preview_size: tuple[int, int] = (DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT),
+        inference_client: InferenceClient | None = None,
     ) -> None:
         """
         LivePreviewRunnerを初期化する.
@@ -41,14 +44,17 @@ class LivePreviewRunner:
             pipeline: .run(image) を持つ画像処理パイプラインインスタンス.
             recording_manager: 録画機能を管理するマネージャー（オプション）.
             preview_size: プレビューウィンドウの表示サイズ (width, height).
+            inference_client: pochitrain 推論 API クライアント（オプション）.
         """
         self.cap = cap
         self.pipeline = pipeline
         self.recording_manager = recording_manager
         self.preview_size = preview_size
+        self.inference_client = inference_client
         self.os_name = platform.system()
         self.logger = LogManager().get_logger()
         self.help_overlay = HelpOverlay()
+        self.inference_overlay = InferenceOverlay()
 
     def _resize_for_preview(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -112,6 +118,7 @@ class LivePreviewRunner:
         - 'r': 録画開始
         - 't': 録画停止
         - 's': カメラ設定
+        - 'i': 推論実行
         - 'h': ヘルプオーバーレイ表示/非表示
         - 'q': 終了
 
@@ -139,6 +146,7 @@ class LivePreviewRunner:
 
                 # プレビュー表示 (リサイズ後にオーバーレイを描画)
                 preview = self._resize_for_preview(frame)
+                self.inference_overlay.draw(preview)
                 self.help_overlay.draw(preview)
                 cv2.imshow("Live View", preview)
 
@@ -162,6 +170,9 @@ class LivePreviewRunner:
                             f"Camera settings dialog is only supported on Windows. "
                             f"Current OS: {self.os_name}"
                         )
+                elif key == ord("i"):
+                    # 推論実行
+                    self._run_inference(frame)
                 elif key == ord("h"):
                     # ヘルプオーバーレイのトグル
                     self.help_overlay.toggle()
@@ -177,6 +188,30 @@ class LivePreviewRunner:
         finally:
             # クリーンアップ処理
             self._cleanup()
+
+    def _run_inference(self, frame: np.ndarray) -> None:
+        """推論 API にフレームを送信して結果をオーバーレイに反映する.
+
+        Args:
+            frame: 現在のフレーム.
+        """
+        if self.inference_client is None:
+            self.logger.warning(
+                "Inference is not available (--inference-url not specified)"
+            )
+            return
+
+        try:
+            result = self.inference_client.predict(frame)
+            self.inference_overlay.update(result)
+            self.logger.info(
+                f"Inference: {result.class_name} "
+                f"({result.confidence * 100:.1f}%, "
+                f"{result.processing_time_ms:.1f}ms)"
+            )
+        except InferenceError as e:
+            self.inference_overlay.clear()
+            self.logger.error(f"Inference failed: {e}")
 
     def _start_recording(self, frame) -> None:
         """
@@ -246,6 +281,10 @@ class LivePreviewRunner:
         # 録画マネージャーのクリーンアップ
         if self.recording_manager:
             self.recording_manager.cleanup()
+
+        # 推論クライアントのクリーンアップ
+        if self.inference_client:
+            self.inference_client.close()
 
         # カメラリソースの解放
         self.cap.release()
