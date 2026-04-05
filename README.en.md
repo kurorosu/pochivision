@@ -100,6 +100,16 @@ uv run pochi run --infer-config config/infer_config.json
 | `--no-recording` | | Disable recording functionality |
 | `--infer-config` | | Inference config file path (default: config/infer_config.json) |
 
+#### Inference Config (`infer_config.json`)
+
+| Key | Required | Default | Description |
+|-----|----------|---------|-------------|
+| `url` | Yes | - | pochitrain inference API base URL |
+| `format` | No | `"jpeg"` | Image format (`"raw"` / `"jpeg"`) |
+| `resize.width` | No | None (no resize) | Target image width |
+| `resize.height` | No | None (no resize) | Target image height |
+| `resize.padding_color` | No | `[0, 0, 0]` | Padding color (BGR) |
+
 ### `pochi extract` - Extract features from images
 
 Run feature extraction on images using the extractor configuration file.

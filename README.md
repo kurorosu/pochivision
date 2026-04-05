@@ -91,6 +91,16 @@ uv run pochi run --infer-config config/infer_config.json
 | `--no-recording` | | 録画機能を無効にして起動 |
 | `--infer-config` | | 推論設定ファイルのパス (デフォルト: config/infer_config.json) |
 
+#### 推論設定 (`infer_config.json`)
+
+| キー | 必須 | デフォルト | 説明 |
+|------|------|-----------|------|
+| `url` | Yes | - | pochitrain 推論 API のベース URL |
+| `format` | No | `"jpeg"` | 画像送信形式 (`"raw"` / `"jpeg"`) |
+| `resize.width` | No | なし (リサイズなし) | 送信画像の幅 |
+| `resize.height` | No | なし (リサイズなし) | 送信画像の高さ |
+| `resize.padding_color` | No | `[0, 0, 0]` | パディング色 (BGR) |
+
 ### `pochi extract` - 特徴量抽出
 
 画像から特徴量を抽出し, CSV ファイルに出力します.
