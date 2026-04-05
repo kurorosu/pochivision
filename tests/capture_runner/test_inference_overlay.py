@@ -17,6 +17,7 @@ def _make_result(
         probabilities=[confidence, 1.0 - confidence],
         e2e_time_ms=12.3,
         backend="onnx",
+        rtt_ms=65.1,
     )
 
 

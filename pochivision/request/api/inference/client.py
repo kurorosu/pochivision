@@ -1,6 +1,7 @@
 """pochitrain 推論 API クライアントモジュール."""
 
 import base64
+import time
 from typing import Any
 
 import cv2
@@ -69,6 +70,7 @@ class InferenceClient:
         payload = self._build_payload(frame)
         url = f"{self.base_url}/api/v1/predict"
 
+        rtt_start = time.perf_counter()
         try:
             response = self._client.post(url, json=payload)
             response.raise_for_status()
@@ -83,6 +85,8 @@ class InferenceClient:
         except httpx.HTTPError as e:
             raise InferenceError(f"推論リクエスト中にエラーが発生しました: {e}") from e
 
+        rtt_ms = (time.perf_counter() - rtt_start) * 1000
+
         try:
             data = response.json()
         except ValueError as e:
@@ -96,6 +100,7 @@ class InferenceClient:
                 probabilities=data["probabilities"],
                 e2e_time_ms=data["e2e_time_ms"],
                 backend=data["backend"],
+                rtt_ms=round(rtt_ms, 3),
             )
         except KeyError as e:
             raise InferenceError(

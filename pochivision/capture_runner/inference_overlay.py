@@ -68,7 +68,8 @@ class InferenceOverlay:
         text = (
             f"{result.class_name}  "
             f"{result.confidence * 100:.1f}%  "
-            f"{result.e2e_time_ms:.1f}ms"
+            f"{result.e2e_time_ms:.1f}ms  "
+            f"(RTT: {result.rtt_ms:.1f}ms)"
         )
         color = self._get_color(result.confidence)
         self._draw_text(frame, text, color)
