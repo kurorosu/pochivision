@@ -13,6 +13,7 @@ from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
 from pochivision.core import PipelineExecutor
 from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
+from pochivision.request.api.inference.client import InferenceClient
 from pochivision.workspace import OutputManager
 
 
@@ -24,6 +25,18 @@ from pochivision.workspace import OutputManager
     "--config", type=str, default="config/config.json", help="設定ファイルパス"
 )
 @click.option("--no-recording", is_flag=True, help="録画機能を無効化")
+@click.option(
+    "--inference-url",
+    type=str,
+    default=None,
+    help="pochitrain 推論 API の URL (例: http://192.168.1.100:8000)",
+)
+@click.option(
+    "--inference-format",
+    type=click.Choice(["raw", "jpeg"]),
+    default="jpeg",
+    help="推論 API への画像送信フォーマット",
+)
 @click.pass_context
 def run(
     ctx: click.Context,
@@ -32,6 +45,8 @@ def run(
     list_profiles: bool,
     config: str,
     no_recording: bool,
+    inference_url: str | None,
+    inference_format: str,
 ) -> None:
     """ライブプレビューを起動する (従来の pochi コマンド)."""
     log_manager = LogManager()
@@ -50,7 +65,14 @@ def run(
 
     cap, camera_setup = _setup_camera(config_data, log_manager, camera, profile)
     _run_preview(
-        config_data, log_manager, cap, camera_setup, no_recording, output_manager
+        config_data,
+        log_manager,
+        cap,
+        camera_setup,
+        no_recording,
+        output_manager,
+        inference_url,
+        inference_format,
     )
 
 
@@ -157,6 +179,8 @@ def _run_preview(
     camera_setup: CameraSetup,
     no_recording: bool,
     output_manager: OutputManager,
+    inference_url: str | None,
+    inference_format: str,
 ) -> None:
     """プレビューを実行する.
 
@@ -167,6 +191,8 @@ def _run_preview(
         camera_setup: カメラセットアップ.
         no_recording: 録画無効フラグ.
         output_manager: 出力ディレクトリの統一管理クラス.
+        inference_url: pochitrain 推論 API の URL (None で無効).
+        inference_format: 画像送信フォーマット ("raw" or "jpeg").
     """
     logger = log_manager.get_logger()
     try:
@@ -201,7 +227,17 @@ def _run_preview(
             preview_config.get("height", DEFAULT_PREVIEW_HEIGHT),
         )
 
-        app = LivePreviewRunner(cap, pipeline, recording_manager, preview_size)
+        inference_client = None
+        if inference_url:
+            inference_client = InferenceClient(
+                base_url=inference_url,
+                image_format=inference_format,
+            )
+            logger.info(f"Inference API enabled: {inference_url}")
+
+        app = LivePreviewRunner(
+            cap, pipeline, recording_manager, preview_size, inference_client
+        )
         app.run()
 
     except Exception as e:
