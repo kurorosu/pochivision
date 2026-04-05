@@ -67,6 +67,38 @@ class TestLoadInferConfigSuccess:
         assert config.resize.height == 240
         assert config.resize.padding_color == (0, 0, 0)
 
+    def test_padding_color_min_boundary(self, tmp_path):
+        path = _write_config(
+            tmp_path,
+            {
+                "url": "http://localhost:8000",
+                "resize": {
+                    "width": 224,
+                    "height": 224,
+                    "padding_color": [0, 0, 0],
+                },
+            },
+        )
+        config = load_infer_config(path)
+        assert config.resize is not None
+        assert config.resize.padding_color == (0, 0, 0)
+
+    def test_padding_color_max_boundary(self, tmp_path):
+        path = _write_config(
+            tmp_path,
+            {
+                "url": "http://localhost:8000",
+                "resize": {
+                    "width": 224,
+                    "height": 224,
+                    "padding_color": [255, 255, 255],
+                },
+            },
+        )
+        config = load_infer_config(path)
+        assert config.resize is not None
+        assert config.resize.padding_color == (255, 255, 255)
+
     def test_format_jpeg_explicit(self, tmp_path):
         path = _write_config(
             tmp_path,
@@ -139,6 +171,17 @@ class TestLoadInferConfigError:
             },
         )
         with pytest.raises(ConfigValidationError, match="height"):
+            load_infer_config(path)
+
+    def test_resize_zero_width(self, tmp_path):
+        path = _write_config(
+            tmp_path,
+            {
+                "url": "http://localhost:8000",
+                "resize": {"width": 0, "height": 224},
+            },
+        )
+        with pytest.raises(ConfigValidationError, match="width"):
             load_infer_config(path)
 
     def test_resize_negative_width(self, tmp_path):
