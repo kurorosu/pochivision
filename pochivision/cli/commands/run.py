@@ -93,7 +93,7 @@ def _load_config(config_path: str, logger: logging.Logger) -> dict:
     except ConfigValidationError as e:
         logger.error(str(e))
         raise click.ClickException(
-            "設定ファイルに誤りがあります. 詳細はログ��確認してください."
+            "設定ファイルに誤りがあります. 詳細はログを確認してください."
         )
     except (ConfigLoadError, Exception) as e:
         logger.error(f"Failed to load configuration: {e}")
@@ -150,7 +150,7 @@ def _setup_camera(
         if cap is None or not cap.isOpened():
             logger.error(f"Failed to open camera {camera_setup.camera_index}.")
             raise click.ClickException(
-                f"カメラ {camera_setup.camera_index} を開けませ���でした."
+                f"カメラ {camera_setup.camera_index} を開けませんでした."
             )
 
         log_manager.log_camera_info(

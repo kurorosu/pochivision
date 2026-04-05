@@ -258,14 +258,20 @@ class LivePreviewRunner:
         if client is None or not client.save_frame:
             return
 
-        processed = client.resize_frame(frame)
-        inference_dir = Path(self.pipeline.output_dir) / "inference"
-        inference_dir.mkdir(exist_ok=True)
+        try:
+            processed = client.resize_frame(frame)
+            inference_dir = Path(self.pipeline.output_dir) / "inference"
+            inference_dir.mkdir(parents=True, exist_ok=True)
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        save_path = inference_dir / f"infer_{timestamp}.png"
-        cv2.imwrite(str(save_path), processed)
-        self.logger.info(f"Inference frame saved: {save_path}")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            save_path = inference_dir / f"infer_{timestamp}.png"
+            success = cv2.imwrite(str(save_path), processed)
+            if success:
+                self.logger.info(f"Inference frame saved: {save_path}")
+            else:
+                self.logger.warning(f"Failed to save inference frame: {save_path}")
+        except (OSError, cv2.error) as e:
+            self.logger.warning(f"Error saving inference frame: {e}")
 
     def _start_recording(self, frame) -> None:
         """

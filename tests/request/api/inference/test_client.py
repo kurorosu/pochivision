@@ -199,7 +199,7 @@ class TestPredict:
 
 
 class TestPredictConnectionError:
-    """接続エ���ーのテスト."""
+    """接続エラーのテスト."""
 
     def test_connection_refused(self):
         with InferenceClient(
@@ -211,7 +211,7 @@ class TestPredictConnectionError:
 
 
 class TestResizeWithPadding:
-    """resize_frame のテ��ト."""
+    """resize_frame のテスト."""
 
     def test_no_resize(self):
         """resize=None の場合は元のフレームがそのまま返る."""
