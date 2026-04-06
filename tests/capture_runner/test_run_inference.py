@@ -147,3 +147,45 @@ class TestRunInferenceThreadSafety:
         runner._run_inference(_make_frame())
 
         assert runner._inferring is False
+
+    def test_save_frame_not_called_on_predict_failure(self, tmp_path):
+        """predict 失敗時に _save_inference_frame が呼ばれない."""
+        runner = _make_runner(tmp_path)
+        runner.inference_client.save_frame = True  # type: ignore[union-attr]
+
+        with (
+            patch.object(
+                runner.inference_client,
+                "predict",
+                side_effect=Exception("connection error"),
+            ),
+            patch.object(runner, "_save_inference_frame") as mock_save,
+        ):
+            runner._run_inference(_make_frame())
+            if runner._inference_thread:
+                runner._inference_thread.join(timeout=5)
+
+        mock_save.assert_not_called()
+
+        runner.inference_client.close()  # type: ignore[union-attr]
+
+    def test_save_frame_called_on_predict_success(self, tmp_path):
+        """predict 成功時に _save_inference_frame が呼ばれる."""
+        runner = _make_runner(tmp_path)
+        runner.inference_client.save_frame = True  # type: ignore[union-attr]
+
+        with (
+            patch.object(
+                runner.inference_client, "predict", return_value=_make_result()
+            ),
+            patch.object(
+                runner, "_save_inference_frame", return_value=None
+            ) as mock_save,
+        ):
+            runner._run_inference(_make_frame())
+            if runner._inference_thread:
+                runner._inference_thread.join(timeout=5)
+
+        mock_save.assert_called_once()
+
+        runner.inference_client.close()  # type: ignore[union-attr]
