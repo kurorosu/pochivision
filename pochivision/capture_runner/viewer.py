@@ -234,7 +234,6 @@ class LivePreviewRunner:
             frame: 推論対象のフレーム.
         """
         try:
-            image_file = self._save_inference_frame(frame)
             result = self.inference_client.predict(frame)  # type: ignore[union-attr]
             self.inference_overlay.update(result)
             self.logger.info(
@@ -243,6 +242,7 @@ class LivePreviewRunner:
                 f"{result.e2e_time_ms:.1f}ms, "
                 f"RTT: {result.rtt_ms:.1f}ms)"
             )
+            image_file = self._save_inference_frame(frame)
             self._save_inference_csv(result, image_file)
         except InferenceError as e:
             self.inference_overlay.clear()
