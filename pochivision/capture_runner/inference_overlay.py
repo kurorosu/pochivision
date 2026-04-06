@@ -1,16 +1,38 @@
 """推論結果オーバーレイモジュール."""
 
+from dataclasses import dataclass
+
 import cv2
 import numpy as np
 
 from pochivision.request.api.inference.models import PredictResponse
 
 
-class InferenceOverlay:
-    """プレビュー画面に推論結果を描画するクラス.
+@dataclass
+class InferenceContext:
+    """推論オーバーレイに表示する静的コンテキスト情報.
 
-    フレーム左上にクラス名, 信頼度(%), 推論時間(ms) を表示する.
-    信頼度に応じて文字色が変化する (緑: 高, 黄: 中, 赤: 低).
+    Attributes:
+        server_url: 推論 API サーバーの URL.
+        image_size: 推論画像サイズ ("WxH" 形式, またはリサイズなしの場合 None).
+    """
+
+    server_url: str
+    image_size: str | None = None
+
+
+class InferenceOverlay:
+    """プレビュー画面に推論結果を複数行で描画するクラス.
+
+    左上に以下を表示する:
+    - 推論結果 (クラス名)
+    - 信頼度 (%)
+    - 推論時間 (e2e_time_ms)
+    - RTT 込時間 (rtt_ms)
+    - 推論画像サイズ
+    - サーバー URL
+
+    推論失敗時はエラーメッセージを表示する.
     """
 
     CONFIDENCE_HIGH = 0.7
@@ -18,22 +40,41 @@ class InferenceOverlay:
 
     INFERRING_TEXT = "Inferring..."
 
-    def __init__(self) -> None:
-        """コンストラクタ."""
+    def __init__(self, context: InferenceContext | None = None) -> None:
+        """コンストラクタ.
+
+        Args:
+            context: サーバー URL や画像サイズなどの静的情報.
+        """
         self.result: PredictResponse | None = None
+        self.error_message: str | None = None
+        self.context = context
         self._inferring = False
 
     def update(self, result: PredictResponse) -> None:
         """推論結果を更新する.
 
+        エラーメッセージがある場合はクリアする.
+
         Args:
             result: 推論 API からのレスポンス.
         """
         self.result = result
+        self.error_message = None
+
+    def set_error(self, message: str) -> None:
+        """エラーメッセージを設定する.
+
+        Args:
+            message: 表示するエラーメッセージ.
+        """
+        self.error_message = message
+        self.result = None
 
     def clear(self) -> None:
-        """推論結果をクリアする."""
+        """推論結果とエラーメッセージをクリアする."""
         self.result = None
+        self.error_message = None
 
     def set_inferring(self, inferring: bool) -> None:
         """推論中フラグを設定する.
@@ -44,43 +85,82 @@ class InferenceOverlay:
         self._inferring = inferring
 
     def draw(self, frame: np.ndarray) -> np.ndarray:
-        """フレーム左上に推論結果を描画する.
-
-        推論中かつ結果未取得の場合は "Inferring..." を表示する.
-        推論中でも前回の結果がある場合は前回の結果を表示し続ける.
+        """フレーム左上に推論情報を描画する.
 
         Args:
             frame: 描画先のフレーム. このフレームを直接変更する.
 
         Returns:
-            推論結果が描画されたフレーム.
+            推論情報が描画されたフレーム.
         """
         inferring = self._inferring
         result = self.result
+        error = self.error_message
 
-        if inferring and result is None:
-            self._draw_text(frame, self.INFERRING_TEXT, (200, 200, 200))
+        if inferring and result is None and error is None:
+            self._draw_text(frame, self.INFERRING_TEXT, (200, 200, 200), y=30)
+            return frame
+
+        if error is not None:
+            self._draw_error(frame, error)
             return frame
 
         if result is None:
             return frame
 
-        text = (
-            f"{result.class_name}  "
-            f"{result.confidence * 100:.1f}%  "
-            f"{result.e2e_time_ms:.1f}ms  "
-            f"(RTT: {result.rtt_ms:.1f}ms)"
-        )
-        color = self._get_color(result.confidence)
-        self._draw_text(frame, text, color)
-
+        self._draw_result(frame, result)
         return frame
+
+    def _draw_result(self, frame: np.ndarray, result: PredictResponse) -> None:
+        """推論結果を複数行で描画する.
+
+        Args:
+            frame: 描画先のフレーム.
+            result: 推論結果.
+        """
+        color = self._get_color(result.confidence)
+        lines: list[tuple[str, tuple[int, int, int]]] = [
+            (f"Result: {result.class_name}", color),
+            (f"Confidence: {result.confidence * 100:.1f}%", color),
+            (f"Inference: {result.e2e_time_ms:.1f}ms", (200, 200, 200)),
+            (f"RTT: {result.rtt_ms:.1f}ms", (200, 200, 200)),
+        ]
+
+        if self.context and self.context.image_size:
+            lines.append((f"Image: {self.context.image_size}", (200, 200, 200)))
+        if self.context:
+            lines.append((f"Server: {self.context.server_url}", (200, 200, 200)))
+
+        y = 30
+        for text, c in lines:
+            self._draw_text(frame, text, c, y=y)
+            y += 25
+
+    def _draw_error(self, frame: np.ndarray, error: str) -> None:
+        """エラーメッセージを描画する.
+
+        Args:
+            frame: 描画先のフレーム.
+            error: エラーメッセージ.
+        """
+        lines: list[tuple[str, tuple[int, int, int]]] = [
+            (f"Error: {error}", (0, 0, 200)),
+        ]
+
+        if self.context:
+            lines.append((f"Server: {self.context.server_url}", (200, 200, 200)))
+
+        y = 30
+        for text, c in lines:
+            self._draw_text(frame, text, c, y=y)
+            y += 25
 
     def _draw_text(
         self,
         frame: np.ndarray,
         text: str,
         color: tuple[int, int, int],
+        y: int,
     ) -> None:
         """フレーム左上にテキストを描画する.
 
@@ -88,13 +168,13 @@ class InferenceOverlay:
             frame: 描画先のフレーム.
             text: 表示テキスト.
             color: BGR カラータプル.
+            y: 描画 Y 座標.
         """
         font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.7
+        font_scale = 0.6
         thickness = 2
         outline_thickness = thickness + 2
         x = 10
-        y = 30
 
         cv2.putText(
             frame,
@@ -102,7 +182,7 @@ class InferenceOverlay:
             (x, y),
             font,
             font_scale,
-            (255, 255, 255),
+            (0, 0, 0),
             outline_thickness,
             cv2.LINE_AA,
         )
