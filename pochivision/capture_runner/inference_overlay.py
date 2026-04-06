@@ -127,7 +127,7 @@ class InferenceOverlay:
         ]
 
         if self.context and self.context.image_size:
-            lines.append((f"Image: {self.context.image_size}", (200, 200, 200)))
+            lines.append((f"ImageSize: {self.context.image_size}", (200, 200, 200)))
         if self.context:
             lines.append((f"Server: {self.context.server_url}", (200, 200, 200)))
 
