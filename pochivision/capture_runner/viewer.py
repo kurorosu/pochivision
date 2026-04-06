@@ -10,12 +10,19 @@ import cv2
 import numpy as np
 
 from pochivision.capture_runner.help_overlay import HelpOverlay
-from pochivision.capture_runner.inference_overlay import InferenceOverlay
+from pochivision.capture_runner.inference_overlay import (
+    InferenceContext,
+    InferenceOverlay,
+)
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
 from pochivision.core import PipelineExecutor
-from pochivision.exceptions import InferenceError, VisionCaptureError
+from pochivision.exceptions import (
+    InferenceConnectionError,
+    InferenceError,
+    VisionCaptureError,
+)
 from pochivision.request.api.inference.client import InferenceClient
 from pochivision.request.api.inference.csv_writer import InferenceCsvWriter
 from pochivision.request.api.inference.models import PredictResponse
@@ -59,10 +66,29 @@ class LivePreviewRunner:
         self.os_name = platform.system()
         self.logger = LogManager().get_logger()
         self.help_overlay = HelpOverlay()
-        self.inference_overlay = InferenceOverlay()
+        self.inference_overlay = InferenceOverlay(self._build_inference_context())
         self._inferring = False
         self._inferring_lock = threading.Lock()
         self._inference_thread: threading.Thread | None = None
+
+    def _build_inference_context(self) -> InferenceContext | None:
+        """推論クライアントからオーバーレイ用コンテキストを構築する.
+
+        Returns:
+            コンテキスト情報, またはクライアントがない場合は None.
+        """
+        client = self.inference_client
+        if client is None:
+            return None
+
+        image_size = None
+        if client.resize is not None:
+            image_size = f"{client.resize.width}x{client.resize.height}"
+
+        return InferenceContext(
+            server_url=client.base_url,
+            image_size=image_size,
+        )
 
     def _resize_for_preview(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -247,11 +273,14 @@ class LivePreviewRunner:
             )
             image_file = self._save_inference_frame(resized)
             self._save_inference_csv(result, image_file)
+        except InferenceConnectionError as e:
+            self.inference_overlay.set_error("Connection failed")
+            self.logger.error(f"Inference failed: {e}")
         except InferenceError as e:
-            self.inference_overlay.clear()
+            self.inference_overlay.set_error("Inference failed")
             self.logger.error(f"Inference failed: {e}")
         except Exception as e:
-            self.inference_overlay.clear()
+            self.inference_overlay.set_error("Unexpected error")
             self.logger.error(f"Unexpected inference error: {e}")
         finally:
             self.inference_overlay.set_inferring(False)
