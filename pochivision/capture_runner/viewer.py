@@ -14,6 +14,7 @@ from pochivision.capture_runner.inference_overlay import (
     InferenceContext,
     InferenceOverlay,
 )
+from pochivision.capture_runner.roi_selector import RoiSelector
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
@@ -70,6 +71,7 @@ class LivePreviewRunner:
         self._inferring = False
         self._inferring_lock = threading.Lock()
         self._inference_thread: threading.Thread | None = None
+        self.roi_selector = RoiSelector()
 
     def _build_inference_context(self) -> InferenceContext | None:
         """推論クライアントからオーバーレイ用コンテキストを構築する.
@@ -153,8 +155,10 @@ class LivePreviewRunner:
         - 't': 録画停止
         - 's': カメラ設定
         - 'i': 推論実行
+        - 'd': ROI リセット
         - 'h': ヘルプオーバーレイ表示/非表示
         - 'q': 終了
+        - マウスドラッグ: ROI 選択
 
         Raises:
             VisionCaptureError: カメラ設定ダイアログが非対応のOSで呼び出された場合.
@@ -163,9 +167,14 @@ class LivePreviewRunner:
         self.logger.info(
             "Press 'c' to capture, 'r' to start recording, 't' to stop recording,"
         )
-        self.logger.info("'s' for camera settings, 'h' for help, 'q' to quit.")
+        self.logger.info(
+            "'s' for camera settings, 'd' to clear ROI, 'h' for help, 'q' to quit."
+        )
 
         try:
+            cv2.namedWindow("Live View")
+            cv2.setMouseCallback("Live View", self.roi_selector.mouse_callback)
+
             while True:
                 ret, frame = self.cap.read()
                 if not ret:
@@ -180,14 +189,16 @@ class LivePreviewRunner:
 
                 # プレビュー表示 (リサイズ後にオーバーレイを描画)
                 preview = self._resize_for_preview(frame)
+                self.roi_selector.set_preview_scale(frame.shape[1], preview.shape[1])
+                self.roi_selector.draw(preview)
                 self.inference_overlay.draw(preview)
                 self.help_overlay.draw(preview)
                 cv2.imshow("Live View", preview)
 
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord("c"):
-                    # キャプチャ処理
-                    snapshot = frame.copy()
+                    # キャプチャ処理 (ROI でクロップ)
+                    snapshot = self.roi_selector.crop(frame.copy())
                     self.pipeline.run(snapshot)
                 elif key == ord("r"):
                     # 録画開始
@@ -205,8 +216,12 @@ class LivePreviewRunner:
                             f"Current OS: {self.os_name}"
                         )
                 elif key == ord("i"):
-                    # 推論実行
-                    self._run_inference(frame)
+                    # 推論実行 (ROI でクロップ)
+                    self._run_inference(self.roi_selector.crop(frame))
+                elif key == ord("d"):
+                    # ROI リセット
+                    self.roi_selector.clear()
+                    self.logger.info("ROI cleared")
                 elif key == ord("h"):
                     # ヘルプオーバーレイのトグル
                     self.help_overlay.toggle()
