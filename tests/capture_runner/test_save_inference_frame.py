@@ -81,12 +81,13 @@ class TestSaveInferenceFrame:
         assert not inference_dir.exists()
 
     def test_saves_resized_frame(self, tmp_path):
-        """resize 設定ありの場合, リサイズ後の画像が保存される."""
+        """リサイズ済みフレームがそのまま保存される."""
         resize = ResizeConfig(width=64, height=64)
         runner = _make_runner(tmp_path, save_frame=True, resize=resize)
         frame = _make_frame(480, 640)
+        resized = runner.inference_client.resize_frame(frame)  # type: ignore[union-attr]
 
-        runner._save_inference_frame(frame)
+        runner._save_inference_frame(resized)
 
         saved_files = list((tmp_path / "inference").glob("infer_*.png"))
         assert len(saved_files) == 1

@@ -234,7 +234,10 @@ class LivePreviewRunner:
             frame: 推論対象のフレーム.
         """
         try:
-            result = self.inference_client.predict(frame)  # type: ignore[union-attr]
+            client = self.inference_client
+            assert client is not None  # _run_inference で None チェック済み
+            resized = client.resize_frame(frame)
+            result = client.predict(frame)
             self.inference_overlay.update(result)
             self.logger.info(
                 f"Inference: {result.class_name} "
@@ -242,7 +245,7 @@ class LivePreviewRunner:
                 f"{result.e2e_time_ms:.1f}ms, "
                 f"RTT: {result.rtt_ms:.1f}ms)"
             )
-            image_file = self._save_inference_frame(frame)
+            image_file = self._save_inference_frame(resized)
             self._save_inference_csv(result, image_file)
         except InferenceError as e:
             self.inference_overlay.clear()
@@ -256,10 +259,10 @@ class LivePreviewRunner:
                 self._inferring = False
 
     def _save_inference_frame(self, frame: np.ndarray) -> str | None:
-        """推論フレームをリサイズ+パディング後に画像ファイルとして保存する.
+        """リサイズ済みフレームを画像ファイルとして保存する.
 
         Args:
-            frame: 推論対象のフレーム.
+            frame: リサイズ+パディング済みのフレーム.
 
         Returns:
             保存されたファイル名, または保存しなかった場合は None.
@@ -269,14 +272,13 @@ class LivePreviewRunner:
             return None
 
         try:
-            processed = client.resize_frame(frame)
             inference_dir = Path(self.pipeline.output_dir) / "inference"
             inference_dir.mkdir(parents=True, exist_ok=True)
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             filename = f"infer_{timestamp}.png"
             save_path = inference_dir / filename
-            success = cv2.imwrite(str(save_path), processed)
+            success = cv2.imwrite(str(save_path), frame)
             if success:
                 self.logger.info(f"Inference frame saved: {save_path}")
                 return filename
