@@ -102,9 +102,13 @@ class RoiSelector:
         x, y, w, h = self.roi
         fh, fw = frame.shape[:2]
 
+        # ROI がフレーム外の場合は元フレームを返す
+        if x >= fw or y >= fh:
+            return frame
+
         # フレームサイズ内にクランプ
-        x = max(0, min(x, fw - 1))
-        y = max(0, min(y, fh - 1))
+        x = max(0, x)
+        y = max(0, y)
         w = min(w, fw - x)
         h = min(h, fh - y)
 

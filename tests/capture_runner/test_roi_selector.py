@@ -152,3 +152,42 @@ class TestRoiSelector:
         original_scale = selector._preview_scale
         selector.set_preview_scale(frame_w=1280, preview_w=0)
         assert selector._preview_scale == original_scale
+
+    def test_crop_roi_completely_out_of_frame(self):
+        """ROI が完全にフレーム外の場合, 元フレームが返される."""
+        selector = RoiSelector()
+        frame = np.zeros((100, 100, 3), dtype=np.uint8)
+
+        selector.roi = (1000, 1000, 50, 50)
+        result = selector.crop(frame)
+
+        # x がクランプされ w <= 0 になるため元フレームが返される
+        assert result is frame
+
+    def test_mouse_continuous_lbuttondown(self):
+        """LBUTTONDOWN 連続呼び出しで前のドラッグが上書きされる."""
+        selector = RoiSelector()
+        selector._preview_scale = 1.0
+
+        # 1 回目のドラッグ開始
+        selector.mouse_callback(cv2.EVENT_LBUTTONDOWN, 10, 10)
+        # 完了せずに 2 回目のドラッグ開始
+        selector.mouse_callback(cv2.EVENT_LBUTTONDOWN, 50, 50)
+        selector.mouse_callback(cv2.EVENT_LBUTTONUP, 150, 150)
+
+        assert selector.roi is not None
+        x, y, w, h = selector.roi
+        assert x == 50
+        assert y == 50
+
+    def test_draw_zero_preview_scale(self):
+        """_preview_scale=0 の場合, 描画されない."""
+        selector = RoiSelector()
+        selector.roi = (100, 100, 200, 200)
+        selector._preview_scale = 0.0
+
+        preview = np.zeros((240, 320, 3), dtype=np.uint8)
+        original = preview.copy()
+        selector.draw(preview)
+
+        np.testing.assert_array_equal(preview, original)

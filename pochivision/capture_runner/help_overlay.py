@@ -11,7 +11,9 @@ class HelpOverlay:
     プレビュー表示のみに適用し, 画像処理・保存パイプラインには影響しない.
     """
 
-    HELP_TEXT = "c:Capture  r:Rec  t:Stop  s:Settings  i:Infer  h:Help  q:Quit"
+    HELP_TEXT = (
+        "c:Capture  r:Rec  t:Stop  s:Settings" "  i:Infer  d:ClearROI  h:Help  q:Quit"
+    )
 
     def __init__(self) -> None:
         """HelpOverlayのコンストラクタ."""
