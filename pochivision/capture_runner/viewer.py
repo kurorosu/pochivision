@@ -18,7 +18,11 @@ from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
 from pochivision.core import PipelineExecutor
-from pochivision.exceptions import InferenceError, VisionCaptureError
+from pochivision.exceptions import (
+    InferenceConnectionError,
+    InferenceError,
+    VisionCaptureError,
+)
 from pochivision.request.api.inference.client import InferenceClient
 from pochivision.request.api.inference.csv_writer import InferenceCsvWriter
 from pochivision.request.api.inference.models import PredictResponse
@@ -269,11 +273,14 @@ class LivePreviewRunner:
             )
             image_file = self._save_inference_frame(resized)
             self._save_inference_csv(result, image_file)
+        except InferenceConnectionError as e:
+            self.inference_overlay.set_error("Connection failed")
+            self.logger.error(f"Inference failed: {e}")
         except InferenceError as e:
-            self.inference_overlay.set_error(str(e))
+            self.inference_overlay.set_error("Inference failed")
             self.logger.error(f"Inference failed: {e}")
         except Exception as e:
-            self.inference_overlay.set_error(str(e))
+            self.inference_overlay.set_error("Unexpected error")
             self.logger.error(f"Unexpected inference error: {e}")
         finally:
             self.inference_overlay.set_inferring(False)

@@ -90,7 +90,7 @@ class TestInferenceOverlay:
 
     def test_draw_error(self):
         overlay = InferenceOverlay(_make_context())
-        overlay.set_error("推論 API サーバーに接続できません")
+        overlay.set_error("Connection failed")
         frame = np.zeros((200, 400, 3), dtype=np.uint8)
         result = overlay.draw(frame)
         assert frame.sum() > 0
