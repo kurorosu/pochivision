@@ -458,8 +458,8 @@ class LivePreviewRunner:
                 output_dir=output_dir,
                 camera_index=self.camera_setup.camera_index,
                 profile_name=self.camera_setup.profile_name,
-                requested_width=self.camera_setup.width,
-                requested_height=self.camera_setup.height,
+                requested_width=self.camera_setup.requested_width,
+                requested_height=self.camera_setup.requested_height,
             )
             self.logger.info(f"Camera config saved: {save_path}")
         except OSError as e:

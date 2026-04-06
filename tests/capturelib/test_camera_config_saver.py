@@ -142,3 +142,33 @@ class TestSaveCameraConfig:
         )
         data = json.loads(path.read_text(encoding="utf-8"))
         assert isinstance(data, dict)
+
+    def test_brightness_zero_is_saved(self, tmp_path):
+        """brightness=0.0 でも保存される."""
+        cap = _make_mock_cap(brightness=0.0)
+        path = save_camera_config(
+            cap,
+            tmp_path,
+            camera_index=0,
+            profile_name="0",
+            requested_width=640,
+            requested_height=480,
+        )
+        data = json.loads(path.read_text(encoding="utf-8"))
+        assert "brightness" in data
+        assert data["brightness"] == 0.0
+
+    def test_exposure_zero_is_saved(self, tmp_path):
+        """exposure=0.0 でも保存される."""
+        cap = _make_mock_cap(exposure=0.0)
+        path = save_camera_config(
+            cap,
+            tmp_path,
+            camera_index=0,
+            profile_name="0",
+            requested_width=640,
+            requested_height=480,
+        )
+        data = json.loads(path.read_text(encoding="utf-8"))
+        assert "exposure" in data
+        assert data["exposure"] == 0.0

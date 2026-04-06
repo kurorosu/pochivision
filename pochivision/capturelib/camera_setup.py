@@ -55,6 +55,8 @@ class CameraSetup:
         self.profile_name = profile_name
         self.width = 0
         self.height = 0
+        self.requested_width = 0
+        self.requested_height = 0
         self.fps = 30
         self.backend: str | None = None
 
@@ -79,6 +81,8 @@ class CameraSetup:
 
             self.width = camera_config.get("width", DEFAULT_CAMERA_WIDTH)
             self.height = camera_config.get("height", DEFAULT_CAMERA_HEIGHT)
+            self.requested_width = self.width
+            self.requested_height = self.height
             self.fps = camera_config.get("fps", DEFAULT_CAMERA_FPS)
             self.backend = camera_config.get("backend", None)
             if self.backend is None:
