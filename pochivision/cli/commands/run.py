@@ -238,7 +238,12 @@ def _run_preview(
                 logger.warning(f"Inference config not loaded, skipping: {e}")
 
         app = LivePreviewRunner(
-            cap, pipeline, recording_manager, preview_size, inference_client
+            cap,
+            pipeline,
+            recording_manager,
+            preview_size,
+            inference_client,
+            camera_setup=camera_setup,
         )
         app.run()
 

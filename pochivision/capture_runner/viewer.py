@@ -15,6 +15,8 @@ from pochivision.capture_runner.inference_overlay import (
     InferenceOverlay,
 )
 from pochivision.capture_runner.roi_selector import RoiSelector
+from pochivision.capturelib.camera_config_saver import save_camera_config
+from pochivision.capturelib.camera_setup import CameraSetup
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
@@ -48,6 +50,7 @@ class LivePreviewRunner:
         recording_manager: RecordingManager | None = None,
         preview_size: tuple[int, int] = (DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT),
         inference_client: InferenceClient | None = None,
+        camera_setup: CameraSetup | None = None,
     ) -> None:
         """
         LivePreviewRunnerを初期化する.
@@ -58,12 +61,14 @@ class LivePreviewRunner:
             recording_manager: 録画機能を管理するマネージャー（オプション）.
             preview_size: プレビューウィンドウの表示サイズ (width, height).
             inference_client: pochitrain 推論 API クライアント（オプション）.
+            camera_setup: カメラセットアップ情報（オプション）.
         """
         self.cap = cap
         self.pipeline = pipeline
         self.recording_manager = recording_manager
         self.preview_size = preview_size
         self.inference_client = inference_client
+        self.camera_setup = camera_setup
         self.os_name = platform.system()
         self.logger = LogManager().get_logger()
         self.help_overlay = HelpOverlay()
@@ -433,7 +438,29 @@ class LivePreviewRunner:
         if self.inference_client:
             self.inference_client.close()
 
+        # カメラ設定を結果フォルダに保存 (cap.release() の前に実行)
+        self._save_camera_config()
+
         # カメラリソースの解放
         self.cap.release()
         cv2.destroyAllWindows()
         self.logger.info("Camera resource and windows have been released.")
+
+    def _save_camera_config(self) -> None:
+        """カメラ設定を結果フォルダに JSON として保存する."""
+        if self.camera_setup is None:
+            return
+
+        try:
+            output_dir = Path(self.pipeline.output_dir)
+            save_path = save_camera_config(
+                cap=self.cap,
+                output_dir=output_dir,
+                camera_index=self.camera_setup.camera_index,
+                profile_name=self.camera_setup.profile_name,
+                requested_width=self.camera_setup.requested_width,
+                requested_height=self.camera_setup.requested_height,
+            )
+            self.logger.info(f"Camera config saved: {save_path}")
+        except OSError as e:
+            self.logger.warning(f"Error saving camera config: {e}")
