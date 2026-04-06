@@ -1,5 +1,6 @@
 """カメラの設定・初期化を行うためのユーティリティモジュール."""
 
+import platform
 from typing import Any
 
 import cv2
@@ -11,6 +12,21 @@ from pochivision.constants import (
     DEFAULT_CAMERA_WIDTH,
 )
 from pochivision.exceptions.config import CameraConfigError
+
+_OS_DEFAULT_BACKENDS: dict[str, str] = {
+    "Windows": "DSHOW",
+    "Linux": "V4L2",
+    "Darwin": "AVFOUNDATION",
+}
+
+
+def _get_default_backend() -> str | None:
+    """OS に応じたデフォルトのカメラバックエンドを返す.
+
+    Returns:
+        バックエンド名, または未知の OS の場合は None.
+    """
+    return _OS_DEFAULT_BACKENDS.get(platform.system())
 
 
 class CameraSetup:
@@ -40,7 +56,7 @@ class CameraSetup:
         self.width = 0
         self.height = 0
         self.fps = 30
-        self.backend = None
+        self.backend: str | None = None
 
     def load_camera_config(self) -> None:
         """設定からカメラ設定を読み込む. CLIで指定されたカメラインデックスとプロファイル名を優先する."""
@@ -65,6 +81,11 @@ class CameraSetup:
             self.height = camera_config.get("height", DEFAULT_CAMERA_HEIGHT)
             self.fps = camera_config.get("fps", DEFAULT_CAMERA_FPS)
             self.backend = camera_config.get("backend", None)
+            if self.backend is None:
+                self.backend = _get_default_backend()
+                self.logger.info(
+                    f"Backend not specified, auto-selected: {self.backend}"
+                )
 
             self.logger.info(
                 f"Camera configuration loaded: Camera Index={self.camera_index}, "
