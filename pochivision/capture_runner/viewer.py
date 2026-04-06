@@ -10,12 +10,22 @@ import cv2
 import numpy as np
 
 from pochivision.capture_runner.help_overlay import HelpOverlay
-from pochivision.capture_runner.inference_overlay import InferenceOverlay
+from pochivision.capture_runner.inference_overlay import (
+    InferenceContext,
+    InferenceOverlay,
+)
+from pochivision.capture_runner.roi_selector import RoiSelector
+from pochivision.capturelib.camera_config_saver import save_camera_config
+from pochivision.capturelib.camera_setup import CameraSetup
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
 from pochivision.core import PipelineExecutor
-from pochivision.exceptions import InferenceError, VisionCaptureError
+from pochivision.exceptions import (
+    InferenceConnectionError,
+    InferenceError,
+    VisionCaptureError,
+)
 from pochivision.request.api.inference.client import InferenceClient
 from pochivision.request.api.inference.csv_writer import InferenceCsvWriter
 from pochivision.request.api.inference.models import PredictResponse
@@ -40,6 +50,7 @@ class LivePreviewRunner:
         recording_manager: RecordingManager | None = None,
         preview_size: tuple[int, int] = (DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT),
         inference_client: InferenceClient | None = None,
+        camera_setup: CameraSetup | None = None,
     ) -> None:
         """
         LivePreviewRunnerを初期化する.
@@ -50,19 +61,41 @@ class LivePreviewRunner:
             recording_manager: 録画機能を管理するマネージャー（オプション）.
             preview_size: プレビューウィンドウの表示サイズ (width, height).
             inference_client: pochitrain 推論 API クライアント（オプション）.
+            camera_setup: カメラセットアップ情報（オプション）.
         """
         self.cap = cap
         self.pipeline = pipeline
         self.recording_manager = recording_manager
         self.preview_size = preview_size
         self.inference_client = inference_client
+        self.camera_setup = camera_setup
         self.os_name = platform.system()
         self.logger = LogManager().get_logger()
         self.help_overlay = HelpOverlay()
-        self.inference_overlay = InferenceOverlay()
+        self.inference_overlay = InferenceOverlay(self._build_inference_context())
         self._inferring = False
         self._inferring_lock = threading.Lock()
         self._inference_thread: threading.Thread | None = None
+        self.roi_selector = RoiSelector()
+
+    def _build_inference_context(self) -> InferenceContext | None:
+        """推論クライアントからオーバーレイ用コンテキストを構築する.
+
+        Returns:
+            コンテキスト情報, またはクライアントがない場合は None.
+        """
+        client = self.inference_client
+        if client is None:
+            return None
+
+        image_size = None
+        if client.resize is not None:
+            image_size = f"{client.resize.width}x{client.resize.height}"
+
+        return InferenceContext(
+            server_url=client.base_url,
+            image_size=image_size,
+        )
 
     def _resize_for_preview(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -127,8 +160,10 @@ class LivePreviewRunner:
         - 't': 録画停止
         - 's': カメラ設定
         - 'i': 推論実行
+        - 'd': ROI リセット
         - 'h': ヘルプオーバーレイ表示/非表示
         - 'q': 終了
+        - マウスドラッグ: ROI 選択
 
         Raises:
             VisionCaptureError: カメラ設定ダイアログが非対応のOSで呼び出された場合.
@@ -137,9 +172,14 @@ class LivePreviewRunner:
         self.logger.info(
             "Press 'c' to capture, 'r' to start recording, 't' to stop recording,"
         )
-        self.logger.info("'s' for camera settings, 'h' for help, 'q' to quit.")
+        self.logger.info(
+            "'s' for camera settings, 'd' to clear ROI, 'h' for help, 'q' to quit."
+        )
 
         try:
+            cv2.namedWindow("Live View")
+            cv2.setMouseCallback("Live View", self.roi_selector.mouse_callback)
+
             while True:
                 ret, frame = self.cap.read()
                 if not ret:
@@ -154,14 +194,16 @@ class LivePreviewRunner:
 
                 # プレビュー表示 (リサイズ後にオーバーレイを描画)
                 preview = self._resize_for_preview(frame)
+                self.roi_selector.set_preview_scale(frame.shape[1], preview.shape[1])
+                self.roi_selector.draw(preview)
                 self.inference_overlay.draw(preview)
                 self.help_overlay.draw(preview)
                 cv2.imshow("Live View", preview)
 
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord("c"):
-                    # キャプチャ処理
-                    snapshot = frame.copy()
+                    # キャプチャ処理 (ROI でクロップ)
+                    snapshot = self.roi_selector.crop(frame.copy())
                     self.pipeline.run(snapshot)
                 elif key == ord("r"):
                     # 録画開始
@@ -179,8 +221,12 @@ class LivePreviewRunner:
                             f"Current OS: {self.os_name}"
                         )
                 elif key == ord("i"):
-                    # 推論実行
-                    self._run_inference(frame)
+                    # 推論実行 (ROI でクロップ)
+                    self._run_inference(self.roi_selector.crop(frame))
+                elif key == ord("d"):
+                    # ROI リセット
+                    self.roi_selector.clear()
+                    self.logger.info("ROI cleared")
                 elif key == ord("h"):
                     # ヘルプオーバーレイのトグル
                     self.help_overlay.toggle()
@@ -234,8 +280,10 @@ class LivePreviewRunner:
             frame: 推論対象のフレーム.
         """
         try:
-            image_file = self._save_inference_frame(frame)
-            result = self.inference_client.predict(frame)  # type: ignore[union-attr]
+            client = self.inference_client
+            assert client is not None  # _run_inference で None チェック済み
+            resized = client.resize_frame(frame)
+            result = client.predict(frame)
             self.inference_overlay.update(result)
             self.logger.info(
                 f"Inference: {result.class_name} "
@@ -243,12 +291,16 @@ class LivePreviewRunner:
                 f"{result.e2e_time_ms:.1f}ms, "
                 f"RTT: {result.rtt_ms:.1f}ms)"
             )
+            image_file = self._save_inference_frame(resized)
             self._save_inference_csv(result, image_file)
+        except InferenceConnectionError as e:
+            self.inference_overlay.set_error("Connection failed")
+            self.logger.error(f"Inference failed: {e}")
         except InferenceError as e:
-            self.inference_overlay.clear()
+            self.inference_overlay.set_error("Inference failed")
             self.logger.error(f"Inference failed: {e}")
         except Exception as e:
-            self.inference_overlay.clear()
+            self.inference_overlay.set_error("Unexpected error")
             self.logger.error(f"Unexpected inference error: {e}")
         finally:
             self.inference_overlay.set_inferring(False)
@@ -256,10 +308,10 @@ class LivePreviewRunner:
                 self._inferring = False
 
     def _save_inference_frame(self, frame: np.ndarray) -> str | None:
-        """推論フレームをリサイズ+パディング後に画像ファイルとして保存する.
+        """リサイズ済みフレームを画像ファイルとして保存する.
 
         Args:
-            frame: 推論対象のフレーム.
+            frame: リサイズ+パディング済みのフレーム.
 
         Returns:
             保存されたファイル名, または保存しなかった場合は None.
@@ -269,14 +321,13 @@ class LivePreviewRunner:
             return None
 
         try:
-            processed = client.resize_frame(frame)
             inference_dir = Path(self.pipeline.output_dir) / "inference"
             inference_dir.mkdir(parents=True, exist_ok=True)
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             filename = f"infer_{timestamp}.png"
             save_path = inference_dir / filename
-            success = cv2.imwrite(str(save_path), processed)
+            success = cv2.imwrite(str(save_path), frame)
             if success:
                 self.logger.info(f"Inference frame saved: {save_path}")
                 return filename
@@ -387,7 +438,29 @@ class LivePreviewRunner:
         if self.inference_client:
             self.inference_client.close()
 
+        # カメラ設定を結果フォルダに保存 (cap.release() の前に実行)
+        self._save_camera_config()
+
         # カメラリソースの解放
         self.cap.release()
         cv2.destroyAllWindows()
         self.logger.info("Camera resource and windows have been released.")
+
+    def _save_camera_config(self) -> None:
+        """カメラ設定を結果フォルダに JSON として保存する."""
+        if self.camera_setup is None:
+            return
+
+        try:
+            output_dir = Path(self.pipeline.output_dir)
+            save_path = save_camera_config(
+                cap=self.cap,
+                output_dir=output_dir,
+                camera_index=self.camera_setup.camera_index,
+                profile_name=self.camera_setup.profile_name,
+                requested_width=self.camera_setup.requested_width,
+                requested_height=self.camera_setup.requested_height,
+            )
+            self.logger.info(f"Camera config saved: {save_path}")
+        except OSError as e:
+            self.logger.warning(f"Error saving camera config: {e}")
