@@ -57,9 +57,7 @@ def save_camera_config(
     }
 
     for name, prop_id in _CAMERA_PROPERTIES.items():
-        value = cap.get(prop_id)
-        if value != 0.0 or name in ("brightness", "exposure"):
-            config[name] = value
+        config[name] = cap.get(prop_id)
 
     save_path = output_dir / _CONFIG_FILENAME
     save_path.parent.mkdir(parents=True, exist_ok=True)
