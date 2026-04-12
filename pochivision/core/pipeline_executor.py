@@ -145,12 +145,17 @@ class PipelineExecutor:
 
         self.saver.save(image, "original")
 
-        processed_images = {"original": image.copy()}
+        # エラー発生時はプロセッサ名に対してエラー情報の dict を格納するため
+        # Any を許容する.
+        processed_images: dict[str, Any] = {"original": image.copy()}
         if self.mode == "parallel":
             for processor in self.processors:
                 try:
                     proc_start = time.time()
-                    result = processor.process(image)
+                    # parallel モードでは複数プロセッサが同一フレームを
+                    # 共有するため, in-place 変更による相互干渉を防ぐため
+                    # 各プロセッサに独立した copy を渡す.
+                    result = processor.process(image.copy())
                     proc_time = time.time() - proc_start
                     self.logger.info(
                         f"Processing time ({processor.name}): {proc_time:.3f} sec"
@@ -161,11 +166,32 @@ class PipelineExecutor:
                     self.logger.error(
                         f"Processor '{processor.name}' failed, skipping: {e}"
                     )
+                    # 失敗したプロセッサの痕跡を残して追跡可能にする.
+                    processed_images[processor.name] = {
+                        "error": True,
+                        "processor_name": processor.name,
+                        "exception": repr(e),
+                    }
 
         elif self.mode == "pipeline":
             result = image
+            pipeline_aborted = False
 
             for processor in self.processors:
+                if pipeline_aborted:
+                    # 直前のプロセッサ失敗時は後続を明示的にスキップし,
+                    # 古い `result` が次のプロセッサへ渡るのを防ぐ.
+                    self.logger.warning(
+                        f"Skipping processor '{processor.name}' "
+                        f"due to earlier pipeline failure"
+                    )
+                    processed_images[processor.name] = {
+                        "error": True,
+                        "processor_name": processor.name,
+                        "exception": "skipped_due_to_earlier_failure",
+                    }
+                    continue
+
                 try:
                     proc_start = time.time()
 
@@ -193,11 +219,26 @@ class PipelineExecutor:
                     )
                     processed_images[processor.name] = result
                 except Exception as e:
+                    # pipeline モードでは失敗時にパイプラインを中断する.
+                    # 古い `result` を次プロセッサへ渡さないことで状態不整合を防ぐ.
                     self.logger.error(
-                        f"Processor '{processor.name}' failed, skipping: {e}"
+                        f"Processor '{processor.name}' failed, "
+                        f"aborting pipeline: {e}"
                     )
+                    processed_images[processor.name] = {
+                        "error": True,
+                        "processor_name": processor.name,
+                        "exception": repr(e),
+                    }
+                    pipeline_aborted = True
 
-            self.saver.save(result, "pipeline")
+            if not pipeline_aborted:
+                self.saver.save(result, "pipeline")
+            else:
+                self.logger.warning(
+                    "Pipeline aborted due to processor failure; "
+                    "final result not saved"
+                )
 
         total_time = time.time() - start_time
         self.logger.info(f"Total processing time: {total_time:.3f} sec")
