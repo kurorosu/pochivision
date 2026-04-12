@@ -175,6 +175,48 @@ class TestCannyEdgeProcessor:
             "3-channel color image." in str(excinfo.value)
         )
 
+    def test_process_image_with_nan_values(self):
+        """NaN を含む入力が 0 にクランプされ, 正常にエッジ検出されるかテスト."""
+        image_float = (np.random.rand(100, 100) * 1000).astype(np.float32)
+        image_float[0, 0] = np.nan
+        image_float[50, 50] = np.nan
+        config = CannyEdgeProcessor.get_default_config()
+        processor = CannyEdgeProcessor(name="canny_nan", config=config)
+        processed_image = processor.process(image_float.copy())
+        assert processed_image.shape == (100, 100)
+        assert processed_image.dtype == np.uint8
+        # 出力に不正値が含まれないこと.
+        assert not np.any(np.isnan(processed_image.astype(np.float32)))
+
+    def test_process_image_with_inf_values(self):
+        """Inf を含む入力が 0 にクランプされ, 正常にエッジ検出されるかテスト."""
+        image_float = (np.random.rand(100, 100) * 1000).astype(np.float32)
+        image_float[0, 0] = np.inf
+        image_float[10, 10] = -np.inf
+        image_float[50, 50] = np.inf
+        config = CannyEdgeProcessor.get_default_config()
+        processor = CannyEdgeProcessor(name="canny_inf", config=config)
+        processed_image = processor.process(image_float.copy())
+        assert processed_image.shape == (100, 100)
+        assert processed_image.dtype == np.uint8
+        # uint8 なので範囲は [0, 255] に収まる.
+        assert processed_image.min() >= 0
+        assert processed_image.max() <= 255
+
+    def test_process_image_with_nan_and_inf_values(self):
+        """NaN と Inf 両方を含む入力が 0 にクランプされるかテスト."""
+        image_float = (np.random.rand(100, 100) * 1000).astype(np.float32)
+        image_float[0, 0] = np.nan
+        image_float[0, 1] = np.inf
+        image_float[0, 2] = -np.inf
+        config = CannyEdgeProcessor.get_default_config()
+        processor = CannyEdgeProcessor(name="canny_nan_inf", config=config)
+        processed_image = processor.process(image_float.copy())
+        assert processed_image.shape == (100, 100)
+        assert processed_image.dtype == np.uint8
+        assert processed_image.min() >= 0
+        assert processed_image.max() <= 255
+
     def test_process_image_normalize_fail(self):
         """cv2.normalize でエラーが発生するケースのテスト (例: 0次元配列)."""
         image_problematic = np.array(0, dtype=np.int32)
