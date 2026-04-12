@@ -8,7 +8,68 @@ import pytest
 
 from pochivision.core.pipeline_executor import PipelineExecutor
 from pochivision.exceptions import CameraConfigError
+from pochivision.processors import BaseProcessor
 from pochivision.processors.registry import get_processor
+
+
+class _FailingProcessor(BaseProcessor):
+    """常に例外を送出するテスト用プロセッサ."""
+
+    def process(self, image: np.ndarray) -> np.ndarray:
+        """意図的に例外を送出する."""
+        raise RuntimeError("intentional failure")
+
+    @staticmethod
+    def get_default_config() -> dict:
+        """空のデフォルト設定を返す."""
+        return {}
+
+
+class _RecordingProcessor(BaseProcessor):
+    """受け取った画像を記録するテスト用プロセッサ.
+
+    parallel モードでコピー渡しされていることを検証するために,
+    受け取った配列の id と実体を記録する.
+    """
+
+    def __init__(self, name: str, config: dict | None = None) -> None:
+        """受け取った画像リストを初期化する."""
+        super().__init__(name=name, config=config or {})
+        self.received_ids: list[int] = []
+        self.received_sums: list[int] = []
+
+    def process(self, image: np.ndarray) -> np.ndarray:
+        """受け取り画像を記録し, in-place 変更して返す."""
+        self.received_ids.append(id(image))
+        # 受け取り時点の画素合計を記録 (in-place 0 埋め前).
+        self.received_sums.append(int(image.sum()))
+        # in-place 変更: 共有されていれば他プロセッサにも影響する.
+        image[...] = 0
+        return image
+
+    @staticmethod
+    def get_default_config() -> dict:
+        """空のデフォルト設定を返す."""
+        return {}
+
+
+class _CountingProcessor(BaseProcessor):
+    """呼び出し回数を数えるテスト用プロセッサ."""
+
+    def __init__(self, name: str, config: dict | None = None) -> None:
+        """呼び出しカウンタを初期化する."""
+        super().__init__(name=name, config=config or {})
+        self.call_count = 0
+
+    def process(self, image: np.ndarray) -> np.ndarray:
+        """呼び出し回数を加算して画像をそのまま返す."""
+        self.call_count += 1
+        return image
+
+    @staticmethod
+    def get_default_config() -> dict:
+        """空のデフォルト設定を返す."""
+        return {}
 
 
 def _create_test_image(width: int = 100, height: int = 80) -> np.ndarray:
@@ -241,3 +302,82 @@ class TestPipelineExecutorRun:
         assert len(pipeline_files) == 1
         result = cv2.imread(str(pipeline_files[0]))
         assert result.shape[1] == 50
+
+
+class TestPipelineExecutorRobustness:
+    """パイプライン堅牢化 (#371, #372) のテスト."""
+
+    def test_pipeline_mode_aborts_on_failure(self, tmp_path):
+        """pipeline モードでプロセッサ失敗時に後続が呼ばれない."""
+        failing = _FailingProcessor(name="failing", config={})
+        after = _CountingProcessor(name="after", config={})
+        executor = PipelineExecutor(
+            processors=[failing, after],
+            output_dir=tmp_path,
+            mode="pipeline",
+        )
+
+        image = _create_test_image()
+        executor.run(image)
+
+        # 失敗後のプロセッサは呼ばれない (パイプライン中断).
+        assert after.call_count == 0
+        # pipeline ディレクトリは作られない, もしくは空である.
+        pipeline_dir = tmp_path / "pipeline"
+        if pipeline_dir.exists():
+            assert len(list(pipeline_dir.glob("*"))) == 0
+
+    def test_pipeline_mode_failure_does_not_save_stale_result(self, tmp_path):
+        """pipeline モードで失敗時に古い result が pipeline に保存されない."""
+        resize = get_processor("resize", {"width": 50, "preserve_aspect_ratio": False})
+        failing = _FailingProcessor(name="failing", config={})
+        executor = PipelineExecutor(
+            processors=[resize, failing],
+            output_dir=tmp_path,
+            mode="pipeline",
+        )
+
+        image = _create_test_image()
+        executor.run(image)
+
+        pipeline_dir = tmp_path / "pipeline"
+        # 直前 resize の結果が "pipeline" として保存されていないこと.
+        if pipeline_dir.exists():
+            assert len(list(pipeline_dir.glob("*"))) == 0
+
+    def test_parallel_mode_failure_does_not_stop_others(self, tmp_path):
+        """parallel モードで一つ失敗しても他は実行される."""
+        failing = _FailingProcessor(name="failing", config={})
+        after = _CountingProcessor(name="after", config={})
+        executor = PipelineExecutor(
+            processors=[failing, after],
+            output_dir=tmp_path,
+            mode="parallel",
+        )
+
+        image = _create_test_image()
+        executor.run(image)
+
+        assert after.call_count == 1
+
+    def test_parallel_mode_passes_independent_copies(self, tmp_path):
+        """parallel モードで各プロセッサに独立したコピーが渡される."""
+        rec1 = _RecordingProcessor(name="rec1", config={})
+        rec2 = _RecordingProcessor(name="rec2", config={})
+        executor = PipelineExecutor(
+            processors=[rec1, rec2],
+            output_dir=tmp_path,
+            mode="parallel",
+        )
+
+        image = _create_test_image()
+        original_sum = int(image.sum())
+        executor.run(image)
+
+        # 入力画像は外部から変更されていない.
+        assert int(image.sum()) == original_sum
+        # 2 つのプロセッサが受け取った配列は異なる id (別オブジェクト).
+        assert rec1.received_ids[0] != rec2.received_ids[0]
+        # 1 つ目が in-place で 0 埋めしても, 2 つ目は元の画素を受け取る.
+        assert rec1.received_sums[0] == original_sum
+        assert rec2.received_sums[0] == original_sum
