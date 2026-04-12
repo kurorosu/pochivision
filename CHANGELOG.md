@@ -12,7 +12,7 @@
 - 無し
 
 ### Fixed
-- 無し
+- `MaskCompositionProcessor` のマスク合成ロジックを明確化. 白領域に `target_image` を出力し 黒領域は 0 で埋めるセマンティクスに統一. 不要なカラー往復変換を削除し, shape/dtype のミスマッチ検証を追加. ([#(NA.)](https://github.com/kurorosu/pochivision/pull/(NA.)))
 
 ### Removed
 - 無し
