@@ -1,5 +1,6 @@
 """CLAHE（適応的ヒストグラム平坦化）プロセッサーのテスト."""
 
+import cv2
 import numpy as np
 import pytest
 
@@ -136,6 +137,41 @@ def test_clahe_custom_params():
     # 結果がnp.ndarrayかつuint8型であることを確認
     assert isinstance(result, np.ndarray)
     assert result.dtype == np.uint8
+
+
+def test_clahe_shape_hw1():
+    """shape (H, W, 1) の 1 チャンネル画像の CLAHE テスト."""
+    processor = CLAHEProcessor(name="clahe", config={})
+
+    # (H, W, 1) 形状のダミー画像を作成.
+    image = np.ones((100, 100, 1), dtype=np.uint8) * 128
+    image[30:70, 30:70, 0] = 200
+
+    result = processor.process(image)
+
+    # 出力は入力と同じ 3 次元形状 (H, W, 1) を保つ.
+    assert isinstance(result, np.ndarray)
+    assert result.dtype == np.uint8
+    assert result.shape == image.shape
+
+    # CLAHE 適用結果が 2D apply と同値である (squeeze して比較).
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    expected = clahe.apply(image.squeeze(axis=2))
+    assert np.array_equal(result.squeeze(axis=2), expected)
+
+
+def test_clahe_shape_hw1_matches_2d():
+    """(H, W, 1) と (H, W) の出力値が一致することを確認."""
+    processor = CLAHEProcessor(name="clahe", config={})
+
+    image_2d = np.copy(DUMMY_GRAY_IMAGE)
+    image_2d[30:70, 30:70] = 200
+    image_3d = image_2d[:, :, np.newaxis].copy()
+
+    result_2d = processor.process(image_2d)
+    result_3d = processor.process(image_3d)
+
+    assert np.array_equal(result_2d, result_3d.squeeze(axis=2))
 
 
 def test_clahe_invalid_color_mode():

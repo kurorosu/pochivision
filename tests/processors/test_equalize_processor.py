@@ -1,5 +1,6 @@
 """ヒストグラム平坦化プロセッサーのテスト."""
 
+import cv2
 import numpy as np
 import pytest
 
@@ -111,6 +112,43 @@ def test_equalize_color_bgr_mode():
 
     # ヒストグラム平坦化により値が変化している
     assert not np.array_equal(result, image)
+
+
+def test_equalize_shape_hw1():
+    """shape (H, W, 1) の 1 チャンネル画像の平坦化テスト."""
+    processor = EqualizeProcessor(name="equalize", config={})
+
+    # (H, W, 1) 形状のダミー画像を作成.
+    image = np.ones((100, 100, 1), dtype=np.uint8) * 128
+    image[30:70, 30:70, 0] = 200
+
+    result = processor.process(image)
+
+    # 出力は入力と同じ 3 次元形状 (H, W, 1) を保つ.
+    assert isinstance(result, np.ndarray)
+    assert result.dtype == np.uint8
+    assert result.shape == image.shape
+
+    # ヒストグラム平坦化により値が変化している.
+    assert not np.array_equal(result, image)
+
+    # 2D equalize と同値である (squeeze して比較).
+    expected = cv2.equalizeHist(image.squeeze(axis=2))
+    assert np.array_equal(result.squeeze(axis=2), expected)
+
+
+def test_equalize_shape_hw1_matches_2d():
+    """(H, W, 1) と (H, W) の出力値が一致することを確認."""
+    processor = EqualizeProcessor(name="equalize", config={})
+
+    image_2d = np.copy(DUMMY_GRAY_IMAGE)
+    image_2d[30:70, 30:70] = 200
+    image_3d = image_2d[:, :, np.newaxis].copy()
+
+    result_2d = processor.process(image_2d)
+    result_3d = processor.process(image_3d)
+
+    assert np.array_equal(result_2d, result_3d.squeeze(axis=2))
 
 
 def test_equalize_invalid_color_mode():
