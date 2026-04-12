@@ -12,7 +12,7 @@
 - 無し
 
 ### Fixed
-- 無し
+- `GaussianBlurProcessor` / `MedianBlurProcessor` のカーネルサイズに対する奇数チェックを追加. 偶数・0 以下・1 を設定した場合, 実行時の `cv2.error` ではなく起動時に `ProcessorValidationError` を投げるよう修正. ([#(NA.)](https://github.com/kurorosu/pochivision/pull/))
 
 ### Removed
 - 無し

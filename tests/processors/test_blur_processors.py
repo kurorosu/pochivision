@@ -126,6 +126,57 @@ def test_bilateral_filter_valid():
     assert result.dtype == np.uint8
 
 
+# GaussianBlur kernel_size バリデーション
+@pytest.mark.parametrize(
+    "kernel_size",
+    [[3, 3], [5, 5], [15, 15], (3, 3)],
+)
+def test_gaussian_blur_valid_kernel_size(kernel_size):
+    """GaussianBlur: 3 以上の奇数ペアで初期化が通ることを確認."""
+    config = {"kernel_size": kernel_size, "sigma": 1}
+    processor = GaussianBlurProcessor(name="gaussian_blur_ok", config=config)
+    assert processor.kernel_size == (kernel_size[0], kernel_size[1])
+
+
+@pytest.mark.parametrize(
+    "kernel_size",
+    [
+        [4, 4],  # 偶数
+        [3, 4],  # 片方偶数
+        [1, 1],  # 3 未満
+        [0, 0],  # 0
+        [-1, 3],  # 負数
+        [3],  # 長さ不正
+        5,  # list/tuple でない
+    ],
+)
+def test_gaussian_blur_invalid_kernel_size(kernel_size):
+    """GaussianBlur: 偶数・0・負数・長さ不正で ProcessorValidationError が発生."""
+    config = {"kernel_size": kernel_size, "sigma": 1}
+    with pytest.raises(ProcessorValidationError, match="kernel_size"):
+        GaussianBlurProcessor(name="gaussian_blur_ng", config=config)
+
+
+# MedianBlur kernel_size バリデーション
+@pytest.mark.parametrize("kernel_size", [3, 5, 15])
+def test_median_blur_valid_kernel_size(kernel_size):
+    """MedianBlur: 3 以上の奇数スカラーで初期化が通ることを確認."""
+    config = {"kernel_size": kernel_size}
+    processor = MedianBlurProcessor(name="median_blur_ok", config=config)
+    assert processor.kernel_size == kernel_size
+
+
+@pytest.mark.parametrize(
+    "kernel_size",
+    [4, 0, 1, -1, -3, [3, 3]],
+)
+def test_median_blur_invalid_kernel_size(kernel_size):
+    """MedianBlur: 偶数・0・1・負数・非 int で ProcessorValidationError が発生."""
+    config = {"kernel_size": kernel_size}
+    with pytest.raises(ProcessorValidationError, match="kernel_size"):
+        MedianBlurProcessor(name="median_blur_ng", config=config)
+
+
 # MotionBlur
 def test_motion_blur_valid():
     """モーションブラーの基本機能をテスト."""
