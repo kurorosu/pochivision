@@ -14,8 +14,12 @@
 ### Fixed
 - `GaussianBlurProcessor` / `MedianBlurProcessor` のカーネルサイズに対する奇数チェックを追加. 偶数・0 以下・1 を設定した場合, 実行時の `cv2.error` ではなく起動時に `ProcessorValidationError` を投げるよう修正. ([#384](https://github.com/kurorosu/pochivision/pull/384))
 - `MaskCompositionProcessor` のマスク合成ロジックを明確化. 白領域に `target_image` を出力し 黒領域は 0 で埋めるセマンティクスに統一. 不要なカラー往復変換を削除し, shape/dtype のミスマッチ検証を追加. ([#385](https://github.com/kurorosu/pochivision/pull/385))
-- pipeline モードでプロセッサが失敗した際に古い `result` が後続プロセッサへ渡され状態不整合が発生する問題を修正. 失敗時はパイプラインを中断し, `processed_images` にエラー情報を記録する. (NA.)
-- parallel モードで複数プロセッサが同一 numpy 配列を共有し `ImageSaver` の `file_naming_manager` も非スレッドセーフだった問題を修正. 各プロセッサへ `image.copy()` を渡し, `ImageSaver` に `threading.Lock` を追加. (NA.)
+- pipeline モードでプロセッサが失敗した際に古い `result` が後続プロセッサへ渡され状態不整合が発生する問題を修正. 失敗時はパイプラインを中断し, `processed_images` にエラー情報を記録する. ([#386](https://github.com/kurorosu/pochivision/pull/386))
+- parallel モードで複数プロセッサが同一 numpy 配列を共有し `ImageSaver` の `file_naming_manager` も非スレッドセーフだった問題を修正. 各プロセッサへ `image.copy()` を渡し, `ImageSaver` に `threading.Lock` を追加. ([#386](https://github.com/kurorosu/pochivision/pull/386))
+- `CannyEdgeProcessor` で NaN のみフィルタされ Inf が uint8 キャスト時に不正値となる問題を修正. `np.nan_to_num` に `posinf=0.0, neginf=0.0` を追加し, 正規化バッファを `float32` 化してメモリを削減. ([#387](https://github.com/kurorosu/pochivision/pull/387))
+- adaptive 2値化の `block_size` が奇数かつ 3 以上であることを起動時に検証するよう修正. 違反時は `ProcessorValidationError` を送出. `c` を `int` にキャスト. ([#388](https://github.com/kurorosu/pochivision/pull/388))
+- `EqualizeProcessor` / `CLAHEProcessor` で shape `(H, W, 1)` 画像の処理を修正. `ndim==2` / `shape[2]==1` / カラー の 3 分岐を明示化し, 不要な `cvtColor(GRAY2BGR)` を削除. ([#389](https://github.com/kurorosu/pochivision/pull/389))
+- `ResizeProcessor` のアスペクト比保持モードで `int()` 切り捨てによる 1px ずれを修正. `int(round(...))` で四捨五入に変更. ([#390](https://github.com/kurorosu/pochivision/pull/390))
 
 ### Removed
 - 無し

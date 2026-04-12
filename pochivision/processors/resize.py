@@ -92,10 +92,12 @@ class ResizeProcessor(BaseProcessor):
 
         if self.aspect_ratio_mode == "width" and self.width is not None:
             target_w = self.width
-            target_h = int(target_w / aspect_ratio)
+            # 端数は四捨五入して 1px ずれを抑制
+            target_h = int(round(target_w / aspect_ratio))
         elif self.aspect_ratio_mode == "height" and self.height is not None:
             target_h = self.height
-            target_w = int(target_h * aspect_ratio)
+            # 端数は四捨五入して 1px ずれを抑制
+            target_w = int(round(target_h * aspect_ratio))
         else:
             # どちらも指定されていない場合は元のサイズを使用
             target_w = self.width if self.width is not None else orig_width

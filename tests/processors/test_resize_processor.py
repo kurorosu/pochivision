@@ -77,6 +77,51 @@ def test_resize_height_only():
     assert result.dtype == np.uint8
 
 
+def test_resize_preserve_aspect_ratio_width_rounding():
+    """幅基準のアスペクト比保持で端数が四捨五入されることを検証.
+
+    元画像 1599x900 を width=800 で縮小した場合,
+    高さは 800 * 900 / 1599 = 450.2814... となり, 切り捨て (int) でも四捨五入でも 450.
+    差が出るケースとして 1601x900 -> height=450 を別テストで検証する.
+
+    ここでは端数 .5 以上のケースを直接確認する.
+    元画像 1000x333 を width=600 で縮小すると
+    target_h = 600 * 333 / 1000 = 199.8 -> 切り捨て 199, 四捨五入 200.
+    """
+    img = np.ones((333, 1000, 3), dtype=np.uint8) * 100
+    proc = ResizeProcessor(
+        name="resize",
+        config={
+            "width": 600,
+            "preserve_aspect_ratio": True,
+            "aspect_ratio_mode": "width",
+        },
+    )
+    result = proc.process(img)
+    # 600 * 333 / 1000 = 199.8 -> round -> 200 (切り捨てだと 199)
+    assert result.shape == (200, 600, 3)
+
+
+def test_resize_preserve_aspect_ratio_height_rounding():
+    """高さ基準のアスペクト比保持で端数が四捨五入されることを検証.
+
+    元画像 1599x900 を height=450 で縮小した場合,
+    幅は 450 * 1599 / 900 = 799.5 となり, 切り捨てだと 799, 四捨五入だと 800 となる.
+    """
+    img = np.ones((900, 1599, 3), dtype=np.uint8) * 100
+    proc = ResizeProcessor(
+        name="resize",
+        config={
+            "height": 450,
+            "preserve_aspect_ratio": True,
+            "aspect_ratio_mode": "height",
+        },
+    )
+    result = proc.process(img)
+    # 450 * 1599 / 900 = 799.5 -> round -> 800 (切り捨てなら 799)
+    assert result.shape == (450, 800, 3)
+
+
 def test_resize_validation_error():
     """パラメータバリデーションのテスト.
 
