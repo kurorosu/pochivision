@@ -19,7 +19,7 @@
 - `CannyEdgeProcessor` で NaN のみフィルタされ Inf が uint8 キャスト時に不正値となる問題を修正. `np.nan_to_num` に `posinf=0.0, neginf=0.0` を追加し, 正規化バッファを `float32` 化してメモリを削減. ([#387](https://github.com/kurorosu/pochivision/pull/387))
 - adaptive 2値化の `block_size` が奇数かつ 3 以上であることを起動時に検証するよう修正. 違反時は `ProcessorValidationError` を送出. `c` を `int` にキャスト. ([#388](https://github.com/kurorosu/pochivision/pull/388))
 - `EqualizeProcessor` / `CLAHEProcessor` で shape `(H, W, 1)` 画像の処理を修正. `ndim==2` / `shape[2]==1` / カラー の 3 分岐を明示化し, 不要な `cvtColor(GRAY2BGR)` を削除. ([#389](https://github.com/kurorosu/pochivision/pull/389))
-- `ResizeProcessor` のアスペクト比保持モードで `int()` 切り捨てによる 1px ずれを修正. `int(round(...))` で四捨五入に変更. (NA.)
+- `ResizeProcessor` のアスペクト比保持モードで `int()` 切り捨てによる 1px ずれを修正. `int(round(...))` で四捨五入に変更. ([#390](https://github.com/kurorosu/pochivision/pull/390))
 
 ### Removed
 - 無し
