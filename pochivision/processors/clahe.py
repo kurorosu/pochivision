@@ -77,10 +77,14 @@ class CLAHEProcessor(BaseProcessor):
         self.validator.validate_image(image)
 
         try:
-            if len(image.shape) == 2:
+            # グレースケール画像 (H, W) はそのまま適用.
+            if image.ndim == 2:
                 return self.clahe.apply(image)
-            if image.shape[2] == 1:
-                return self.clahe.apply(image.squeeze(axis=2))
+            # shape (H, W, 1) の 1 チャンネル画像は squeeze して適用し,
+            # 入力と同じ 3 次元形状で返す.
+            if image.ndim == 3 and image.shape[2] == 1:
+                clahe_img = self.clahe.apply(image.squeeze(axis=2))
+                return clahe_img[:, :, np.newaxis]
 
             # カラー画像の処理
             if self.color_mode == "gray":
