@@ -20,8 +20,19 @@ from pydantic import (
 class GaussianBlurParams(BaseModel):
     """ガウシアンブラーのパラメータスキーマ."""
 
-    kernel_size: list[StrictInt]
+    kernel_size: list[StrictInt] = Field(min_length=2, max_length=2)
     sigma: StrictFloat = Field(ge=0)
+
+    @field_validator("kernel_size")
+    @classmethod
+    def kernel_size_must_be_odd(cls, v: list[int]) -> list[int]:
+        """kernel_size の各要素は 3 以上の奇数でなければならない."""
+        for item in v:
+            if item < 3 or item % 2 == 0:
+                raise ValueError(
+                    f"kernel_size elements must be odd integers >= 3, got {v}"
+                )
+        return v
 
 
 class AverageBlurParams(BaseModel):
@@ -33,7 +44,15 @@ class AverageBlurParams(BaseModel):
 class MedianBlurParams(BaseModel):
     """メディアンブラーのパラメータスキーマ."""
 
-    kernel_size: StrictInt
+    kernel_size: StrictInt = Field(ge=3)
+
+    @field_validator("kernel_size")
+    @classmethod
+    def kernel_size_must_be_odd(cls, v: int) -> int:
+        """kernel_size は奇数でなければならない."""
+        if v % 2 == 0:
+            raise ValueError(f"kernel_size must be odd, got {v}")
+        return v
 
 
 class GrayscaleParams(BaseModel):
