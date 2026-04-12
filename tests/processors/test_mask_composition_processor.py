@@ -53,29 +53,40 @@ class TestMaskCompositionProcessorProcess:
         with pytest.raises(ProcessorRuntimeError, match="not set"):
             processor.process(dummy_binary_image)
 
-    def test_process_with_white_pixels(self, dummy_binary_image: np.ndarray):
-        """白ピクセル部分をターゲット画像で置き換える."""
+    def test_process_with_white_pixels(self):
+        """白領域に target_image を出力し 黒領域は 0 で埋める."""
         processor = MaskCompositionProcessor(name="mask_composition", config={})
-        target = np.full((100, 100, 3), 128, dtype=np.uint8)
+        mask = np.zeros((50, 50), dtype=np.uint8)
+        mask[10:40, 10:40] = 255  # 中央に白領域
+        target = np.full((50, 50, 3), 128, dtype=np.uint8)
         processor.set_target_image(target)
 
-        result = processor.process(dummy_binary_image)
+        result = processor.process(mask)
 
-        assert result.shape == (100, 100, 3)
+        assert result.shape == (50, 50, 3)
         assert result.dtype == np.uint8
+        # 白領域は target の値 (128)
+        assert np.all(result[20, 20] == 128)
+        # 黒領域は 0
+        assert np.all(result[0, 0] == 0)
 
-    def test_process_with_black_pixels(self, dummy_binary_image: np.ndarray):
-        """use_white_pixels=False で黒ピクセル部分を置き換える."""
+    def test_process_with_black_pixels(self):
+        """use_white_pixels=False で黒領域に target_image が出力される."""
         processor = MaskCompositionProcessor(
             name="mask_composition", config={"use_white_pixels": False}
         )
-        target = np.full((100, 100, 3), 128, dtype=np.uint8)
+        mask = np.zeros((50, 50), dtype=np.uint8)
+        mask[10:40, 10:40] = 255  # 中央に白領域
+        target = np.full((50, 50, 3), 128, dtype=np.uint8)
         processor.set_target_image(target)
 
-        result = processor.process(dummy_binary_image)
+        result = processor.process(mask)
 
-        assert result.shape == (100, 100, 3)
+        assert result.shape == (50, 50, 3)
         assert result.dtype == np.uint8
+        # 反転により 元の白領域は 0, 元の黒領域に target (128) が出力
+        assert np.all(result[20, 20] == 0)
+        assert np.all(result[0, 0] == 128)
 
     def test_process_with_color_binary_mask(self, dummy_binary_color_image: np.ndarray):
         """カラー2値画像をマスクとして使用できる."""
@@ -128,6 +139,16 @@ class TestMaskCompositionProcessorProcess:
         non_binary = np.full((100, 100), 100, dtype=np.uint8)
         with pytest.raises(ProcessorValidationError, match="binary"):
             processor.process(non_binary)
+
+    def test_process_dtype_mismatch_raises(
+        self, processor: MaskCompositionProcessor, dummy_binary_image: np.ndarray
+    ):
+        """target_image の dtype が uint8 でない場合に ProcessorValidationError."""
+        # float 型の target_image は uint8 ではないため不整合
+        target_float = np.full((100, 100, 3), 0.5, dtype=np.float32)
+        processor.set_target_image(target_float)
+        with pytest.raises(ProcessorValidationError, match="uint8"):
+            processor.process(dummy_binary_image)
 
 
 class TestMaskCompositionProcessorPipelineMode:
