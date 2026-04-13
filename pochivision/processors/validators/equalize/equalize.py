@@ -17,8 +17,32 @@ class EqualizeInputValidator(BaseValidator):
 
         Args:
             config (dict[str, Any] | None, optional): 設定パラメータ. デフォルトはNone.
+
+        Raises:
+            ProcessorValidationError: 設定が不正な場合.
         """
         self.config = config or {}
+        self.validate_config(self.config)
+
+    def validate_config(self, config: dict[str, Any]) -> None:
+        """
+        設定のバリデーションを実行する.
+
+        ``color_mode`` は ``"gray"`` , ``"lab"`` , ``"bgr"`` のいずれかでなければならない.
+
+        Args:
+            config (dict[str, Any]): バリデーション対象の設定辞書.
+
+        Raises:
+            ProcessorValidationError: ``color_mode`` が不正な場合.
+        """
+        if "color_mode" not in config or config["color_mode"] is None:
+            return
+        color_mode = config["color_mode"]
+        if color_mode not in ("gray", "lab", "bgr"):
+            raise ProcessorValidationError(
+                "color_mode must be one of 'gray', 'lab', 'bgr', " f"got {color_mode!r}"
+            )
 
     def validate_image(self, image: np.ndarray) -> None:
         """

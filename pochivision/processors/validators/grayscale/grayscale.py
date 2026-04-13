@@ -19,6 +19,18 @@ class GrayscaleValidator(BaseValidator):
             config (dict[str, Any]): バリデーション対象の設定辞書.
         """
         self.config = config
+        self.validate_config(config)
+
+    def validate_config(self, config: dict[str, Any]) -> None:
+        """
+        設定のバリデーションを実行する.
+
+        グレースケール変換はパラメータを持たないため検証不要.
+
+        Args:
+            config (dict[str, Any]): バリデーション対象の設定辞書.
+        """
+        return None
 
     def validate_image(self, image: np.ndarray) -> None:
         """

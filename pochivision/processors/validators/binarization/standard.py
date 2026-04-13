@@ -1,5 +1,7 @@
 """標準2値化バリデータの実装モジュール."""
 
+from typing import Any
+
 import numpy as np
 
 from pochivision.exceptions import ProcessorValidationError
@@ -23,8 +25,36 @@ class StandardBinarizationValidator(BaseValidator):
 
         Args:
             config (dict): バリデーション対象の設定辞書.
+
+        Raises:
+            ProcessorValidationError: 設定が不正な場合.
         """
         self.config = config
+        self.validate_config(dict(config))
+
+    def validate_config(self, config: dict[str, Any]) -> None:
+        """
+        設定のバリデーションを実行する.
+
+        ``threshold`` は 0 以上 255 以下の int でなければならない.
+
+        Args:
+            config (dict[str, Any]): バリデーション対象の設定辞書.
+
+        Raises:
+            ProcessorValidationError: ``threshold`` が不正な場合.
+        """
+        if "threshold" not in config:
+            return
+        threshold = config["threshold"]
+        if not isinstance(threshold, int) or isinstance(threshold, bool):
+            raise ProcessorValidationError(
+                f"threshold must be an int, got {threshold!r}"
+            )
+        if threshold < 0 or threshold > 255:
+            raise ProcessorValidationError(
+                f"threshold must be in [0, 255], got {threshold}"
+            )
 
     def validate_image(self, image: np.ndarray) -> None:
         """

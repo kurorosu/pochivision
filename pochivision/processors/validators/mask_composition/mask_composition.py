@@ -18,8 +18,35 @@ class MaskCompositionValidator(BaseValidator):
 
         Args:
             config (dict[str, Any]): 設定パラメータ.
+
+        Raises:
+            ProcessorValidationError: 設定が不正な場合.
         """
         self.config = config
+        self.validate_config(config)
+
+    def validate_config(self, config: dict[str, Any]) -> None:
+        """
+        設定のバリデーションを実行する.
+
+        ``crop_margin`` は 0 以上の int でなければならない.
+
+        Args:
+            config (dict[str, Any]): バリデーション対象の設定辞書.
+
+        Raises:
+            ProcessorValidationError: ``crop_margin`` が不正な場合.
+        """
+        if "crop_margin" in config and config["crop_margin"] is not None:
+            crop_margin = config["crop_margin"]
+            if not isinstance(crop_margin, int) or isinstance(crop_margin, bool):
+                raise ProcessorValidationError(
+                    f"crop_margin must be an int, got {crop_margin!r}"
+                )
+            if crop_margin < 0:
+                raise ProcessorValidationError(
+                    f"crop_margin must be >= 0, got {crop_margin}"
+                )
 
     def validate_image(self, image: np.ndarray) -> None:
         """

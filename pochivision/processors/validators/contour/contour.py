@@ -18,8 +18,47 @@ class ContourValidator(BaseValidator):
 
         Args:
             config (dict[str, Any]): バリデーション対象の設定辞書.
+
+        Raises:
+            ProcessorValidationError: 設定が不正な場合.
         """
         self.config = config
+        self.validate_config(config)
+
+    def validate_config(self, config: dict[str, Any]) -> None:
+        """
+        設定のバリデーションを実行する.
+
+        ``min_area`` および ``contour_rank`` は 0 以上の int,
+        ``retrieval_mode`` , ``approximation_method`` , ``select_mode`` は
+        許容される文字列のいずれかでなければならない.
+
+        Args:
+            config (dict[str, Any]): バリデーション対象の設定辞書.
+
+        Raises:
+            ProcessorValidationError: 設定が不正な場合.
+        """
+        for key in ("min_area", "contour_rank"):
+            if key in config and config[key] is not None:
+                value = config[key]
+                if not isinstance(value, int) or isinstance(value, bool):
+                    raise ProcessorValidationError(
+                        f"{key} must be an int, got {value!r}"
+                    )
+                if value < 0:
+                    raise ProcessorValidationError(f"{key} must be >= 0, got {value}")
+        allowed = {
+            "retrieval_mode": ("external", "list", "ccomp", "tree", "floodfill"),
+            "approximation_method": ("none", "simple", "tc89_l1", "tc89_kcos"),
+            "select_mode": ("rank", "all"),
+        }
+        for key, values in allowed.items():
+            if key in config and config[key] is not None:
+                if config[key] not in values:
+                    raise ProcessorValidationError(
+                        f"{key} must be one of {values}, got {config[key]!r}"
+                    )
 
     def is_binary_image(self, image: np.ndarray) -> bool:
         """

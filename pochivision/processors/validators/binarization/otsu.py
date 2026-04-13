@@ -1,5 +1,7 @@
 """大津の2値化バリデータの実装モジュール."""
 
+from typing import Any
+
 import numpy as np
 
 from pochivision.exceptions import ProcessorValidationError
@@ -25,6 +27,18 @@ class OtsuBinarizationValidator(BaseValidator):
             config (dict[str, int]): バリデーション対象の設定辞書.
         """
         self.config = config
+        self.validate_config(dict(config))
+
+    def validate_config(self, config: dict[str, Any]) -> None:
+        """
+        設定のバリデーションを実行する.
+
+        大津の2値化はパラメータを持たないため検証不要.
+
+        Args:
+            config (dict[str, Any]): バリデーション対象の設定辞書.
+        """
+        return None
 
     def validate_image(self, image: np.ndarray) -> None:
         """

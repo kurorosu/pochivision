@@ -59,6 +59,20 @@ class GaussianAdaptiveBinarizationValidator(BaseValidator):
             ProcessorValidationError: ``block_size`` が奇数かつ 3 以上でない場合.
         """
         self.config = config
+        self.validate_config(config)
+
+    def validate_config(self, config: dict[str, Any]) -> None:
+        """
+        設定のバリデーションを実行する.
+
+        ``block_size`` は ``int`` 型かつ 3 以上の奇数でなければならない.
+
+        Args:
+            config (dict[str, Any]): バリデーション対象の設定辞書.
+
+        Raises:
+            ProcessorValidationError: ``block_size`` が不正な場合.
+        """
         _validate_adaptive_block_size(config, "GaussianAdaptiveBinarization")
 
     def validate_image(self, image: np.ndarray) -> None:
@@ -102,6 +116,20 @@ class MeanAdaptiveBinarizationValidator(BaseValidator):
             ProcessorValidationError: ``block_size`` が奇数かつ 3 以上でない場合.
         """
         self.config = config
+        self.validate_config(config)
+
+    def validate_config(self, config: dict[str, Any]) -> None:
+        """
+        設定のバリデーションを実行する.
+
+        ``block_size`` は ``int`` 型かつ 3 以上の奇数でなければならない.
+
+        Args:
+            config (dict[str, Any]): バリデーション対象の設定辞書.
+
+        Raises:
+            ProcessorValidationError: ``block_size`` が不正な場合.
+        """
         _validate_adaptive_block_size(config, "MeanAdaptiveBinarization")
 
     def validate_image(self, image: np.ndarray) -> None:

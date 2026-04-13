@@ -17,8 +17,23 @@ class BilateralFilterValidator(BaseValidator):
 
         Args:
             config (dict): バリデーション対象の設定辞書.
+
+        Raises:
+            ProcessorValidationError: 設定が不正な場合.
         """
         self.config = config
+        self.validate_config(config)
+
+    def validate_config(self, config: dict[str, Any]) -> None:
+        """
+        設定のバリデーションを実行する.
+
+        型チェックは pydantic スキーマに委譲しているため, ここでは追加検証を行わない.
+
+        Args:
+            config (dict[str, Any]): バリデーション対象の設定辞書.
+        """
+        return None
 
     def validate_image(self, image: np.ndarray) -> None:
         """

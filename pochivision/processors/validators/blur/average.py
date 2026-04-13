@@ -17,8 +17,41 @@ class AverageBlurValidator(BaseValidator):
 
         Args:
             config (dict): バリデーション対象の設定辞書.
+
+        Raises:
+            ProcessorValidationError: 設定が不正な場合.
         """
         self.config = config
+        self.validate_config(config)
+
+    def validate_config(self, config: dict[str, Any]) -> None:
+        """
+        設定のバリデーションを実行する.
+
+        kernel_size は長さ 2 の list/tuple で, 両要素とも 1 以上の int でなければならない.
+
+        Args:
+            config (dict[str, Any]): バリデーション対象の設定辞書.
+
+        Raises:
+            ProcessorValidationError: kernel_size が不正な場合.
+        """
+        if "kernel_size" not in config:
+            return
+        kernel_size = config["kernel_size"]
+        if not isinstance(kernel_size, (list, tuple)) or len(kernel_size) != 2:
+            raise ProcessorValidationError(
+                f"kernel_size must be a list/tuple of length 2, got {kernel_size!r}"
+            )
+        for v in kernel_size:
+            if not isinstance(v, int) or isinstance(v, bool):
+                raise ProcessorValidationError(
+                    f"kernel_size elements must be int, got {v!r}"
+                )
+            if v < 1:
+                raise ProcessorValidationError(
+                    f"kernel_size elements must be >= 1, got {kernel_size!r}"
+                )
 
     def validate_image(self, image: np.ndarray) -> None:
         """
