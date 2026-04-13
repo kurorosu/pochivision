@@ -24,6 +24,13 @@ class CLAHEProcessor(BaseProcessor):
     - 'lab': LAB色空間に変換して輝度（L）チャンネルのみを平坦化
     - 'bgr': BGR各チャンネルを個別に平坦化
 
+    Note:
+        OpenCV の CLAHE オブジェクトは `__init__` 時に `cv2.createCLAHE()` で生成してキャッシュしている.
+        他の多くのプロセッサは `process()` 呼び出しごとに OpenCV 関数を呼ぶため属性の書き換えで
+        パラメータ変更が反映されるが, 本プロセッサはキャッシュ済みオブジェクトが使われるため
+        `clip_limit` / `tile_grid_size` 属性を書き換えても反映されない. 動的な変更には
+        `update_params()` を呼び出し内部オブジェクトを再生成する必要がある.
+
     登録名:
         "clahe"
 
