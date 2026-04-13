@@ -29,6 +29,32 @@ def test_grayscale_already_grayscale():
 
     assert result.ndim == 2
     assert result.shape == (10, 10)
+    # 早期リターンにより同一オブジェクトが返されること (冗長変換が発生しない)
+    assert result is gray_image
+
+
+def test_grayscale_already_grayscale_3d_single_channel():
+    """3 次元 1 チャンネル画像は 2 次元グレースケールに整形されて返される."""
+    processor = GrayscaleProcessor(name="grayscale", config={})
+    gray_image = np.ones((10, 10, 1), dtype=np.uint8) * 100
+    result = processor.process(gray_image)
+
+    assert result.ndim == 2
+    assert result.shape == (10, 10)
+    assert result.dtype == np.uint8
+    # 値が保持されていること
+    assert np.array_equal(result, gray_image.squeeze(axis=2))
+
+
+def test_grayscale_double_apply_is_idempotent():
+    """grayscale を 2 回適用しても例外にならず同じ結果を返す."""
+    processor = GrayscaleProcessor(name="grayscale", config={})
+    first = processor.process(DUMMY_COLOR)
+    second = processor.process(first)
+
+    assert second.ndim == 2
+    assert second.shape == (10, 10)
+    assert np.array_equal(first, second)
 
 
 def test_grayscale_empty_image():
