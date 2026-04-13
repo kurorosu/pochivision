@@ -10,6 +10,8 @@ from pochivision.processors.validators.base import BaseValidator
 class ResizeConfigValidator(BaseValidator):
     """リサイズプロセッサー用のバリデータ."""
 
+    processor_name = "resize"
+
     def __init__(self, config: dict[str, Any]) -> None:
         """
         ResizeConfigValidatorのコンストラクタ.

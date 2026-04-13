@@ -172,7 +172,7 @@ class TestCannyEdgeProcessor:
             processor.process(image)
         assert (
             "Input image for CannyEdgeProcessor must be 2D grayscale or "
-            "3-channel color image." in str(excinfo.value)
+            "3-channel color image" in str(excinfo.value)
         )
 
     def test_process_image_with_nan_values(self):
@@ -226,5 +226,5 @@ class TestCannyEdgeProcessor:
             processor.process(image_problematic)
         assert (
             "Input image for CannyEdgeProcessor must be 2D grayscale or "
-            "3-channel color image." in str(excinfo.value)
+            "3-channel color image" in str(excinfo.value)
         )

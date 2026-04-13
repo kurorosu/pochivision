@@ -17,6 +17,8 @@ class StandardBinarizationValidator(BaseValidator):
         ProcessorValidationError: 不正なパラメータが検出された場合.
     """
 
+    processor_name = "std_bin"
+
     def __init__(self, config: dict[str, int]) -> None:
         """
         StandardBinarizationValidatorのコンストラクタ.
@@ -44,6 +46,9 @@ class StandardBinarizationValidator(BaseValidator):
         # to_grayscale 内部でさらに詳細なチェックが行われる。
         if not ((image.ndim == 2) or (image.ndim == 3 and image.shape[2] in (3, 4))):
             raise ProcessorValidationError(
-                "Input image for StandardBinarization must be 2D grayscale or "
-                "3/4 channel color image (BGR/BGRA)."
+                self._format_error(
+                    "Input image for StandardBinarization must be 2D grayscale or "
+                    "3/4 channel color image (BGR/BGRA), "
+                    f"got ndim={image.ndim} (shape={image.shape})"
+                )
             )

@@ -11,6 +11,8 @@ from pochivision.processors.validators.base import BaseValidator
 class EqualizeInputValidator(BaseValidator):
     """ヒストグラム平坦化入力用のバリデータ."""
 
+    processor_name = "equalize"
+
     def __init__(self, config: dict[str, Any] | None = None) -> None:
         """
         EqualizeInputValidatorのコンストラクタ.
@@ -36,5 +38,7 @@ class EqualizeInputValidator(BaseValidator):
         # 画像データ型チェック
         if image.dtype != np.uint8:
             raise ProcessorValidationError(
-                f"Image data type must be np.uint8, got {image.dtype}"
+                self._format_error(
+                    f"Image data type must be np.uint8, got {image.dtype}"
+                )
             )

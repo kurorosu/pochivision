@@ -12,6 +12,8 @@ from pochivision.utils.image import to_grayscale
 class ContourValidator(BaseValidator):
     """輪郭抽出処理のためのバリデータ."""
 
+    processor_name = "contour"
+
     def __init__(self, config: dict[str, Any]) -> None:
         """
         ContourValidatorのコンストラクタ.
@@ -65,9 +67,13 @@ class ContourValidator(BaseValidator):
             has_valid_channels = image.shape[2] in (1, 3, 4)
 
         if not (is_2d or has_valid_channels):
-            msg_part1 = "Input image for ContourProcessor must be 2D grayscale "
-            msg_part2 = "or 3/4 channel color image."
-            raise ProcessorValidationError(msg_part1 + msg_part2)
+            raise ProcessorValidationError(
+                self._format_error(
+                    "Input image for ContourProcessor must be 2D grayscale "
+                    "or 3/4 channel color image, "
+                    f"got ndim={image.ndim} (shape={image.shape})"
+                )
+            )
 
     def validate_image_for_contour(self, image: np.ndarray) -> tuple[bool, str]:
         """
@@ -88,8 +94,10 @@ class ContourValidator(BaseValidator):
             if not self.is_binary_image(image):
                 return (
                     False,
-                    "Input image is not binary. Contour detection "
-                    "requires a binary image.",
+                    self._format_error(
+                        "Input image is not binary. Contour detection "
+                        "requires a binary image."
+                    ),
                 )
 
             return (True, "")
