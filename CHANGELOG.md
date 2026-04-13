@@ -9,6 +9,20 @@
 - 無し
 
 ### Changed
+- 無し
+
+### Fixed
+- 無し
+
+### Removed
+- 無し
+
+## [0.7.0] - 2026-04-13
+
+### Added
+- 無し
+
+### Changed
 - `GrayscaleProcessor` で既にグレースケール化された入力 (`ndim == 2` / `shape[2] == 1`) を早期リターンし, 冗長な `cv2.cvtColor` 呼び出しを回避. ([#391](https://github.com/kurorosu/pochivision/pull/391))
 - `ContourProcessor` で `cv2.findContours` の階層情報 (`hierarchy`) を `last_contours` / `last_hierarchy` として保持. OpenCV 3.x/4.x 両対応の `find_contours_compat` ラッパーを追加. ([#392](https://github.com/kurorosu/pochivision/pull/392))
 - `CLAHEProcessor` に `update_params(clip_limit, tile_grid_size)` を追加. 内部 CLAHE オブジェクトを再生成することで動的なパラメータ変更に対応. ([#393](https://github.com/kurorosu/pochivision/pull/393))
@@ -25,22 +39,6 @@
 - adaptive 2値化の `block_size` が奇数かつ 3 以上であることを起動時に検証するよう修正. 違反時は `ProcessorValidationError` を送出. `c` を `int` にキャスト. ([#388](https://github.com/kurorosu/pochivision/pull/388))
 - `EqualizeProcessor` / `CLAHEProcessor` で shape `(H, W, 1)` 画像の処理を修正. `ndim==2` / `shape[2]==1` / カラー の 3 分岐を明示化し, 不要な `cvtColor(GRAY2BGR)` を削除. ([#389](https://github.com/kurorosu/pochivision/pull/389))
 - `ResizeProcessor` のアスペクト比保持モードで `int()` 切り捨てによる 1px ずれを修正. `int(round(...))` で四捨五入に変更. ([#390](https://github.com/kurorosu/pochivision/pull/390))
-
-### Removed
-- 無し
-
-## [0.6.0] - 2026-04-07
-
-### Added
-- OS 自動検出によるカメラバックエンド自動選択機能を追加. `config.json` で `backend` 未指定時に Windows → DSHOW, Linux → V4L2, macOS → AVFOUNDATION を自動選択. ([#365](https://github.com/kurorosu/pochivision/pull/365))
-- プレビュー上でマウスドラッグにより ROI (関心領域) を指定する機能を追加. 推論・キャプチャ時に ROI 領域のみを使用. `d` キーで ROI リセット. ([#366](https://github.com/kurorosu/pochivision/pull/366))
-- セッション終了時にカメラ設定 (解像度, FPS, ホワイトバランス, 露出等) を `camera_config.json` として結果フォルダに保存する機能を追加. ([#368](https://github.com/kurorosu/pochivision/pull/368))
-
-### Changed
-- 推論オーバーレイを複数行表示にリデザイン. 推論結果, 信頼度, 推論時間, RTT, 画像サイズ, サーバー URL を表示. エラー時にメッセージをオーバーレイ表示. ([#362](https://github.com/kurorosu/pochivision/pull/362))
-
-### Fixed
-- 推論失敗時にもフレーム画像が保存される問題を修正. `predict` 成功後に保存するよう順序を変更. ([#360](https://github.com/kurorosu/pochivision/pull/360))
 
 ### Removed
 - 無し
