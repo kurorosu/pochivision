@@ -13,6 +13,34 @@ from .registry import register_processor
 from .validators.contour import ContourValidator
 
 
+def find_contours_compat(
+    image: np.ndarray, mode: int, method: int
+) -> tuple[list[np.ndarray], np.ndarray | None]:
+    """バージョン非依存な ``cv2.findContours`` ラッパー.
+
+    OpenCV 3.x では ``(image, contours, hierarchy)`` の 3 要素,
+    OpenCV 4.x では ``(contours, hierarchy)`` の 2 要素を返すため,
+    戻り値数の違いを吸収して ``(contours, hierarchy)`` で統一する.
+
+    Args:
+        image (np.ndarray): 入力画像 (8bit シングルチャンネル推奨).
+        mode (int): 輪郭抽出モード (``cv2.RETR_*``).
+        method (int): 輪郭近似方法 (``cv2.CHAIN_APPROX_*``).
+
+    Returns:
+        tuple[list[np.ndarray], np.ndarray | None]:
+            - 検出された輪郭のリスト.
+            - 階層情報 ``(1, N, 4)`` 形状の配列. 輪郭が無い場合は ``None``.
+    """
+    result = cv2.findContours(image, mode, method)
+    # OpenCV 4.x: (contours, hierarchy), OpenCV 3.x: (image, contours, hierarchy)
+    if len(result) == 2:
+        contours, hierarchy = result
+    else:
+        _, contours, hierarchy = result
+    return list(contours), hierarchy
+
+
 @register_processor("contour")
 class ContourProcessor(BaseProcessor):
     """画像から輪郭を抽出するプロセッサー."""
@@ -54,6 +82,25 @@ class ContourProcessor(BaseProcessor):
         self._inside_color = self.config.get(
             "inside_color", default_vals["inside_color"]
         )
+
+        # 直近の findContours 結果 (後段や将来の階層フィルタ拡張で参照可能).
+        self._last_contours: list[np.ndarray] = []
+        self._last_hierarchy: np.ndarray | None = None
+
+    @property
+    def last_contours(self) -> list[np.ndarray]:
+        """直近の ``process`` 呼び出しで検出された輪郭のリストを返す."""
+        return self._last_contours
+
+    @property
+    def last_hierarchy(self) -> np.ndarray | None:
+        """直近の ``process`` 呼び出しで得られた階層情報を返す.
+
+        Returns:
+            np.ndarray | None: ``cv2.findContours`` が返す ``(1, N, 4)`` 形状の
+            階層情報. 輪郭が検出されない場合は ``None``.
+        """
+        return self._last_hierarchy
 
     @staticmethod
     def _get_retrieval_mode(mode_str: str) -> int:
@@ -160,9 +207,13 @@ class ContourProcessor(BaseProcessor):
                 else:
                     gray_image = gray_image.astype(np.uint8)
 
-            contours, _ = cv2.findContours(
+            contours, hierarchy = find_contours_compat(
                 gray_image, self._retrieval_mode, self._approximation_method
             )
+
+            # 階層情報を後段で参照できるよう保持 (Issue #383).
+            self._last_contours = list(contours)
+            self._last_hierarchy = hierarchy
 
             if self._select_mode == "rank":
                 # ランクによる選択
