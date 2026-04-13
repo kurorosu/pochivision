@@ -13,6 +13,7 @@
 from typing import Any, Callable
 
 from pochivision.capturelib.log_manager import LogManager
+from pochivision.exceptions import ExtractorRegistrationError
 
 from .base import BaseFeatureExtractor
 from .schema import EXTRACTOR_SCHEMA_MAP
@@ -25,23 +26,37 @@ FEATURE_EXTRACTOR_REGISTRY: dict[str, type[BaseFeatureExtractor]] = {}
 
 def register_feature_extractor(
     name: str,
+    override: bool = False,
 ) -> Callable[[type[BaseFeatureExtractor]], type[BaseFeatureExtractor]]:
     """
     特徴量抽出器クラスを名前付きで登録するためのデコレータ.
 
     Args:
         name (str): 登録する特徴量抽出器の名前.
+        override (bool): True の場合, 既存登録の上書きを許可する.
+            False (デフォルト) の場合, 重複登録時に例外を送出する.
 
     Returns:
         Callable: デコレートされたクラスをそのまま返す.
+
+    Raises:
+        ExtractorRegistrationError: 同名の特徴量抽出器が既に登録されており,
+            ``override=False`` の場合.
     """
 
     def decorator(cls: type[BaseFeatureExtractor]) -> type[BaseFeatureExtractor]:
         if name in FEATURE_EXTRACTOR_REGISTRY:
+            existing = FEATURE_EXTRACTOR_REGISTRY[name]
+            if not override:
+                raise ExtractorRegistrationError(
+                    f"Feature extractor '{name}' is already registered "
+                    f"({existing.__name__}). "
+                    f"Pass override=True to replace it with {cls.__name__}."
+                )
             logger.warning(
                 f"Feature extractor '{name}' is already registered "
-                f"({FEATURE_EXTRACTOR_REGISTRY[name].__name__}), "
-                f"overwriting with {cls.__name__}"
+                f"({existing.__name__}), "
+                f"overwriting with {cls.__name__} (override=True)"
             )
         FEATURE_EXTRACTOR_REGISTRY[name] = cls
         return cls

@@ -13,11 +13,12 @@
 from typing import Any, Callable
 
 from pochivision.capturelib.log_manager import LogManager
-
-logger = LogManager().get_logger()
+from pochivision.exceptions import ProcessorRegistrationError
 
 from .base import BaseProcessor
 from .schema import PROCESSOR_SCHEMA_MAP
+
+logger = LogManager().get_logger()
 
 # 名前とクラスのマッピングを保持する辞書
 PROCESSOR_REGISTRY: dict[str, type[BaseProcessor]] = {}
@@ -25,23 +26,37 @@ PROCESSOR_REGISTRY: dict[str, type[BaseProcessor]] = {}
 
 def register_processor(
     name: str,
+    override: bool = False,
 ) -> Callable[[type[BaseProcessor]], type[BaseProcessor]]:
     """
     画像処理プロセッサクラスを名前付きで登録するためのデコレータ.
 
     Args:
         name (str): 登録するプロセッサの名前.
+        override (bool): True の場合, 既存登録の上書きを許可する.
+            False (デフォルト) の場合, 重複登録時に例外を送出する.
 
     Returns:
         Callable: デコレートされたクラスをそのまま返す.
+
+    Raises:
+        ProcessorRegistrationError: 同名のプロセッサが既に登録されており,
+            ``override=False`` の場合.
     """
 
     def decorator(cls: type[BaseProcessor]) -> type[BaseProcessor]:
         if name in PROCESSOR_REGISTRY:
+            existing = PROCESSOR_REGISTRY[name]
+            if not override:
+                raise ProcessorRegistrationError(
+                    f"Processor '{name}' is already registered "
+                    f"({existing.__name__}). "
+                    f"Pass override=True to replace it with {cls.__name__}."
+                )
             logger.warning(
                 f"Processor '{name}' is already registered "
-                f"({PROCESSOR_REGISTRY[name].__name__}), "
-                f"overwriting with {cls.__name__}"
+                f"({existing.__name__}), "
+                f"overwriting with {cls.__name__} (override=True)"
             )
         PROCESSOR_REGISTRY[name] = cls
         return cls
