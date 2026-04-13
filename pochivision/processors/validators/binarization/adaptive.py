@@ -16,7 +16,7 @@ def _validate_adaptive_block_size(config: dict[str, Any], processor_label: str) 
 
     Args:
         config (dict[str, Any]): バリデーション対象の設定辞書.
-        processor_label (str): エラーメッセージに含めるプロセッサ名.
+        processor_label (str): エラーメッセージのプレフィックスに含めるプロセッサ名.
 
     Raises:
         ProcessorValidationError: ``block_size`` が不正な場合.
@@ -27,12 +27,12 @@ def _validate_adaptive_block_size(config: dict[str, Any], processor_label: str) 
     # bool は int のサブクラスだが, ここでは無効として扱う.
     if isinstance(block_size, bool) or not isinstance(block_size, int):
         raise ProcessorValidationError(
-            f"{processor_label}: block_size must be an int, got "
+            f"[{processor_label}] block_size must be an int, got "
             f"{type(block_size).__name__} ({block_size!r})"
         )
     if block_size < 3 or block_size % 2 == 0:
         raise ProcessorValidationError(
-            f"{processor_label}: block_size must be an odd integer >= 3, "
+            f"[{processor_label}] block_size must be an odd integer >= 3, "
             f"got {block_size}"
         )
 
@@ -48,6 +48,8 @@ class GaussianAdaptiveBinarizationValidator(BaseValidator):
         ProcessorValidationError: 不正なパラメータが検出された場合.
     """
 
+    processor_name = "gauss_adapt_bin"
+
     def __init__(self, config: dict[str, Any]) -> None:
         """
         GaussianAdaptiveBinarizationValidatorのコンストラクタ.
@@ -59,7 +61,7 @@ class GaussianAdaptiveBinarizationValidator(BaseValidator):
             ProcessorValidationError: ``block_size`` が奇数かつ 3 以上でない場合.
         """
         self.config = config
-        _validate_adaptive_block_size(config, "GaussianAdaptiveBinarization")
+        _validate_adaptive_block_size(config, self.processor_name)
 
     def validate_image(self, image: np.ndarray) -> None:
         """
@@ -75,8 +77,11 @@ class GaussianAdaptiveBinarizationValidator(BaseValidator):
 
         if not ((image.ndim == 2) or (image.ndim == 3 and image.shape[2] in (3, 4))):
             raise ProcessorValidationError(
-                "Input image for GaussianAdaptiveBinarization must be 2D grayscale or "
-                "3/4 channel color image (BGR/BGRA)."
+                self._format_error(
+                    "Input image for GaussianAdaptiveBinarization must be 2D "
+                    "grayscale or 3/4 channel color image (BGR/BGRA), "
+                    f"got ndim={image.ndim} (shape={image.shape})"
+                )
             )
 
 
@@ -91,6 +96,8 @@ class MeanAdaptiveBinarizationValidator(BaseValidator):
         ProcessorValidationError: 不正なパラメータが検出された場合.
     """
 
+    processor_name = "mean_adapt_bin"
+
     def __init__(self, config: dict[str, Any]) -> None:
         """
         MeanAdaptiveBinarizationValidatorのコンストラクタ.
@@ -102,7 +109,7 @@ class MeanAdaptiveBinarizationValidator(BaseValidator):
             ProcessorValidationError: ``block_size`` が奇数かつ 3 以上でない場合.
         """
         self.config = config
-        _validate_adaptive_block_size(config, "MeanAdaptiveBinarization")
+        _validate_adaptive_block_size(config, self.processor_name)
 
     def validate_image(self, image: np.ndarray) -> None:
         """
@@ -118,6 +125,9 @@ class MeanAdaptiveBinarizationValidator(BaseValidator):
 
         if not ((image.ndim == 2) or (image.ndim == 3 and image.shape[2] in (3, 4))):
             raise ProcessorValidationError(
-                "Input image for MeanAdaptiveBinarization must be 2D grayscale or "
-                "3/4 channel color image (BGR/BGRA)."
+                self._format_error(
+                    "Input image for MeanAdaptiveBinarization must be 2D "
+                    "grayscale or 3/4 channel color image (BGR/BGRA), "
+                    f"got ndim={image.ndim} (shape={image.shape})"
+                )
             )
