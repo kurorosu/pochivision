@@ -60,6 +60,48 @@ class CLAHEProcessor(BaseProcessor):
             clipLimit=self.clip_limit, tileGridSize=self.tile_grid_size
         )
 
+    def update_params(
+        self,
+        clip_limit: float | None = None,
+        tile_grid_size: tuple[int, int] | list[int] | None = None,
+    ) -> None:
+        """CLAHE のパラメータを動的に更新する.
+
+        指定されたパラメータを反映したうえで内部の CLAHE オブジェクトを再生成する.
+        省略されたパラメータは現在の値を維持する.
+
+        Args:
+            clip_limit (float | None, optional): 新しいコントラスト制限値.
+                正の値でなければならない. デフォルトは None (変更しない).
+            tile_grid_size (tuple[int, int] | list[int] | None, optional):
+                新しいタイルグリッドサイズ. 長さ 2 かつ各要素が正の整数でなければならない.
+                デフォルトは None (変更しない).
+
+        Raises:
+            ValueError: パラメータが不正な場合.
+        """
+        if clip_limit is not None:
+            if clip_limit <= 0:
+                raise ValueError(f"clip_limit must be > 0, got {clip_limit}")
+            self.clip_limit = float(clip_limit)
+
+        if tile_grid_size is not None:
+            size = tuple(tile_grid_size)
+            if len(size) != 2 or not all(isinstance(v, int) and v > 0 for v in size):
+                raise ValueError(
+                    "tile_grid_size must be a length-2 sequence of positive "
+                    f"integers, got {tile_grid_size}"
+                )
+            self.tile_grid_size = size
+
+        # 設定ディクショナリも同期させる.
+        self.config["clip_limit"] = self.clip_limit
+        self.config["tile_grid_size"] = list(self.tile_grid_size)
+
+        self.clahe = cv2.createCLAHE(
+            clipLimit=self.clip_limit, tileGridSize=self.tile_grid_size
+        )
+
     def process(self, image: np.ndarray) -> np.ndarray:
         """
         CLAHE処理を実行します.

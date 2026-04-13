@@ -182,6 +182,106 @@ def test_clahe_invalid_color_mode():
         get_processor("clahe", {"color_mode": "invalid"})
 
 
+def test_clahe_update_params_clip_limit_only():
+    """update_params で clip_limit だけを更新できる."""
+    processor = CLAHEProcessor(name="clahe", config={})
+    assert processor.clip_limit == 2.0
+    assert processor.tile_grid_size == (8, 8)
+
+    processor.update_params(clip_limit=4.0)
+
+    assert processor.clip_limit == 4.0
+    # tile_grid_size は維持される.
+    assert processor.tile_grid_size == (8, 8)
+    # config も同期されている.
+    assert processor.config["clip_limit"] == 4.0
+    assert processor.config["tile_grid_size"] == [8, 8]
+
+
+def test_clahe_update_params_tile_grid_only():
+    """update_params で tile_grid_size だけを更新できる."""
+    processor = CLAHEProcessor(name="clahe", config={})
+
+    processor.update_params(tile_grid_size=[16, 16])
+
+    assert processor.clip_limit == 2.0
+    assert processor.tile_grid_size == (16, 16)
+    assert processor.config["tile_grid_size"] == [16, 16]
+
+
+def test_clahe_update_params_both():
+    """update_params で両方を同時に更新できる."""
+    processor = CLAHEProcessor(name="clahe", config={})
+
+    processor.update_params(clip_limit=3.5, tile_grid_size=(4, 4))
+
+    assert processor.clip_limit == 3.5
+    assert processor.tile_grid_size == (4, 4)
+
+
+def test_clahe_update_params_reflected_in_process():
+    """update_params 後の process() が新パラメータで動作する."""
+    processor = CLAHEProcessor(name="clahe", config={})
+
+    image = np.copy(DUMMY_GRAY_IMAGE)
+    image[30:70, 30:70] = 200
+
+    # 更新前の結果.
+    result_before = processor.process(image)
+
+    # パラメータ更新.
+    processor.update_params(clip_limit=10.0, tile_grid_size=(4, 4))
+    result_after = processor.process(image)
+
+    # 期待結果を新パラメータで cv2 から直接計算.
+    expected = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(4, 4)).apply(image)
+    assert np.array_equal(result_after, expected)
+
+    # 更新前後で出力が変化している.
+    assert not np.array_equal(result_before, result_after)
+
+
+def test_clahe_update_params_invalid_clip_limit():
+    """不正な clip_limit は ValueError になる."""
+    processor = CLAHEProcessor(name="clahe", config={})
+
+    with pytest.raises(ValueError):
+        processor.update_params(clip_limit=0.0)
+
+    with pytest.raises(ValueError):
+        processor.update_params(clip_limit=-1.0)
+
+
+def test_clahe_update_params_invalid_tile_grid_size():
+    """不正な tile_grid_size は ValueError になる."""
+    processor = CLAHEProcessor(name="clahe", config={})
+
+    with pytest.raises(ValueError):
+        processor.update_params(tile_grid_size=[8])
+
+    with pytest.raises(ValueError):
+        processor.update_params(tile_grid_size=[8, 8, 8])
+
+    with pytest.raises(ValueError):
+        processor.update_params(tile_grid_size=[0, 8])
+
+    with pytest.raises(ValueError):
+        processor.update_params(tile_grid_size=[-1, 8])
+
+
+def test_clahe_update_params_no_args_is_noop():
+    """引数なしの update_params では値が変わらず CLAHE は再生成される."""
+    processor = CLAHEProcessor(name="clahe", config={})
+    old_clahe = processor.clahe
+
+    processor.update_params()
+
+    assert processor.clip_limit == 2.0
+    assert processor.tile_grid_size == (8, 8)
+    # 再生成されて別インスタンスになる.
+    assert processor.clahe is not old_clahe
+
+
 def test_clahe_invalid_input():
     """無効な入力テスト."""
     processor = CLAHEProcessor(name="clahe", config={})
