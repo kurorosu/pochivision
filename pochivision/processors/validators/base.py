@@ -8,13 +8,17 @@ from pochivision.exceptions import ProcessorValidationError
 
 
 class BaseValidator(ABC):
-    """
-    すべてのバリデータの基底クラス.
+    """すべてのバリデータの基底クラス.
 
-    各プロセッサ用バリデータは、このクラスを継承して
-    validate_config および validate_image メソッドを実装する必要があります.
+    各プロセッサ用バリデータは, このクラスを継承して `validate_image` を実装する.
+    共通バリデーションメソッドも提供する.
 
-    共通バリデーションメソッドも提供します.
+    Note:
+        設定 (config) の検証は本クラスの責務ではなく, プロセッサスキーマ
+        (`get_processor` 経由) に一本化されている. 過去に存在した
+        `validate_config` 抽象メソッドは PR #238 で意図的に削除済み.
+        config 検証ロジックを追加したい場合は, スキーマ側 (`schemas/`) を
+        拡張すること. バリデータに `validate_config` を再追加してはならない.
     """
 
     @abstractmethod
