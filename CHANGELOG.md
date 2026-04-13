@@ -12,6 +12,9 @@
 - `GrayscaleProcessor` で既にグレースケール化された入力 (`ndim == 2` / `shape[2] == 1`) を早期リターンし, 冗長な `cv2.cvtColor` 呼び出しを回避. ([#391](https://github.com/kurorosu/pochivision/pull/391))
 - `ContourProcessor` で `cv2.findContours` の階層情報 (`hierarchy`) を `last_contours` / `last_hierarchy` として保持. OpenCV 3.x/4.x 両対応の `find_contours_compat` ラッパーを追加. ([#392](https://github.com/kurorosu/pochivision/pull/392))
 - `CLAHEProcessor` に `update_params(clip_limit, tile_grid_size)` を追加. 内部 CLAHE オブジェクトを再生成することで動的なパラメータ変更に対応. ([#393](https://github.com/kurorosu/pochivision/pull/393))
+- `BaseValidator` の docstring から削除済み `validate_config` への言及を除去. スキーマ検証への一本化方針を Note に明記. ([#396](https://github.com/kurorosu/pochivision/pull/396))
+- `Registry` (processors / feature_extractors) で重複登録時に `ProcessorRegistrationError` / `ExtractorRegistrationError` を送出. 意図的な上書きには `override=True` を指定する. ([#397](https://github.com/kurorosu/pochivision/pull/397))
+- バリデータのエラーメッセージに `[processor_name]` プレフィックスと受け取った値・期待値を含めるよう統一. 原因特定と UI/ログでの識別性を改善. ([#398](https://github.com/kurorosu/pochivision/pull/398))
 
 ### Fixed
 - `GaussianBlurProcessor` / `MedianBlurProcessor` のカーネルサイズに対する奇数チェックを追加. 偶数・0 以下・1 を設定した場合, 実行時の `cv2.error` ではなく起動時に `ProcessorValidationError` を投げるよう修正. ([#384](https://github.com/kurorosu/pochivision/pull/384))

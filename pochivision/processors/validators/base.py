@@ -8,18 +8,22 @@ from pochivision.exceptions import ProcessorValidationError
 
 
 class BaseValidator(ABC):
-    """
-    すべてのバリデータの基底クラス.
+    """すべてのバリデータの基底クラス.
 
-    各プロセッサ用バリデータは、このクラスを継承して
-    validate_config および validate_image メソッドを実装する必要があります.
-
-    共通バリデーションメソッドも提供します.
+    各プロセッサ用バリデータは, このクラスを継承して `validate_image` を実装する.
+    共通バリデーションメソッドも提供する.
 
     各サブクラスは ``processor_name`` クラス属性 (プロセッサ登録名,
     例: ``"gaussian_blur"``) を定義し, エラーメッセージのプレフィックス
     ``[processor_name]`` として利用する. 未定義の場合は ``"unknown"`` が
     用いられる.
+
+    Note:
+        設定 (config) の検証は本クラスの責務ではなく, プロセッサスキーマ
+        (`get_processor` 経由) に一本化されている. 過去に存在した
+        `validate_config` 抽象メソッドは PR #238 で意図的に削除済み.
+        config 検証ロジックを追加したい場合は, スキーマ側 (`schemas/`) を
+        拡張すること. バリデータに `validate_config` を再追加してはならない.
     """
 
     #: エラーメッセージのプレフィックスに用いるプロセッサ名.
