@@ -11,6 +11,8 @@ from pochivision.processors.validators.base import BaseValidator
 class AverageBlurValidator(BaseValidator):
     """平均ブラー用のバリデータ."""
 
+    processor_name = "average_blur"
+
     def __init__(self, config: dict[str, Any]) -> None:
         """
         AverageBlurValidatorのコンストラクタ.
@@ -35,16 +37,26 @@ class AverageBlurValidator(BaseValidator):
 
         # 追加のバリデーション
         if image.dtype != np.uint8:
-            raise ProcessorValidationError("Input image must be of type np.uint8")
+            raise ProcessorValidationError(
+                self._format_error(
+                    f"Input image must be of type np.uint8, got {image.dtype}"
+                )
+            )
 
         # 2Dグレースケール画像または3チャンネルのBGR画像であることを確認
         if image.ndim not in [2, 3]:
             raise ProcessorValidationError(
-                "Input image must be a 2D (grayscale) or 3-channel (BGR) image"
+                self._format_error(
+                    "Input image must be a 2D (grayscale) or 3-channel (BGR) "
+                    f"image, got ndim={image.ndim} (shape={image.shape})"
+                )
             )
 
         # 3Dの場合、チャンネル数が3であることを確認
         if image.ndim == 3 and image.shape[2] not in [1, 3]:
             raise ProcessorValidationError(
-                "Input image must have 1 or 3 channels for 3D images"
+                self._format_error(
+                    "Input image must have 1 or 3 channels for 3D images, "
+                    f"got {image.shape[2]} (shape={image.shape})"
+                )
             )

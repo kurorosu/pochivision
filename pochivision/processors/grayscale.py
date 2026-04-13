@@ -55,6 +55,13 @@ class GrayscaleProcessor(BaseProcessor):
         """
         self.validator.validate_image(image)
 
+        # 既にグレースケール (2D, もしくは 3D で 1 チャンネル) の場合は
+        # 冗長な cv2 呼び出しを避けるために早期リターンする.
+        if image.ndim == 2:
+            return image
+        if image.ndim == 3 and image.shape[2] == 1:
+            return image.squeeze(axis=2)
+
         try:
             return to_grayscale(image)
         except Exception as e:

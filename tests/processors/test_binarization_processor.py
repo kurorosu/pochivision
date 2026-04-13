@@ -253,6 +253,74 @@ def test_standard_binarization_empty_input_image():
     assert "input image is empty" in str(excinfo.value)
 
 
+@pytest.mark.parametrize(
+    "processor_cls, name",
+    [
+        (GaussianAdaptiveBinarizationProcessor, "gauss_adapt_bin"),
+        (MeanAdaptiveBinarizationProcessor, "mean_adapt_bin"),
+    ],
+)
+@pytest.mark.parametrize("invalid_block_size", [0, -1, 2, 4, 10])
+def test_adaptive_binarization_invalid_block_size_raises(
+    processor_cls: type, name: str, invalid_block_size: int
+) -> None:
+    """偶数/0/負の block_size は ProcessorValidationError を送出する."""
+    config = {"block_size": invalid_block_size, "c": 2}
+    with pytest.raises(ProcessorValidationError):
+        processor_cls(name=name, config=config)
+
+
+@pytest.mark.parametrize(
+    "processor_cls, name",
+    [
+        (GaussianAdaptiveBinarizationProcessor, "gauss_adapt_bin"),
+        (MeanAdaptiveBinarizationProcessor, "mean_adapt_bin"),
+    ],
+)
+def test_adaptive_binarization_float_block_size_raises(
+    processor_cls: type, name: str
+) -> None:
+    """小数の block_size は ProcessorValidationError を送出する."""
+    config = {"block_size": 3.0, "c": 2}
+    with pytest.raises(ProcessorValidationError):
+        processor_cls(name=name, config=config)
+
+
+@pytest.mark.parametrize(
+    "processor_cls, name",
+    [
+        (GaussianAdaptiveBinarizationProcessor, "gauss_adapt_bin"),
+        (MeanAdaptiveBinarizationProcessor, "mean_adapt_bin"),
+    ],
+)
+@pytest.mark.parametrize("valid_block_size", [3, 5, 11, 21])
+def test_adaptive_binarization_valid_block_size(
+    processor_cls: type, name: str, valid_block_size: int
+) -> None:
+    """奇数かつ 3 以上の block_size は例外を送出せず処理が成功する."""
+    config = {"block_size": valid_block_size, "c": 2}
+    processor = processor_cls(name=name, config=config)
+    result = processor.process(DUMMY_GRAY)
+    assert result.shape == DUMMY_GRAY.shape
+
+
+@pytest.mark.parametrize(
+    "processor_cls, name",
+    [
+        (GaussianAdaptiveBinarizationProcessor, "gauss_adapt_bin"),
+        (MeanAdaptiveBinarizationProcessor, "mean_adapt_bin"),
+    ],
+)
+def test_adaptive_binarization_c_value_is_cast_to_int(
+    processor_cls: type, name: str
+) -> None:
+    """float の c は int にキャストされる."""
+    config = {"block_size": 5, "c": 2.7}
+    processor = processor_cls(name=name, config=config)
+    assert isinstance(processor.c_value, int)
+    assert processor.c_value == 2
+
+
 def test_standard_binarization_invalid_input_shape():
     """StandardBinarizationProcessor の不正な形状の入力画像に対するテスト."""
     config = {"threshold": 128}

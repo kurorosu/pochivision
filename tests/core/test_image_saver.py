@@ -1,5 +1,7 @@
 """ImageSaver のテスト."""
 
+import threading
+
 import cv2
 import numpy as np
 
@@ -60,3 +62,28 @@ class TestImageSaver:
 
         saved_files = list((tmp_path / "multi_test").glob("*"))
         assert len(saved_files) == 3
+
+    def test_save_is_thread_safe(self, tmp_path):
+        """並行呼び出しでも全画像が重複なく保存される.
+
+        threading.Lock による file_naming_manager 保護を検証する.
+        """
+        saver = ImageSaver(tmp_path)
+        num_threads = 8
+        per_thread = 5
+
+        def _worker() -> None:
+            """スレッドから複数回 save を呼び出す."""
+            for _ in range(per_thread):
+                saver.save(_create_test_image(), "concurrent")
+
+        threads = [threading.Thread(target=_worker) for _ in range(num_threads)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        saved_files = list((tmp_path / "concurrent").glob("*"))
+        # 全件がユニークなファイル名で保存されている.
+        assert len(saved_files) == num_threads * per_thread
+        assert len({f.name for f in saved_files}) == num_threads * per_thread

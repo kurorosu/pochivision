@@ -2,18 +2,24 @@
 
 from .base import VisionCaptureError
 from .config import CameraConfigError, ConfigLoadError, ConfigValidationError
-from .extractor import ExtractorValidationError
+from .extractor import ExtractorRegistrationError, ExtractorValidationError
 from .inference import InferenceConnectionError, InferenceError
-from .processor import ProcessorRuntimeError, ProcessorValidationError
+from .processor import (
+    ProcessorRegistrationError,
+    ProcessorRuntimeError,
+    ProcessorValidationError,
+)
 
 __all__ = [
     "VisionCaptureError",
     "ProcessorValidationError",
     "ProcessorRuntimeError",
+    "ProcessorRegistrationError",
     "ConfigValidationError",
     "ConfigLoadError",
     "CameraConfigError",
     "ExtractorValidationError",
+    "ExtractorRegistrationError",
     "InferenceError",
     "InferenceConnectionError",
 ]

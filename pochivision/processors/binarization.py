@@ -200,7 +200,8 @@ class GaussianAdaptiveBinarizationProcessor(BaseProcessor):
         self.logger = LogManager().get_logger()
         self.validator = GaussianAdaptiveBinarizationValidator(self.config)
         self.block_size: int = self.config.get("block_size", 11)
-        self.c_value: int | float = self.config.get("c", 2)
+        # cv2.adaptiveThreshold は C を int で期待するため int へキャストする.
+        self.c_value: int = int(self.config.get("c", 2))
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """
@@ -285,7 +286,8 @@ class MeanAdaptiveBinarizationProcessor(BaseProcessor):
         self.logger = LogManager().get_logger()
         self.validator = MeanAdaptiveBinarizationValidator(self.config)
         self.block_size: int = self.config.get("block_size", 11)
-        self.c_value: int | float = self.config.get("c", 2)
+        # cv2.adaptiveThreshold は C を int で期待するため int へキャストする.
+        self.c_value: int = int(self.config.get("c", 2))
 
     def process(self, image: np.ndarray) -> np.ndarray:
         """

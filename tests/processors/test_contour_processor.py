@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from pochivision.exceptions import ProcessorValidationError
-from pochivision.processors.contour import ContourProcessor
+from pochivision.processors.contour import ContourProcessor, find_contours_compat
 from pochivision.processors.validators.contour import ContourValidator
 
 
@@ -379,6 +379,85 @@ class TestContourProcessor:
             ContourProcessor._get_approximation_method("unknown")
             == cv2.CHAIN_APPROX_SIMPLE
         )
+
+    def test_last_hierarchy_is_preserved_after_process(self):
+        """process 実行後に階層情報が保持されていることをテストします."""
+        import cv2
+
+        # RETR_TREE で階層情報を取得する設定
+        processor = ContourProcessor(
+            name="contour_tree",
+            config={"retrieval_mode": "tree", "min_area": 0, "select_mode": "all"},
+        )
+
+        # 外側の四角形の内側に穴 (内側四角形) を持つ二値画像
+        binary_image = np.zeros((100, 100), dtype=np.uint8)
+        binary_image[10:90, 10:90] = 255  # 外側
+        binary_image[30:70, 30:70] = 0  # 穴
+        binary_image[40:60, 40:60] = 255  # 内側
+
+        processor.process(binary_image)
+
+        # 階層情報が保持されていること
+        assert processor.last_hierarchy is not None
+        assert isinstance(processor.last_hierarchy, np.ndarray)
+        # cv2.findContours の階層情報は (1, N, 4) 形状
+        assert processor.last_hierarchy.ndim == 3
+        assert processor.last_hierarchy.shape[2] == 4
+        # 輪郭数と階層情報のエントリ数が一致すること
+        assert processor.last_hierarchy.shape[1] == len(processor.last_contours)
+        # RETR_TREE で少なくとも 3 つの輪郭が検出されるはず
+        assert len(processor.last_contours) >= 3
+
+        # retrieval_mode が tree の場合, 親子関係を表す列 (index 3) に
+        # 非 -1 の値が少なくとも 1 つ存在すること (親あり輪郭が存在する).
+        hierarchy = processor.last_hierarchy[0]
+        assert any(row[3] != -1 for row in hierarchy)
+
+        # cv2 定数で呼び出した場合と同等の結果が得られること.
+        contours_direct, hierarchy_direct = find_contours_compat(
+            binary_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+        )
+        assert len(contours_direct) == len(processor.last_contours)
+        assert hierarchy_direct is not None
+        assert hierarchy_direct.shape == processor.last_hierarchy.shape
+
+    def test_last_hierarchy_none_for_non_binary_image(self):
+        """非二値画像では階層情報が初期値 None のまま維持されることをテストします."""
+        processor = ContourProcessor(name="contour_nb", config={})
+        gray = create_test_image(50, 50, is_binary=False)
+        processor.process(gray)
+        # バリデーションで早期 return するため, 階層情報は初期値のまま.
+        assert processor.last_hierarchy is None
+        assert processor.last_contours == []
+
+    def test_find_contours_compat_returns_contours_and_hierarchy(self):
+        """find_contours_compat が輪郭と階層情報を返すことをテストします."""
+        import cv2
+
+        binary_image = np.zeros((60, 60), dtype=np.uint8)
+        binary_image[10:50, 10:50] = 255
+
+        contours, hierarchy = find_contours_compat(
+            binary_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        assert isinstance(contours, list)
+        assert len(contours) == 1
+        assert hierarchy is not None
+        assert hierarchy.shape == (1, 1, 4)
+
+    def test_find_contours_compat_empty_image(self):
+        """find_contours_compat が輪郭ゼロの画像を安全に扱えることをテストします."""
+        import cv2
+
+        empty = np.zeros((20, 20), dtype=np.uint8)
+        contours, hierarchy = find_contours_compat(
+            empty, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE
+        )
+        assert contours == []
+        # 輪郭ゼロの場合 hierarchy は None (OpenCV 4.x の仕様).
+        assert hierarchy is None
 
     def test_float_image_processing(self):
         """float32型の画像処理をテストします."""

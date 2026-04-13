@@ -13,3 +13,9 @@ class ProcessorRuntimeError(VisionCaptureError, RuntimeError):
     """プロセッサ実行時のエラー用例外クラス."""
 
     pass
+
+
+class ProcessorRegistrationError(VisionCaptureError, ValueError):
+    """プロセッサのレジストリ登録エラー用例外クラス."""
+
+    pass

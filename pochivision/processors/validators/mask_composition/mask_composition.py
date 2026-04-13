@@ -12,6 +12,8 @@ from pochivision.processors.validators.base import BaseValidator
 class MaskCompositionValidator(BaseValidator):
     """マスク合成プロセッサの設定と入力画像を検証するバリデータ."""
 
+    processor_name = "mask_composition"
+
     def __init__(self, config: dict[str, Any]):
         """
         MaskCompositionValidatorを初期化.
@@ -47,24 +49,27 @@ class MaskCompositionValidator(BaseValidator):
         Raises:
             ProcessorValidationError: 画像が無効な場合.
         """
-        # 画像がnumpy配列かチェック
-        if not isinstance(image, np.ndarray):
-            raise ProcessorValidationError("image must be of type numpy.ndarray")
-
-        # 画像が空でないか確認
-        if image.size == 0:
-            raise ProcessorValidationError("input image is empty")
+        # 画像の型と空チェック (共通バリデーション)
+        self.validate_image_type_and_nonempty(image)
 
         # 画像の次元が正しいか確認
         if len(image.shape) not in [2, 3]:
             raise ProcessorValidationError(
-                "Input image for MaskComposition must be 2D "
-                "grayscale or 3-channel color"
+                self._format_error(
+                    "Input image for MaskComposition must be 2D "
+                    "grayscale or 3-channel color, "
+                    f"got ndim={image.ndim} (shape={image.shape})"
+                )
             )
 
         # 3チャンネルの場合はRGBかチェック
         if len(image.shape) == 3 and image.shape[2] != 3:
-            raise ProcessorValidationError("Input color image must have 3 channels")
+            raise ProcessorValidationError(
+                self._format_error(
+                    "Input color image must have 3 channels, "
+                    f"got {image.shape[2]} (shape={image.shape})"
+                )
+            )
 
     def _validate_binary_image(self, image: np.ndarray) -> None:
         """
@@ -85,8 +90,11 @@ class MaskCompositionValidator(BaseValidator):
                 or np.array_equal(unique_values, [255])
             ):
                 raise ProcessorValidationError(
-                    "Input image for MaskComposition must be a "
-                    "binary image (only 0 and 255 values)"
+                    self._format_error(
+                        "Input image for MaskComposition must be a "
+                        "binary image (only 0 and 255 values), "
+                        f"got unique values {unique_values.tolist()}"
+                    )
                 )
         # カラー画像の場合
         elif len(image.shape) == 3:
@@ -94,8 +102,10 @@ class MaskCompositionValidator(BaseValidator):
             b, g, r = cv2.split(image)
             if not (np.array_equal(b, g) and np.array_equal(g, r)):
                 raise ProcessorValidationError(
-                    "For color images, all channels must have "
-                    "identical values for binary image"
+                    self._format_error(
+                        "For color images, all channels must have "
+                        "identical values for binary image"
+                    )
                 )
             # 値が0か255のみか確認
             unique_values = np.unique(b)
@@ -105,6 +115,9 @@ class MaskCompositionValidator(BaseValidator):
                 or np.array_equal(unique_values, [255])
             ):
                 raise ProcessorValidationError(
-                    "Input image for MaskComposition must be a "
-                    "binary image (only 0 and 255 values)"
+                    self._format_error(
+                        "Input image for MaskComposition must be a "
+                        "binary image (only 0 and 255 values), "
+                        f"got unique values {unique_values.tolist()}"
+                    )
                 )

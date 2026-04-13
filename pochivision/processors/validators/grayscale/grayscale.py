@@ -11,6 +11,8 @@ from pochivision.processors.validators.base import BaseValidator
 class GrayscaleValidator(BaseValidator):
     """グレースケール変換用のバリデータ."""
 
+    processor_name = "grayscale"
+
     def __init__(self, config: dict[str, Any]) -> None:
         """
         GrayscaleValidatorのコンストラクタ.
@@ -35,11 +37,17 @@ class GrayscaleValidator(BaseValidator):
 
         # dtype チェック
         if image.dtype != np.uint8:
-            raise ProcessorValidationError("Input image must be of type np.uint8")
+            raise ProcessorValidationError(
+                self._format_error(
+                    f"Input image must be of type np.uint8, got {image.dtype}"
+                )
+            )
 
         # 1チャンネル(グレースケール)または3チャンネル(BGRカラー)の画像であることを確認
         if not ((image.ndim == 2) or (image.ndim == 3 and image.shape[2] in (1, 3, 4))):
             raise ProcessorValidationError(
-                "Input image must be 2D grayscale or 3/4 channel color "
-                "image (BGR/BGRA)."
+                self._format_error(
+                    "Input image must be 2D grayscale or 3/4 channel color "
+                    f"image (BGR/BGRA), got ndim={image.ndim} (shape={image.shape})"
+                )
             )
