@@ -93,6 +93,25 @@ class TestLoadDetectConfig:
         with pytest.raises(ConfigValidationError, match="jpeg_quality"):
             load_detect_config(str(path))
 
+    def test_jpeg_quality_over_100_raises(self, tmp_path):
+        path = _write_config(
+            tmp_path, {"url": "http://localhost:8000", "jpeg_quality": 101}
+        )
+        with pytest.raises(ConfigValidationError, match="jpeg_quality"):
+            load_detect_config(str(path))
+
+    def test_score_threshold_boundaries_valid(self, tmp_path):
+        for v in (0.0, 1.0):
+            path = _write_config(
+                tmp_path, {"url": "http://localhost:8000", "score_threshold": v}
+            )
+            assert load_detect_config(str(path)).score_threshold == v
+
+    def test_timeout_zero_raises(self, tmp_path):
+        path = _write_config(tmp_path, {"url": "http://localhost:8000", "timeout": 0})
+        with pytest.raises(ConfigValidationError, match="timeout"):
+            load_detect_config(str(path))
+
     def test_missing_file_raises(self, tmp_path):
         with pytest.raises(ConfigLoadError):
             load_detect_config(str(tmp_path / "nonexistent.json"))

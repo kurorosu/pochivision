@@ -77,6 +77,24 @@ class TestInit:
         with DetectionClient(base_url="http://localhost:8000/") as client:
             assert client.base_url == "http://localhost:8000"
 
+    def test_score_threshold_boundary_accepted(self):
+        for v in (0.0, 1.0):
+            with DetectionClient(
+                base_url="http://localhost:8000", score_threshold=v
+            ) as client:
+                assert client.score_threshold == v
+
+    def test_jpeg_quality_boundary_accepted(self):
+        for v in (1, 100):
+            with DetectionClient(
+                base_url="http://localhost:8000", jpeg_quality=v
+            ) as client:
+                assert client.jpeg_quality == v
+
+    def test_jpeg_quality_over_100_raises(self):
+        with pytest.raises(ValueError, match="jpeg_quality"):
+            DetectionClient(base_url="http://localhost:8000", jpeg_quality=101)
+
 
 class TestEncodeRaw:
     """_encode_raw のテスト."""
@@ -118,6 +136,24 @@ class TestEncodeJpeg:
         restored = cv2.imdecode(buf, cv2.IMREAD_COLOR)
         assert restored is not None
         assert restored.shape == frame.shape
+
+    def test_encode_empty_frame_raises(self, jpeg_client):
+        empty = np.zeros((0, 0, 3), dtype=np.uint8)
+        with pytest.raises(Exception):
+            jpeg_client._encode_jpeg(empty)
+
+    def test_quality_affects_output_size(self):
+        frame = _make_frame(height=256, width=256)
+        with DetectionClient(
+            base_url="http://localhost:8000", image_format="jpeg", jpeg_quality=10
+        ) as low:
+            low_size = len(low._encode_jpeg(frame)["image_data"])
+        with DetectionClient(
+            base_url="http://localhost:8000", image_format="jpeg", jpeg_quality=100
+        ) as high:
+            high_size = len(high._encode_jpeg(frame)["image_data"])
+
+        assert high_size > low_size
 
 
 class TestBuildPayload:
