@@ -8,7 +8,6 @@ import cv2
 import httpx
 import numpy as np
 
-from pochivision.capturelib.log_manager import LogManager
 from pochivision.constants import (
     DEFAULT_DETECTION_FORMAT,
     DEFAULT_DETECTION_JPEG_QUALITY,
@@ -72,7 +71,6 @@ class DetectionClient:
         self.image_format = image_format
         self.score_threshold = score_threshold
         self.jpeg_quality = jpeg_quality
-        self.logger = LogManager().get_logger()
         self._client = httpx.Client(timeout=timeout)
 
     def detect(self, frame: np.ndarray) -> DetectionResponse:
