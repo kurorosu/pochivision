@@ -89,6 +89,8 @@ class DetectionClient:
         """
         if frame.dtype != np.uint8:
             raise ValueError(f"frame は uint8 dtype 必須 (サーバー仕様): {frame.dtype}")
+        if frame.ndim != 3 or frame.shape[2] != 3:
+            raise ValueError(f"frame は (H, W, 3) の 3 チャネル画像必須: {frame.shape}")
         payload = self._build_payload(frame)
         url = f"{self.base_url}/api/v1/detect"
 
@@ -96,7 +98,13 @@ class DetectionClient:
         try:
             response = self._client.post(url, json=payload)
             response.raise_for_status()
-        except (httpx.ConnectError, httpx.ConnectTimeout) as e:
+        except (
+            httpx.ConnectError,
+            httpx.ConnectTimeout,
+            httpx.ReadTimeout,
+            httpx.WriteTimeout,
+            httpx.PoolTimeout,
+        ) as e:
             raise DetectionConnectionError(
                 f"検出 API サーバーに接続できません: {self.base_url}"
             ) from e

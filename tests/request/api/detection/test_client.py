@@ -157,6 +157,28 @@ class TestDetect:
 
         client.close()
 
+    def test_non_3channel_frame_raises(self):
+        client = DetectionClient(base_url="http://localhost:8000")
+        frame_2d = np.zeros((48, 64), dtype=np.uint8)
+        frame_4ch = np.zeros((48, 64, 4), dtype=np.uint8)
+
+        with pytest.raises(ValueError, match=r"\(H, W, 3\)"):
+            client.detect(frame_2d)
+        with pytest.raises(ValueError, match=r"\(H, W, 3\)"):
+            client.detect(frame_4ch)
+
+        client.close()
+
+    def test_read_timeout_mapped_to_connection_error(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            raise httpx.ReadTimeout("read timeout", request=request)
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        with pytest.raises(DetectionConnectionError):
+            client.detect(_make_frame())
+
     def test_success(self):
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(200, json=_VALID_RESPONSE)

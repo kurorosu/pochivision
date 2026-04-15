@@ -76,6 +76,11 @@ def _build_detect_config(data: dict[str, Any]) -> DetectConfig:
     """
     if "url" not in data:
         raise ConfigValidationError("検出設定に 'url' が必要です")
+    url = data["url"]
+    if not isinstance(url, str) or not url.startswith(("http://", "https://")):
+        raise ConfigValidationError(
+            f"'url' は http:// または https:// で始まる文字列必須: {url!r}"
+        )
 
     fmt = data.get("format", DEFAULT_DETECTION_FORMAT)
     if fmt not in _VALID_FORMATS:

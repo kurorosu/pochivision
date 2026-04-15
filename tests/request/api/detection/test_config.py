@@ -57,6 +57,16 @@ class TestLoadDetectConfig:
         with pytest.raises(ConfigValidationError, match="url"):
             load_detect_config(str(path))
 
+    def test_invalid_url_scheme_raises(self, tmp_path):
+        path = _write_config(tmp_path, {"url": "localhost:8000"})
+        with pytest.raises(ConfigValidationError, match="http"):
+            load_detect_config(str(path))
+
+    def test_non_string_url_raises(self, tmp_path):
+        path = _write_config(tmp_path, {"url": 12345})
+        with pytest.raises(ConfigValidationError, match="http"):
+            load_detect_config(str(path))
+
     def test_invalid_format_raises(self, tmp_path):
         path = _write_config(
             tmp_path, {"url": "http://localhost:8000", "format": "png"}
