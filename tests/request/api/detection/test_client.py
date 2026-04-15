@@ -148,6 +148,15 @@ class TestBuildPayload:
 class TestDetect:
     """detect のテスト."""
 
+    def test_non_uint8_frame_raises(self):
+        client = DetectionClient(base_url="http://localhost:8000")
+        frame = np.zeros((48, 64, 3), dtype=np.float32)
+
+        with pytest.raises(ValueError, match="uint8"):
+            client.detect(frame)
+
+        client.close()
+
     def test_success(self):
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(200, json=_VALID_RESPONSE)

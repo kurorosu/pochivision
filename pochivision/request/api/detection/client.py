@@ -85,7 +85,13 @@ class DetectionClient:
         Raises:
             DetectionConnectionError: API サーバーへの接続に失敗した場合.
             DetectionError: 検出リクエストが失敗した場合.
+            ValueError: フレームが uint8 以外の dtype の場合.
         """
+        if frame.dtype != np.uint8:
+            raise ValueError(
+                f"frame は uint8 dtype である必要があります (サーバー仕様): "
+                f"{frame.dtype}"
+            )
         payload = self._build_payload(frame)
         url = f"{self.base_url}/api/v1/detect"
 
