@@ -1,0 +1,7 @@
+{
+    "url": "http://localhost:8000",
+    "format": "raw",
+    "score_threshold": 0.5,
+    "timeout": 5.0,
+    "jpeg_quality": 90
+}

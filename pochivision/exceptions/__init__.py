@@ -2,6 +2,7 @@
 
 from .base import VisionCaptureError
 from .config import CameraConfigError, ConfigLoadError, ConfigValidationError
+from .detection import DetectionConnectionError, DetectionError
 from .extractor import ExtractorRegistrationError, ExtractorValidationError
 from .inference import InferenceConnectionError, InferenceError
 from .processor import (
@@ -22,4 +23,6 @@ __all__ = [
     "ExtractorRegistrationError",
     "InferenceError",
     "InferenceConnectionError",
+    "DetectionError",
+    "DetectionConnectionError",
 ]
