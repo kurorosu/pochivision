@@ -1,0 +1,268 @@
+"""DetectionClient のテスト."""
+
+import base64
+
+import cv2
+import httpx
+import numpy as np
+import pytest
+
+from pochivision.exceptions import DetectionConnectionError, DetectionError
+from pochivision.request.api.detection.client import DetectionClient
+from pochivision.request.api.detection.models import DetectionResponse
+
+_VALID_RESPONSE = {
+    "detections": [
+        {
+            "class_id": 0,
+            "class_name": "pochi",
+            "confidence": 0.95,
+            "bbox": [10.5, 20.2, 100.8, 200.3],
+        },
+        {
+            "class_id": 1,
+            "class_name": "pochi2",
+            "confidence": 0.72,
+            "bbox": [300.0, 120.0, 380.0, 250.0],
+        },
+    ],
+    "e2e_time_ms": 12.3,
+    "backend": "onnx",
+}
+
+
+def _make_frame(height: int = 48, width: int = 64) -> np.ndarray:
+    """テスト用のフレームを生成する."""
+    return np.random.randint(0, 256, (height, width, 3), dtype=np.uint8)
+
+
+@pytest.fixture
+def raw_client():
+    """Raw 形式の DetectionClient を提供する."""
+    with DetectionClient(
+        base_url="http://localhost:8000", image_format="raw"
+    ) as client:
+        yield client
+
+
+@pytest.fixture
+def jpeg_client():
+    """JPEG 形式の DetectionClient を提供する."""
+    with DetectionClient(
+        base_url="http://localhost:8000", image_format="jpeg"
+    ) as client:
+        yield client
+
+
+class TestInit:
+    """__init__ のテスト."""
+
+    def test_invalid_base_url_raises(self):
+        with pytest.raises(ValueError, match="http://"):
+            DetectionClient(base_url="localhost:8000")
+
+    def test_invalid_format_raises(self):
+        with pytest.raises(ValueError, match="image_format"):
+            DetectionClient(base_url="http://localhost:8000", image_format="png")
+
+    def test_invalid_score_threshold_raises(self):
+        with pytest.raises(ValueError, match="score_threshold"):
+            DetectionClient(base_url="http://localhost:8000", score_threshold=1.5)
+
+    def test_invalid_jpeg_quality_raises(self):
+        with pytest.raises(ValueError, match="jpeg_quality"):
+            DetectionClient(base_url="http://localhost:8000", jpeg_quality=0)
+
+    def test_base_url_trailing_slash_stripped(self):
+        with DetectionClient(base_url="http://localhost:8000/") as client:
+            assert client.base_url == "http://localhost:8000"
+
+
+class TestEncodeRaw:
+    """_encode_raw のテスト."""
+
+    def test_payload_format(self, raw_client):
+        frame = _make_frame()
+        payload = raw_client._encode_raw(frame)
+
+        assert payload["format"] == "raw"
+        assert payload["shape"] == [48, 64, 3]
+        assert payload["dtype"] == "uint8"
+        assert isinstance(payload["image_data"], str)
+
+    def test_roundtrip(self, raw_client):
+        frame = _make_frame()
+        payload = raw_client._encode_raw(frame)
+
+        restored = np.frombuffer(
+            base64.b64decode(payload["image_data"]), dtype=np.uint8
+        ).reshape(frame.shape)
+        np.testing.assert_array_equal(restored, frame)
+
+
+class TestEncodeJpeg:
+    """_encode_jpeg のテスト."""
+
+    def test_payload_format(self, jpeg_client):
+        frame = _make_frame()
+        payload = jpeg_client._encode_jpeg(frame)
+
+        assert payload["format"] == "jpeg"
+        assert isinstance(payload["image_data"], str)
+
+    def test_decodable(self, jpeg_client):
+        frame = _make_frame()
+        payload = jpeg_client._encode_jpeg(frame)
+
+        buf = np.frombuffer(base64.b64decode(payload["image_data"]), dtype=np.uint8)
+        restored = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+        assert restored is not None
+        assert restored.shape == frame.shape
+
+
+class TestBuildPayload:
+    """_build_payload のテスト."""
+
+    def test_jpeg_format_includes_score_threshold(self, jpeg_client):
+        frame = _make_frame()
+        payload = jpeg_client._build_payload(frame)
+
+        assert payload["format"] == "jpeg"
+        assert payload["score_threshold"] == jpeg_client.score_threshold
+
+    def test_raw_format_includes_score_threshold(self, raw_client):
+        frame = _make_frame()
+        payload = raw_client._build_payload(frame)
+
+        assert payload["format"] == "raw"
+        assert payload["score_threshold"] == raw_client.score_threshold
+
+    def test_custom_score_threshold_reflected(self):
+        with DetectionClient(
+            base_url="http://localhost:8000", score_threshold=0.3
+        ) as client:
+            payload = client._build_payload(_make_frame())
+            assert payload["score_threshold"] == 0.3
+
+
+class TestDetect:
+    """detect のテスト."""
+
+    def test_success(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_VALID_RESPONSE)
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        response = client.detect(_make_frame())
+
+        assert isinstance(response, DetectionResponse)
+        assert len(response.detections) == 2
+        assert response.detections[0].class_name == "pochi"
+        assert response.detections[0].bbox == (10.5, 20.2, 100.8, 200.3)
+        assert response.e2e_time_ms == 12.3
+        assert response.backend == "onnx"
+        assert response.rtt_ms >= 0
+
+    def test_empty_detections(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "detections": [],
+                    "e2e_time_ms": 5.0,
+                    "backend": "pytorch",
+                },
+            )
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        response = client.detect(_make_frame())
+
+        assert response.detections == ()
+        assert response.backend == "pytorch"
+
+    def test_http_status_error(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(500, json={"detail": "server error"})
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        with pytest.raises(DetectionError, match="status=500"):
+            client.detect(_make_frame())
+
+    def test_invalid_json_response(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, content=b"not json")
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        with pytest.raises(DetectionError, match="JSON"):
+            client.detect(_make_frame())
+
+    def test_missing_response_field(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json={"detections": []})
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        with pytest.raises(DetectionError, match="フォーマット"):
+            client.detect(_make_frame())
+
+    def test_malformed_detection_item(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "detections": [{"class_id": 0, "class_name": "x"}],
+                    "e2e_time_ms": 1.0,
+                    "backend": "onnx",
+                },
+            )
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        with pytest.raises(DetectionError, match="フォーマット"):
+            client.detect(_make_frame())
+
+    def test_connection_refused(self):
+        client = DetectionClient(base_url="http://127.0.0.1:1", timeout=0.5)
+
+        with pytest.raises(DetectionConnectionError):
+            client.detect(_make_frame())
+
+        client.close()
+
+    def test_request_sent_to_detect_endpoint(self):
+        captured_url: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured_url.append(str(request.url))
+            return httpx.Response(200, json=_VALID_RESPONSE)
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        client.detect(_make_frame())
+
+        assert captured_url[0].endswith("/api/v1/detect")
+
+    def test_score_threshold_sent_in_payload(self):
+        captured_payload: list[dict] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured_payload.append(request.read().decode())
+            return httpx.Response(200, json=_VALID_RESPONSE)
+
+        client = DetectionClient(base_url="http://localhost:8000", score_threshold=0.25)
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        client.detect(_make_frame())
+
+        assert '"score_threshold":0.25' in captured_payload[0].replace(" ", "")
