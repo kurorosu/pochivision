@@ -281,6 +281,40 @@ class TestDetect:
         with pytest.raises(DetectionError, match="フォーマット"):
             client.detect(_make_frame())
 
+    def test_detections_field_wrong_type(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "detections": "not-a-list",
+                    "e2e_time_ms": 1.0,
+                    "backend": "onnx",
+                },
+            )
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        with pytest.raises(DetectionError, match="フォーマット"):
+            client.detect(_make_frame())
+
+    def test_detection_item_not_dict(self):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "detections": [123],
+                    "e2e_time_ms": 1.0,
+                    "backend": "onnx",
+                },
+            )
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        with pytest.raises(DetectionError, match="フォーマット"):
+            client.detect(_make_frame())
+
     def test_malformed_detection_item(self):
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(
