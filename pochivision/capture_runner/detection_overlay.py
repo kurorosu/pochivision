@@ -98,7 +98,7 @@ class DetectionOverlay:
         """
         self._inferring = inferring
 
-    def get_color(self, class_id: int) -> tuple[int, int, int]:
+    def _get_color(self, class_id: int) -> tuple[int, int, int]:
         """class_id に対応する決定的な BGR 色を返す.
 
         Args:
@@ -112,12 +112,17 @@ class DetectionOverlay:
     def draw(self, frame: np.ndarray) -> np.ndarray:
         """フレームに bbox とメタ情報を描画する.
 
+        BGR 3 チャネル以外のフレームは描画せずそのまま返す.
+
         Args:
             frame: 描画先のフレーム. このフレームを直接変更する.
 
         Returns:
             検出結果が描画されたフレーム.
         """
+        if frame.ndim != 3 or frame.shape[2] != 3:
+            return frame
+
         inferring = self._inferring
         result = self.result
         error = self.error_message
@@ -165,12 +170,25 @@ class DetectionOverlay:
     def _draw_bbox(self, frame: np.ndarray, det: Detection) -> None:
         """1 つの検出を bbox + ラベルで描画する.
 
+        NaN / Inf を含む bbox, x2 <= x1 または y2 <= y1 の反転 bbox,
+        完全にフレーム外の bbox はスキップする.
+
         Args:
             frame: 描画先のフレーム.
             det: 検出結果 1 件.
         """
-        color = self.get_color(det.class_id)
-        x1, y1, x2, y2 = (int(v) for v in det.bbox)
+        bbox = det.bbox
+        if not all(np.isfinite(v) for v in bbox):
+            return
+
+        h, w = frame.shape[:2]
+        x1, y1, x2, y2 = (int(v) for v in bbox)
+        if x2 <= x1 or y2 <= y1:
+            return
+        if x2 < 0 or y2 < 0 or x1 >= w or y1 >= h:
+            return
+
+        color = self._get_color(det.class_id)
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
 
         label = f"{det.class_name} {det.confidence:.2f}"
@@ -178,19 +196,30 @@ class DetectionOverlay:
         font_scale = 0.5
         thickness = 1
         (tw, th), baseline = cv2.getTextSize(label, font, font_scale, thickness)
-        label_y = y1 - 6 if y1 - 6 - th >= 0 else y1 + th + 6
+
+        # ラベル矩形がフレーム外に飛び出さないようクリップ
+        if y1 - 6 - th >= 0:
+            label_y = y1 - 6
+        else:
+            label_y = y1 + th + 6
+        rect_top = max(0, label_y - th - 4)
+        rect_bottom = min(h - 1, label_y + baseline)
+        rect_left = max(0, x1)
+        rect_right = min(w - 1, x1 + tw + 4)
+        if rect_top >= rect_bottom or rect_left >= rect_right:
+            return
 
         cv2.rectangle(
             frame,
-            (x1, label_y - th - 4),
-            (x1 + tw + 4, label_y + baseline),
+            (rect_left, rect_top),
+            (rect_right, rect_bottom),
             color,
             thickness=cv2.FILLED,
         )
         cv2.putText(
             frame,
             label,
-            (x1 + 2, label_y),
+            (rect_left + 2, label_y),
             font,
             font_scale,
             (0, 0, 0),

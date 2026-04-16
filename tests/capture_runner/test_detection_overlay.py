@@ -90,20 +90,20 @@ class TestState:
 
 
 class TestGetColor:
-    """get_color (決定的色割当) のテスト."""
+    """_get_color (決定的色割当) のテスト."""
 
     def test_same_class_id_same_color(self):
         overlay = DetectionOverlay()
-        assert overlay.get_color(0) == overlay.get_color(0)
+        assert overlay._get_color(0) == overlay._get_color(0)
 
     def test_different_class_id_different_color(self):
         overlay = DetectionOverlay()
-        assert overlay.get_color(0) != overlay.get_color(1)
+        assert overlay._get_color(0) != overlay._get_color(1)
 
     def test_class_id_wraps_around_palette(self):
         overlay = DetectionOverlay()
         palette_size = len(DetectionOverlay.PALETTE)
-        assert overlay.get_color(0) == overlay.get_color(palette_size)
+        assert overlay._get_color(0) == overlay._get_color(palette_size)
 
 
 class TestDraw:
@@ -156,7 +156,7 @@ class TestDraw:
         overlay.update(_make_response(detections=(det,)))
         frame = np.zeros((200, 200, 3), dtype=np.uint8)
         result = overlay.draw(frame)
-        expected_color = overlay.get_color(2)
+        expected_color = overlay._get_color(2)
         # bbox 辺上のどこかに期待色が存在する
         b, g, r = expected_color
         match = (result[..., 0] == b) & (result[..., 1] == g) & (result[..., 2] == r)
@@ -171,8 +171,8 @@ class TestDraw:
         overlay.update(_make_response(detections=dets))
         frame = np.zeros((240, 240, 3), dtype=np.uint8)
         result = overlay.draw(frame)
-        c0 = overlay.get_color(0)
-        c1 = overlay.get_color(1)
+        c0 = overlay._get_color(0)
+        c1 = overlay._get_color(1)
         has_c0 = (
             (result[..., 0] == c0[0])
             & (result[..., 1] == c0[1])
@@ -191,4 +191,60 @@ class TestDraw:
         det = _make_detection(bbox=(0.0, 0.0, 50.0, 30.0))
         overlay.update(_make_response(detections=(det,)))
         frame = np.zeros((200, 300, 3), dtype=np.uint8)
+        overlay.draw(frame)
+
+    def test_inverted_bbox_is_skipped(self):
+        overlay = DetectionOverlay()
+        # メタ情報描画領域 (左上) と干渉しないよう右下に inverted bbox を置く
+        det = _make_detection(bbox=(350.0, 350.0, 250.0, 250.0))
+        overlay.update(_make_response(detections=(det,)))
+        frame = np.zeros((400, 400, 3), dtype=np.uint8)
+        original = frame.copy()
+        result = overlay.draw(frame)
+        # 反転 bbox が描画スキップされ, 該当領域に描画がないことを確認
+        np.testing.assert_array_equal(
+            result[245:355, 245:355], original[245:355, 245:355]
+        )
+
+    def test_nan_bbox_does_not_crash(self):
+        overlay = DetectionOverlay()
+        det = _make_detection(bbox=(float("nan"), 10.0, 100.0, 100.0))
+        overlay.update(_make_response(detections=(det,)))
+        frame = np.zeros((200, 200, 3), dtype=np.uint8)
+        overlay.draw(frame)
+
+    def test_inf_bbox_does_not_crash(self):
+        overlay = DetectionOverlay()
+        det = _make_detection(bbox=(0.0, 0.0, float("inf"), 100.0))
+        overlay.update(_make_response(detections=(det,)))
+        frame = np.zeros((200, 200, 3), dtype=np.uint8)
+        overlay.draw(frame)
+
+    def test_bbox_completely_outside_frame_is_skipped(self):
+        overlay = DetectionOverlay()
+        det = _make_detection(bbox=(500.0, 500.0, 600.0, 600.0))
+        overlay.update(_make_response(detections=(det,)))
+        frame = np.zeros((200, 200, 3), dtype=np.uint8)
+        overlay.draw(frame)
+
+    def test_non_bgr_frame_returned_unchanged(self):
+        overlay = DetectionOverlay()
+        overlay.update(_make_response())
+        frame_gray = np.zeros((200, 200), dtype=np.uint8)
+        original = frame_gray.copy()
+        result = overlay.draw(frame_gray)
+        np.testing.assert_array_equal(result, original)
+
+    def test_confidence_zero_boundary(self):
+        overlay = DetectionOverlay()
+        det = _make_detection(confidence=0.0, bbox=(10.0, 10.0, 80.0, 80.0))
+        overlay.update(_make_response(detections=(det,)))
+        frame = np.zeros((200, 200, 3), dtype=np.uint8)
+        overlay.draw(frame)
+
+    def test_confidence_one_boundary(self):
+        overlay = DetectionOverlay()
+        det = _make_detection(confidence=1.0, bbox=(10.0, 10.0, 80.0, 80.0))
+        overlay.update(_make_response(detections=(det,)))
+        frame = np.zeros((200, 200, 3), dtype=np.uint8)
         overlay.draw(frame)
