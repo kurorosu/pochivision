@@ -154,7 +154,7 @@ class DetectionClient:
             "image_data": image_data,
             "format": "raw",
             "shape": list(frame.shape),
-            "dtype": str(frame.dtype),
+            "dtype": frame.dtype.name,
         }
 
     def _encode_jpeg(self, frame: np.ndarray) -> dict[str, Any]:
