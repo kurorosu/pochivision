@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
+from pochivision.capture_runner import _overlay_colors
 from pochivision.request.api.detection.models import Detection, DetectionResponse
 
 
@@ -39,8 +40,8 @@ class DetectionOverlay:
     """
 
     INFERRING_TEXT = "Detecting..."
-    META_COLOR: tuple[int, int, int] = (200, 200, 200)
-    ERROR_COLOR: tuple[int, int, int] = (0, 0, 200)
+    META_COLOR: tuple[int, int, int] = _overlay_colors.META_COLOR
+    ERROR_COLOR: tuple[int, int, int] = _overlay_colors.ERROR_COLOR
 
     # 決定的な色パレット (BGR). class_id % len(PALETTE) で割当.
     PALETTE: tuple[tuple[int, int, int], ...] = (

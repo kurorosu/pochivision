@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
+from pochivision.capture_runner import _overlay_colors
 from pochivision.request.api.inference.models import PredictResponse
 
 
@@ -39,6 +40,11 @@ class InferenceOverlay:
     CONFIDENCE_LOW = 0.4
 
     INFERRING_TEXT = "Inferring..."
+    META_COLOR: tuple[int, int, int] = _overlay_colors.META_COLOR
+    ERROR_COLOR: tuple[int, int, int] = _overlay_colors.ERROR_COLOR
+    HIGH_COLOR: tuple[int, int, int] = (0, 200, 0)
+    MEDIUM_COLOR: tuple[int, int, int] = (0, 200, 200)
+    LOW_COLOR: tuple[int, int, int] = (0, 0, 200)
 
     def __init__(self, context: InferenceContext | None = None) -> None:
         """コンストラクタ.
@@ -98,7 +104,7 @@ class InferenceOverlay:
         error = self.error_message
 
         if inferring and result is None and error is None:
-            self._draw_text(frame, self.INFERRING_TEXT, (200, 200, 200), y=30)
+            self._draw_text(frame, self.INFERRING_TEXT, self.META_COLOR, y=30)
             return frame
 
         if error is not None:
@@ -122,14 +128,14 @@ class InferenceOverlay:
         lines: list[tuple[str, tuple[int, int, int]]] = [
             (f"Result: {result.class_name}", color),
             (f"Confidence: {result.confidence * 100:.1f}%", color),
-            (f"Inference: {result.e2e_time_ms:.1f}ms", (200, 200, 200)),
-            (f"RTT: {result.rtt_ms:.1f}ms", (200, 200, 200)),
+            (f"Inference: {result.e2e_time_ms:.1f}ms", self.META_COLOR),
+            (f"RTT: {result.rtt_ms:.1f}ms", self.META_COLOR),
         ]
 
         if self.context and self.context.image_size:
-            lines.append((f"ImageSize: {self.context.image_size}", (200, 200, 200)))
+            lines.append((f"ImageSize: {self.context.image_size}", self.META_COLOR))
         if self.context:
-            lines.append((f"Server: {self.context.server_url}", (200, 200, 200)))
+            lines.append((f"Server: {self.context.server_url}", self.META_COLOR))
 
         y = 30
         for text, c in lines:
@@ -144,11 +150,11 @@ class InferenceOverlay:
             error: エラーメッセージ.
         """
         lines: list[tuple[str, tuple[int, int, int]]] = [
-            (f"Error: {error}", (0, 0, 200)),
+            (f"Error: {error}", self.ERROR_COLOR),
         ]
 
         if self.context:
-            lines.append((f"Server: {self.context.server_url}", (200, 200, 200)))
+            lines.append((f"Server: {self.context.server_url}", self.META_COLOR))
 
         y = 30
         for text, c in lines:
@@ -207,7 +213,7 @@ class InferenceOverlay:
             BGR カラータプル.
         """
         if confidence >= self.CONFIDENCE_HIGH:
-            return (0, 200, 0)  # 緑
+            return self.HIGH_COLOR
         if confidence >= self.CONFIDENCE_LOW:
-            return (0, 200, 200)  # 黄
-        return (0, 0, 200)  # 赤
+            return self.MEDIUM_COLOR
+        return self.LOW_COLOR
