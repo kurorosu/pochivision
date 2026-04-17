@@ -104,11 +104,15 @@ class LivePreviewRunner:
         # `_detect_period_s` は時間経過ベースのスロットリング周期.
         # `_detection_enabled` は i キートグルで変化し, True のとき送信.
         # `_detecting` は in-flight ガード (前リクエスト未完了なら次を送らない).
+        # `_detecting_lock` は _detecting 更新の排他制御.
+        # `_detection_state_lock` は _detection_enabled トグルと worker の
+        # overlay 反映を直列化し, OFF 切替直後に stale な結果が反映されるレースを防ぐ.
         self._detect_period_s = 1.0 / detect_fps if detect_fps > 0 else 0.0
         self._detection_enabled = self.detection_client is not None
         self._last_detect_ts: float = -float("inf")
         self._detecting = False
         self._detecting_lock = threading.Lock()
+        self._detection_state_lock = threading.Lock()
         self._detection_thread: threading.Thread | None = None
 
     def _build_inference_context(self) -> InferenceContext | None:
@@ -377,16 +381,17 @@ class LivePreviewRunner:
         """検出の ON / OFF をトグルする.
 
         OFF 時は overlay をクリアし, 次フレーム以降のリクエスト送信を停止する.
-        In-flight 中のリクエストはキャンセルせず, 結果が返っても overlay に
-        反映されない (OFF 側で clear 済み) ため UI 上は消える.
+        `_detection_state_lock` で worker の overlay 反映と直列化するため,
+        In-flight 中のリクエスト結果が OFF 切替後に紛れ込むことはない.
         """
-        self._detection_enabled = not self._detection_enabled
-        if not self._detection_enabled:
-            self.detection_overlay.clear()
-            self.detection_overlay.set_inferring(False)
-            self.logger.info("Detection: OFF")
-        else:
-            self.logger.info("Detection: ON")
+        with self._detection_state_lock:
+            self._detection_enabled = not self._detection_enabled
+            if not self._detection_enabled:
+                self.detection_overlay.clear()
+                self.detection_overlay.set_inferring(False)
+                self.logger.info("Detection: OFF")
+            else:
+                self.logger.info("Detection: ON")
 
     def _maybe_detect(self, frame: np.ndarray, now: float | None = None) -> bool:
         """スロットリング + in-flight ガードを判定し, 検出ワーカーを起動する.
@@ -440,21 +445,26 @@ class LivePreviewRunner:
             client = self.detection_client
             assert client is not None  # _maybe_detect で None チェック済み
             result = client.detect(frame)
-            # OFF に切り替わった後は描画に使わないよう overlay.clear() 済みだが,
-            # update で再設定されるのを避けるため enabled を確認してから反映.
-            if self._detection_enabled:
-                self.detection_overlay.update(result)
+            # (enabled チェック + overlay 反映) を _detection_state_lock で
+            # 直列化. これにより _toggle_detection OFF 後の overlay.clear()
+            # より先に update が走って stale 結果が残るレースを防ぐ.
+            with self._detection_state_lock:
+                if self._detection_enabled:
+                    self.detection_overlay.update(result)
         except DetectionConnectionError as e:
-            if self._detection_enabled:
-                self.detection_overlay.set_error("Connection failed")
+            with self._detection_state_lock:
+                if self._detection_enabled:
+                    self.detection_overlay.set_error("Connection failed")
             self.logger.error(f"Detection failed: {e}")
         except DetectionError as e:
-            if self._detection_enabled:
-                self.detection_overlay.set_error("Detection failed")
+            with self._detection_state_lock:
+                if self._detection_enabled:
+                    self.detection_overlay.set_error("Detection failed")
             self.logger.error(f"Detection failed: {e}")
         except Exception as e:
-            if self._detection_enabled:
-                self.detection_overlay.set_error("Unexpected error")
+            with self._detection_state_lock:
+                if self._detection_enabled:
+                    self.detection_overlay.set_error("Unexpected error")
             self.logger.error(f"Unexpected detection error: {e}")
         finally:
             self.detection_overlay.set_inferring(False)

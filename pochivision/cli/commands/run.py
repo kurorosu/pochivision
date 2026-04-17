@@ -318,6 +318,10 @@ def _build_detection_client(
         return None, DEFAULT_DETECTION_FPS
 
     if detect_cfg.mode != "detect":
+        logger.info(
+            f"Detection runtime not enabled: mode={detect_cfg.mode!r} "
+            f"(set mode='detect' in {detect_config_path} to enable)"
+        )
         return None, detect_cfg.detect_fps
 
     try:
