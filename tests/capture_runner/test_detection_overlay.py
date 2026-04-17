@@ -25,13 +25,17 @@ def _make_detection(
 
 
 def _make_response(
-    detections: tuple[Detection, ...] = (),
+    detections: tuple[Detection, ...] | None = None,
     e2e_time_ms: float = 12.3,
     rtt_ms: float = 65.1,
     backend: str = "onnx",
 ) -> DetectionResponse:
-    """テスト用の DetectionResponse を生成する."""
-    if not detections:
+    """テスト用の DetectionResponse を生成する.
+
+    detections が None の場合はデフォルトの Detection を 1 件含む.
+    空の検出結果をテストしたい場合は明示的に `()` を渡す.
+    """
+    if detections is None:
         detections = (_make_detection(),)
     return DetectionResponse(
         detections=detections,
@@ -88,6 +92,13 @@ class TestState:
         overlay.set_inferring(True)
         assert overlay._inferring is True
 
+    def test_error_then_result_clears_error(self):
+        overlay = DetectionOverlay()
+        overlay.set_error("connection refused")
+        overlay.update(_make_response())
+        assert overlay.error_message is None
+        assert overlay.result is not None
+
 
 class TestGetColor:
     """_get_color (決定的色割当) のテスト."""
@@ -134,12 +145,10 @@ class TestDraw:
         overlay = DetectionOverlay()
         overlay.update(_make_response(detections=()))
         frame = np.zeros((200, 400, 3), dtype=np.uint8)
-        # 空の tuple を渡すと _make_response がデフォルト値を入れてしまうので回避
-        overlay.result = DetectionResponse(
-            detections=(), e2e_time_ms=5.0, backend="onnx", rtt_ms=10.0
-        )
         result = overlay.draw(frame)
         assert result.sum() > 0
+        assert overlay.result is not None
+        assert overlay.result.detections == ()
 
     def test_bbox_drawn_within_frame(self):
         overlay = DetectionOverlay()
@@ -248,3 +257,18 @@ class TestDraw:
         overlay.update(_make_response(detections=(det,)))
         frame = np.zeros((200, 200, 3), dtype=np.uint8)
         overlay.draw(frame)
+
+    def test_text_outline_dark_pixels_drawn(self):
+        """テキストのアウトライン (黒ストローク) が描画されていることを検証.
+
+        LINE_AA のアンチエイリアスにより完全な (0, 0, 0) は稀なため,
+        白背景で十分に暗いピクセル (全チャネル 50 未満) の存在で検証する.
+        """
+        overlay = DetectionOverlay()
+        overlay.update(_make_response(detections=()))
+        frame = np.full((200, 400, 3), 255, dtype=np.uint8)
+        result = overlay.draw(frame)
+        dark_mask = (
+            (result[..., 0] < 50) & (result[..., 1] < 50) & (result[..., 2] < 50)
+        )
+        assert dark_mask.any()
