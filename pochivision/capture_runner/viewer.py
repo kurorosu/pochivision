@@ -267,10 +267,11 @@ class LivePreviewRunner:
                 cv2.imshow("Live View", preview)
 
                 key = cv2.waitKey(1) & 0xFF
-                # DEBUG: キー値のトレース (何も押していないのに OFF になる事象の調査用).
+                # TRACE: キー値を INFO で記録 (何も押していないのに OFF になる事象の調査用).
                 # 255 = (-1 & 0xFF) は「何も押されていない」状態なのでスキップ.
+                # 調査完了後はこのブロックを削除する.
                 if key != 255:
-                    self.logger.debug(
+                    self.logger.info(
                         f"key event: raw={key} "
                         f"ascii={chr(key) if 32 <= key < 127 else '?'}"
                     )
