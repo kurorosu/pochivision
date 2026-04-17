@@ -34,6 +34,9 @@ def detect_runner(tmp_path):
     `cap` / `pipeline` は cv2 / PipelineExecutor の重い初期化を避けるため
     MagicMock を使用 (本プロジェクトの既存テスト test_run_inference.py と同じ方針).
     `DetectionClient` は実オブジェクトを生成する.
+
+    `_detection_enabled` はデフォルト False だが, スロットリング / worker 系の
+    挙動を検証するテストでは事前に True に設定しておく (i キー押下相当).
     """
     cap = MagicMock()
     pipeline = MagicMock()
@@ -45,6 +48,7 @@ def detect_runner(tmp_path):
         detection_client=client,
         detect_fps=5.0,
     )
+    runner._detection_enabled = True
     try:
         yield runner
     finally:
@@ -72,8 +76,22 @@ class TestDetectMode:
     def test_is_detect_mode_false_when_no_client(self, no_detect_runner):
         assert no_detect_runner.is_detect_mode is False
 
-    def test_detection_enabled_defaults_true_in_detect_mode(self, detect_runner):
-        assert detect_runner._detection_enabled is True
+    def test_detection_enabled_defaults_false_on_startup(self, tmp_path):
+        """起動直後は `i` 押下待ちで検出は OFF. fixture での True 上書きをバイパス."""
+        cap = MagicMock()
+        pipeline = MagicMock()
+        pipeline.output_dir = tmp_path
+        client = DetectionClient(base_url="http://localhost:8000")
+        runner = LivePreviewRunner(
+            cap,
+            pipeline,
+            detection_client=client,
+            detect_fps=5.0,
+        )
+        try:
+            assert runner._detection_enabled is False
+        finally:
+            client.close()
 
     def test_detect_period_matches_fps(self, detect_runner):
         # fixture の detect_fps=5.0 → period=0.2s

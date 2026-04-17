@@ -32,7 +32,6 @@ class TestLoadDetectConfig:
         assert config.score_threshold == 0.5
         assert config.timeout == 5.0
         assert config.jpeg_quality == 90
-        assert config.mode == "classify"
         assert config.detect_fps == 5.0
 
     def test_full_config(self, tmp_path):
@@ -122,21 +121,30 @@ class TestLoadDetectConfig:
         with pytest.raises(ConfigLoadError):
             load_detect_config(str(tmp_path / "nonexistent.json"))
 
-    def test_mode_detect(self, tmp_path):
+    def test_detect_fps_custom(self, tmp_path):
         path = _write_config(
             tmp_path,
-            {"base_url": "http://localhost:8000", "mode": "detect", "detect_fps": 10.0},
+            {"base_url": "http://localhost:8000", "detect_fps": 10.0},
         )
         config = load_detect_config(str(path))
-        assert config.mode == "detect"
         assert config.detect_fps == 10.0
 
-    def test_invalid_mode_raises(self, tmp_path):
+    def test_legacy_mode_key_ignored_with_warning(self, tmp_path, caplog):
+        """廃止された `mode` キーが JSON に残っていても warning を出して無視する."""
         path = _write_config(
-            tmp_path, {"base_url": "http://localhost:8000", "mode": "invalid"}
+            tmp_path,
+            {"base_url": "http://localhost:8000", "mode": "detect"},
         )
-        with pytest.raises(ConfigValidationError, match="mode"):
-            load_detect_config(str(path))
+        with caplog.at_level("WARNING"):
+            config = load_detect_config(str(path))
+
+        # mode 属性は DetectConfig に存在しない
+        assert not hasattr(config, "mode")
+        # 廃止アナウンスの warning が記録されている
+        assert any(
+            "mode" in rec.message and "--detect" in rec.message
+            for rec in caplog.records
+        )
 
     def test_detect_fps_zero_raises(self, tmp_path):
         path = _write_config(

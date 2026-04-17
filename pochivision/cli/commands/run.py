@@ -45,6 +45,13 @@ from pochivision.workspace import OutputManager
     default=DEFAULT_DETECT_CONFIG_PATH,
     help=f"検出設定ファイルのパス (デフォルト: {DEFAULT_DETECT_CONFIG_PATH})",
 )
+@click.option(
+    "--detect",
+    "detect_enabled",
+    is_flag=True,
+    default=False,
+    help="常時検出ランタイムを有効化 (pochidetection WebAPI を使用)",
+)
 @click.pass_context
 def run(
     ctx: click.Context,
@@ -55,6 +62,7 @@ def run(
     no_recording: bool,
     infer_config: str,
     detect_config: str,
+    detect_enabled: bool,
 ) -> None:
     """ライブプレビューを起動する (従来の pochi コマンド)."""
     log_manager = LogManager()
@@ -81,6 +89,7 @@ def run(
         output_manager,
         infer_config,
         detect_config,
+        detect_enabled,
     )
 
 
@@ -189,6 +198,7 @@ def _run_preview(
     output_manager: OutputManager,
     infer_config_path: str,
     detect_config_path: str,
+    detect_enabled: bool,
 ) -> None:
     """プレビューを実行する.
 
@@ -201,6 +211,7 @@ def _run_preview(
         output_manager: 出力ディレクトリの統一管理クラス.
         infer_config_path: 推論設定ファイルのパス.
         detect_config_path: 検出設定ファイルのパス.
+        detect_enabled: `--detect` フラグで検出ランタイムを有効化するか.
     """
     logger = log_manager.get_logger()
     try:
@@ -236,7 +247,7 @@ def _run_preview(
         )
 
         detection_client, detect_fps = _build_detection_client(
-            detect_config_path, logger
+            detect_config_path, detect_enabled, logger
         )
         inference_client = None
         if detection_client is None:
@@ -294,35 +305,36 @@ def _build_inference_client(
 
 
 def _build_detection_client(
-    detect_config_path: str, logger: logging.Logger
+    detect_config_path: str, detect_enabled: bool, logger: logging.Logger
 ) -> tuple[DetectionClient | None, float]:
     """検出クライアントを構築する.
 
-    `mode == "detect"` の場合のみクライアントを生成する.
-    設定ファイルが存在しない, `mode == "classify"`, または読み込みに失敗した
-    場合は (None, デフォルト fps) を返す (分類モードにフォールバック).
+    `detect_enabled=True` (CLI の `--detect` フラグ指定) のときのみクライアントを
+    生成する. 設定ファイルが存在しない, または読み込みに失敗した場合は
+    (None, デフォルト fps) を返す (分類モードにフォールバック).
 
     Args:
         detect_config_path: 検出設定ファイルのパス.
+        detect_enabled: `--detect` フラグで検出モードが有効化されているか.
         logger: ロガー.
 
     Returns:
         (DetectionClient or None, detect_fps).
     """
+    if not detect_enabled:
+        return None, DEFAULT_DETECTION_FPS
+
     if not Path(detect_config_path).exists():
+        logger.warning(
+            f"--detect is set but config file is missing: {detect_config_path} "
+            f"(falling back to classify mode)"
+        )
         return None, DEFAULT_DETECTION_FPS
     try:
         detect_cfg = load_detect_config(detect_config_path)
     except (ConfigLoadError, ConfigValidationError, ValueError) as e:
         logger.warning(f"Detect config not loaded, skipping: {e}")
         return None, DEFAULT_DETECTION_FPS
-
-    if detect_cfg.mode != "detect":
-        logger.info(
-            f"Detection runtime not enabled: mode={detect_cfg.mode!r} "
-            f"(set mode='detect' in {detect_config_path} to enable)"
-        )
-        return None, detect_cfg.detect_fps
 
     try:
         client = DetectionClient(
