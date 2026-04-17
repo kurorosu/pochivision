@@ -6,15 +6,16 @@
 ## [Unreleased]
 
 ### Added
-- pochidetection 検出 API クライアント (`DetectionClient`) を追加. base64 エンコードで画像を送信し, bbox + class + confidence を取得する. `DetectConfig`, 専用例外 (`DetectionError` / `DetectionConnectionError`), サンプル設定 `config/detect_config.json` を同梱. ([#403](https://github.com/kurorosu/pochivision/pull/403))
-- `DetectionOverlay` を追加し, `DetectionResponse` を受けてフレームに bbox / ラベル / メタ情報 (検出数, e2e_time_ms, rtt_ms, backend) を描画する. クラス ID から決定的に割り当てる 8 色パレットを内蔵. ([#407](https://github.com/kurorosu/pochivision/pull/407))
-- 常時検出ランタイムを `CaptureRunner` に統合. `detect_config.json` に `mode = "detect"` と `detect_fps` (例: 5 Hz) を設定すると, `time.perf_counter()` ベースのスロットリング + 非同期スレッドで `DetectionClient.detect()` を呼び出し, `DetectionOverlay` に結果を反映する. `i` キーで検出 ON/OFF をトグル. detect モードでは ROI 選択を無効化しフル解像度フレームを送信 (bbox 座標系を保つため). CLI に `--detect-config` オプション追加. 接続失敗・タイムアウト時は overlay にエラー表示しキャプチャループは継続. `DetectionOverlay` の状態更新 / draw を `threading.Lock` で保護. ((NA.))
+- pochidetection 検出 API クライアント (`DetectionClient`) を追加. `DetectConfig` / 専用例外 / サンプル `config/detect_config.json` 同梱. ([#403](https://github.com/kurorosu/pochivision/pull/403))
+- `DetectionOverlay` を追加. `DetectionResponse` を受けて bbox / ラベル / メタ情報 (検出数 / e2e_time_ms / rtt_ms / backend) を描画. class ID からの決定的 8 色パレット内蔵. ([#407](https://github.com/kurorosu/pochivision/pull/407))
+- 常時検出ランタイムを `CaptureRunner` に統合. `time.perf_counter()` ベースのスロットリング + 非同期スレッドで検出し `DetectionOverlay` に反映. `i` キーで ON/OFF トグル, detect モードは ROI 無効化. `DetectionOverlay` の state 更新 / draw を `threading.Lock` で保護. ([#414](https://github.com/kurorosu/pochivision/pull/414))
 
 ### Changed
-- **BREAKING**: API クライアント / config の命名を統一. `InferConfig` / `DetectConfig` のフィールドと JSON キーを `url` → `base_url`, `format` → `image_format` に変更してクライアント引数名と揃えた. 既存 `config/infer_config.json` / `config/detect_config.json` を使っている場合は新しいキー名への更新が必要. ([#412](https://github.com/kurorosu/pochivision/pull/412))
-- `DetectionClient` のバリデーションとレスポンスパースを堅牢化. フレーム dtype / shape / timeout / 接続先 URL / malformed JSON / detection 要素の型不一致を検知して適切な例外にマッピング. dtype 送信を `frame.dtype.name` で正規化. `inference/__init__.py` の docstring 半角スペースも統一. ([#406](https://github.com/kurorosu/pochivision/pull/406))
-- `DetectionOverlay` で bbox 異常値 (NaN / Inf / 反転 / フレーム外) をガードしてスキップし, ラベル矩形をフレーム範囲でクリップ. BGR 3 チャネル以外のフレームは描画せず返す. スレッド安全性の注意書きを docstring に追加 (lock は #402 で導入予定). ([#410](https://github.com/kurorosu/pochivision/pull/410))
-- `DetectionOverlay` / `InferenceOverlay` の色定数定義方針を統一. `InferenceOverlay` の hardcoded 色 (メタグレー / エラー赤 / 信頼度の高中低) を `META_COLOR` / `ERROR_COLOR` / `HIGH_COLOR` / `MEDIUM_COLOR` / `LOW_COLOR` のクラス定数に整理. 共通色 (`META_COLOR` / `ERROR_COLOR`) は `capture_runner/_overlay_colors.py` に抽出して両オーバーレイから参照する. ([#413](https://github.com/kurorosu/pochivision/pull/413))
+- **BREAKING**: 検出モードの有効化を `DetectConfig.mode` から CLI フラグ `--detect` に変更. 既存 JSON の `mode` キーは warning を出して無視 (後方互換). ((NA.))
+- **BREAKING**: API クライアント / config のキー名を `url` → `base_url`, `format` → `image_format` に統一. 既存 `config/*.json` は要更新. ([#412](https://github.com/kurorosu/pochivision/pull/412))
+- `DetectionClient` のバリデーション / レスポンスパースを堅牢化. frame dtype / shape / timeout / URL / JSON / 型不一致を適切な例外にマッピング. ([#406](https://github.com/kurorosu/pochivision/pull/406))
+- `DetectionOverlay` で bbox 異常値 (NaN / Inf / 反転 / フレーム外) をガード, ラベル矩形をフレーム範囲でクリップ. 非 BGR 3ch フレームは描画しない. ([#410](https://github.com/kurorosu/pochivision/pull/410))
+- `DetectionOverlay` / `InferenceOverlay` の色定数定義を統一. 共通色 (`META_COLOR` / `ERROR_COLOR`) を `capture_runner/_overlay_colors.py` に抽出. ([#413](https://github.com/kurorosu/pochivision/pull/413))
 
 ### Fixed
 - 無し

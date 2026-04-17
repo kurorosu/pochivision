@@ -1,5 +1,6 @@
 """検出設定ファイルのモデルとローダーを定義するモジュール."""
 
+import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -8,14 +9,14 @@ from pochivision.constants import (
     DEFAULT_DETECTION_FORMAT,
     DEFAULT_DETECTION_FPS,
     DEFAULT_DETECTION_JPEG_QUALITY,
-    DEFAULT_DETECTION_MODE,
     DEFAULT_DETECTION_SCORE_THRESHOLD,
     DEFAULT_DETECTION_TIMEOUT,
 )
 from pochivision.exceptions.config import ConfigValidationError
 
 _VALID_FORMATS = {"raw", "jpeg"}
-_VALID_MODES = {"classify", "detect"}
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -36,11 +37,8 @@ class DetectConfig:
         score_threshold: 検出信頼度の下限しきい値 (0.0-1.0).
         timeout: リクエストタイムアウト (秒).
         jpeg_quality: JPEG 圧縮品質 (1-100). image_format="jpeg" のとき使用.
-        mode: ランタイム統合モード ("classify" or "detect"). "detect" 指定時のみ
-            常時検出ランタイムが有効化される. "classify" (デフォルト) なら
-            従来どおり infer_config 経由の分類のみが有効.
-        detect_fps: `mode="detect"` のときの検出リクエスト頻度 (Hz). 入力 FPS より
-            低い値を設定してスロットリング. 正の数のみ.
+        detect_fps: 検出モードが CLI `--detect` で有効化された際の検出リクエスト頻度
+            (Hz). 入力 FPS より低い値を設定してスロットリング. 正の数のみ.
     """
 
     base_url: str
@@ -48,7 +46,6 @@ class DetectConfig:
     score_threshold: float = DEFAULT_DETECTION_SCORE_THRESHOLD
     timeout: float = DEFAULT_DETECTION_TIMEOUT
     jpeg_quality: int = DEFAULT_DETECTION_JPEG_QUALITY
-    mode: str = DEFAULT_DETECTION_MODE
     detect_fps: float = DEFAULT_DETECTION_FPS
 
 
@@ -124,10 +121,10 @@ def _build_detect_config(data: dict[str, Any]) -> DetectConfig:
             f"'jpeg_quality' は 1-100 の整数である必要があります: {jpeg_quality!r}"
         )
 
-    mode = data.get("mode", DEFAULT_DETECTION_MODE)
-    if mode not in _VALID_MODES:
-        raise ConfigValidationError(
-            f"'mode' は {_VALID_MODES} のいずれかである必要があります: {mode!r}"
+    if "mode" in data:
+        _logger.warning(
+            "'mode' フィールドは廃止されました. 検出モードの有効化は "
+            "CLI フラグ '--detect' を使用してください. 値は無視されます."
         )
 
     detect_fps = data.get("detect_fps", DEFAULT_DETECTION_FPS)
@@ -142,6 +139,5 @@ def _build_detect_config(data: dict[str, Any]) -> DetectConfig:
         score_threshold=float(score_threshold),
         timeout=float(timeout),
         jpeg_quality=jpeg_quality,
-        mode=mode,
         detect_fps=float(detect_fps),
     )
