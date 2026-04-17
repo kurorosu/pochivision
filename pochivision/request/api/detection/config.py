@@ -81,7 +81,8 @@ def _build_detect_config(data: dict[str, Any]) -> DetectConfig:
         ("http://", "https://")
     ):
         raise ConfigValidationError(
-            f"'base_url' は http:// または https:// で始まる文字列必須: {base_url!r}"
+            f"'base_url' は http:// または https:// で始まる文字列である必要があります: "
+            f"{base_url!r}"
         )
 
     image_format = data.get("image_format", DEFAULT_DETECTION_FORMAT)

@@ -52,7 +52,7 @@ class TestLoadDetectConfig:
         assert config.timeout == 10.0
         assert config.jpeg_quality == 75
 
-    def test_missing_url_raises(self, tmp_path):
+    def test_missing_base_url_raises(self, tmp_path):
         path = _write_config(tmp_path, {"image_format": "jpeg"})
         with pytest.raises(ConfigValidationError, match="base_url"):
             load_detect_config(str(path))
@@ -67,7 +67,7 @@ class TestLoadDetectConfig:
         with pytest.raises(ConfigValidationError, match="http"):
             load_detect_config(str(path))
 
-    def test_invalid_format_raises(self, tmp_path):
+    def test_invalid_image_format_raises(self, tmp_path):
         path = _write_config(
             tmp_path, {"base_url": "http://localhost:8000", "image_format": "png"}
         )

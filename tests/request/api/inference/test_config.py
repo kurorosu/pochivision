@@ -157,12 +157,12 @@ class TestLoadInferConfigError:
         with pytest.raises(ConfigLoadError):
             load_infer_config(str(path))
 
-    def test_missing_url(self, tmp_path):
+    def test_missing_base_url(self, tmp_path):
         path = _write_config(tmp_path, {"image_format": "jpeg"})
         with pytest.raises(ConfigValidationError, match="base_url"):
             load_infer_config(path)
 
-    def test_invalid_format(self, tmp_path):
+    def test_invalid_image_format(self, tmp_path):
         path = _write_config(
             tmp_path,
             {
