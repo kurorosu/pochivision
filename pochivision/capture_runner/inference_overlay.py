@@ -44,6 +44,8 @@ class InferenceOverlay:
     ERROR_COLOR: tuple[int, int, int] = _overlay_colors.ERROR_COLOR
     HIGH_COLOR: tuple[int, int, int] = (0, 200, 0)
     MEDIUM_COLOR: tuple[int, int, int] = (0, 200, 200)
+    # 信頼度低を示す赤. 現状 ERROR_COLOR と同値だが意味 (有効な低信頼推論 vs 通信エラー)
+    # が異なるため独立定義する. 片方だけ変えたい将来の変更に備える.
     LOW_COLOR: tuple[int, int, int] = (0, 0, 200)
 
     def __init__(self, context: InferenceContext | None = None) -> None:
