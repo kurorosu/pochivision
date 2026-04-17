@@ -25,13 +25,20 @@ def _make_detection(
 
 
 def _make_response(
-    detections: tuple[Detection, ...] = (),
+    detections: tuple[Detection, ...] | None = None,
     e2e_time_ms: float = 12.3,
     rtt_ms: float = 65.1,
     backend: str = "onnx",
 ) -> DetectionResponse:
-    """テスト用の DetectionResponse を生成する."""
-    if not detections:
+    """テスト用の DetectionResponse を生成する.
+
+    - `detections=None` (デフォルト): 代表的な Detection を 1 件含む応答を返す
+    - `detections=()`: 空の検出応答を返す (メタ情報描画のみ検証したい場合に使う)
+    - `detections=(det1, det2, ...)`: 明示的に指定した検出だけを含む
+
+    暗黙のデフォルト検出に依存するテストは呼び出し側で意図を明記すること.
+    """
+    if detections is None:
         detections = (_make_detection(),)
     return DetectionResponse(
         detections=detections,
@@ -88,6 +95,13 @@ class TestState:
         overlay.set_inferring(True)
         assert overlay._inferring is True
 
+    def test_error_then_result_clears_error(self):
+        overlay = DetectionOverlay()
+        overlay.set_error("connection refused")
+        overlay.update(_make_response())
+        assert overlay.error_message is None
+        assert overlay.result is not None
+
 
 class TestGetColor:
     """_get_color (決定的色割当) のテスト."""
@@ -130,16 +144,34 @@ class TestDraw:
         result = overlay.draw(frame)
         assert result.sum() > 0
 
-    def test_empty_detections_draws_meta_only(self):
+    def test_error_draws_without_context(self):
+        """context なしでも error メッセージが描画される."""
         overlay = DetectionOverlay()
-        overlay.update(_make_response(detections=()))
+        overlay.set_error("boom")
         frame = np.zeros((200, 400, 3), dtype=np.uint8)
-        # 空の tuple を渡すと _make_response がデフォルト値を入れてしまうので回避
-        overlay.result = DetectionResponse(
-            detections=(), e2e_time_ms=5.0, backend="onnx", rtt_ms=10.0
-        )
         result = overlay.draw(frame)
         assert result.sum() > 0
+
+    def test_result_takes_precedence_over_inferring(self):
+        """result がある状態で inferring=True でも 'Detecting...' ではなく result を描画する."""
+        overlay = DetectionOverlay()
+        overlay.update(_make_response(detections=()))
+        overlay.set_inferring(True)
+        frame = np.zeros((200, 400, 3), dtype=np.uint8)
+        result = overlay.draw(frame)
+        # 結果のメタが出ており, それは最終状態での result 優先の証左
+        assert result.sum() > 0
+        assert overlay.result is not None
+
+    def test_empty_detections_draws_meta_only(self):
+        overlay = DetectionOverlay()
+        # detections=() を明示して bbox 描画を発生させずメタ情報のみ描画することを検証
+        overlay.update(_make_response(detections=()))
+        frame = np.zeros((200, 400, 3), dtype=np.uint8)
+        result = overlay.draw(frame)
+        assert result.sum() > 0
+        assert overlay.result is not None
+        assert overlay.result.detections == ()
 
     def test_bbox_drawn_within_frame(self):
         overlay = DetectionOverlay()
@@ -248,3 +280,39 @@ class TestDraw:
         overlay.update(_make_response(detections=(det,)))
         frame = np.zeros((200, 200, 3), dtype=np.uint8)
         overlay.draw(frame)
+
+    def test_text_outline_dark_pixels_drawn(self):
+        """テキストのアウトライン (黒ストローク) が描画されていることを検証.
+
+        実装は `cv2.putText` を 2 回呼び出す (outline: color=(0,0,0),
+        thickness=4 -> text: color=META_COLOR, thickness=2). LINE_AA による
+        アンチエイリアスで白背景と混合するため完全な (0, 0, 0) は中心に限られ,
+        ストローク中心付近の十分に暗いピクセルで存在確認する.
+
+        閾値 50 は「白 255 からの強い暗化があれば outline とみなせる」目安値で,
+        アンチエイリアスによる縁 (中間色) が通常 100-200 程度になる性質に基づく.
+        検出 bbox が描く塗りつぶしの影響を排除するため detections=() を使う.
+        """
+        overlay = DetectionOverlay()
+        overlay.update(_make_response(detections=()))
+        frame = np.full((200, 400, 3), 255, dtype=np.uint8)
+        result = overlay.draw(frame)
+        dark_mask = (
+            (result[..., 0] < 50) & (result[..., 1] < 50) & (result[..., 2] < 50)
+        )
+        assert dark_mask.any()
+
+    def test_text_outline_visible_on_black_background(self):
+        """黒背景でもアウトライン描画が text の色変化として現れることを検証."""
+        overlay = DetectionOverlay()
+        overlay.update(_make_response(detections=()))
+        frame = np.zeros((200, 400, 3), dtype=np.uint8)
+        result = overlay.draw(frame)
+        # 黒背景ではテキスト本体 (META_COLOR) が唯一の非黒ピクセル源
+        b, g, r = DetectionOverlay.META_COLOR
+        bright_mask = (
+            (result[..., 0] > b // 2)
+            & (result[..., 1] > g // 2)
+            & (result[..., 2] > r // 2)
+        )
+        assert bright_mask.any()
