@@ -90,6 +90,7 @@ uv run pochi run --infer-config config/infer_config.json
 | `--config` | | 設定ファイルのパスを指定 (デフォルト: config/config.json) |
 | `--no-recording` | | 録画機能を無効にして起動 |
 | `--infer-config` | | 推論設定ファイルのパス (デフォルト: config/infer_config.json) |
+| `--detect-config` | | 検出設定ファイルのパス (デフォルト: config/detect_config.json) |
 
 #### 推論設定 (`infer_config.json`)
 
@@ -104,6 +105,22 @@ uv run pochi run --infer-config config/infer_config.json
 | `save_csv` | No | `false` | 推論結果を CSV ファイルに出力するか |
 
 > **Migration (0.7 → 0.8)**: キー名が `url` → `base_url`, `format` → `image_format` に変更されました. お使いの `config/infer_config.json` / `config/detect_config.json` の該当キーをリネームしてください (旧キーを含む設定は `ConfigValidationError: 'base_url' が必要です` エラーになります).
+
+#### 検出設定 (`detect_config.json`)
+
+`mode = "detect"` を設定することで, pochidetection WebAPI を使った**常時検出ランタイム**が有効化されます. 入力 FPS に対して `detect_fps` でスロットリングしつつ非同期に検出リクエストを送信し, 結果をプレビューに bbox + メタ情報として描画します. detect モードでは ROI 選択は無効化され, 常にフル解像度フレームが送信されます (bbox 座標系を保つためクライアント側のリサイズは行わない).
+
+| キー | 必須 | デフォルト | 説明 |
+|------|------|-----------|------|
+| `base_url` | Yes | - | pochidetection 検出 API のベース URL |
+| `image_format` | No | `"raw"` | 画像送信形式 (`"raw"` / `"jpeg"`) |
+| `score_threshold` | No | `0.5` | 検出信頼度の下限しきい値 (0.0-1.0) |
+| `timeout` | No | `5.0` | リクエストタイムアウト (秒) |
+| `jpeg_quality` | No | `90` | JPEG 圧縮品質 (1-100, `image_format="jpeg"` のとき) |
+| `mode` | No | `"classify"` | ランタイムモード (`"classify"` / `"detect"`). `"detect"` で常時検出ランタイム有効化 |
+| `detect_fps` | No | `5.0` | `mode="detect"` 時の検出リクエスト頻度 (Hz) |
+
+実行中は `i` キーで検出の ON/OFF をトグルできます. 接続失敗やタイムアウト時はキャプチャループを止めず, overlay にエラーメッセージが表示されます.
 
 ### `pochi extract` - 特徴量抽出
 

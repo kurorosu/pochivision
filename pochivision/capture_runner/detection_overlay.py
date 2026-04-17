@@ -1,5 +1,6 @@
 """検出結果オーバーレイモジュール."""
 
+import threading
 from dataclasses import dataclass
 
 import cv2
@@ -65,6 +66,7 @@ class DetectionOverlay:
         self.error_message: str | None = None
         self.context = context
         self._inferring = False
+        self._lock = threading.Lock()
 
     def update(self, result: DetectionResponse) -> None:
         """検出結果を更新する.
@@ -74,8 +76,9 @@ class DetectionOverlay:
         Args:
             result: 検出 API からのレスポンス.
         """
-        self.result = result
-        self.error_message = None
+        with self._lock:
+            self.result = result
+            self.error_message = None
 
     def set_error(self, message: str) -> None:
         """エラーメッセージを設定する.
@@ -83,13 +86,15 @@ class DetectionOverlay:
         Args:
             message: 表示するエラーメッセージ.
         """
-        self.error_message = message
-        self.result = None
+        with self._lock:
+            self.error_message = message
+            self.result = None
 
     def clear(self) -> None:
         """検出結果とエラーメッセージをクリアする."""
-        self.result = None
-        self.error_message = None
+        with self._lock:
+            self.result = None
+            self.error_message = None
 
     def set_inferring(self, inferring: bool) -> None:
         """推論中フラグを設定する.
@@ -97,7 +102,8 @@ class DetectionOverlay:
         Args:
             inferring: 推論中かどうか.
         """
-        self._inferring = inferring
+        with self._lock:
+            self._inferring = inferring
 
     def _get_color(self, class_id: int) -> tuple[int, int, int]:
         """class_id に対応する決定的な BGR 色を返す.
@@ -116,12 +122,11 @@ class DetectionOverlay:
         BGR 3 チャネル以外のフレームは描画せずそのまま返す.
 
         Note:
-            スレッド安全性: 本メソッドは `self.result` / `self.error_message` /
-            `self._inferring` を読み取る. 複数スレッドからの `update()` /
-            `set_error()` / `set_inferring()` と並行実行すると TOCTOU 競合の
-            可能性あり. 呼び出し側でシリアライズすること. ランタイム統合で
-            lock を導入予定
-            ([#402](https://github.com/kurorosu/pochivision/issues/402)).
+            スレッド安全性: 状態読み取りを lock 下でローカル変数にスナップショット
+            してからロックを解放する. cv2 の描画呼び出しはロック外で行うため,
+            UI スレッド描画とワーカースレッド `update()` / `set_error()` の並行
+            実行でも state の不整合は起きない. 描画中に状態が更新された場合,
+            次フレームの draw で反映される.
 
         Args:
             frame: 描画先のフレーム. このフレームを直接変更する.
@@ -132,9 +137,10 @@ class DetectionOverlay:
         if frame.ndim != 3 or frame.shape[2] != 3:
             return frame
 
-        inferring = self._inferring
-        result = self.result
-        error = self.error_message
+        with self._lock:
+            inferring = self._inferring
+            result = self.result
+            error = self.error_message
 
         if inferring and result is None and error is None:
             self._draw_text(frame, self.INFERRING_TEXT, self.META_COLOR, y=30)
