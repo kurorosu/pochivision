@@ -27,15 +27,15 @@ class InferConfig:
     """推論 API の設定.
 
     Attributes:
-        url: pochitrain 推論 API のベース URL.
-        format: 画像送信形式 ("raw" or "jpeg").
+        base_url: pochitrain 推論 API のベース URL.
+        image_format: 画像送信形式 ("raw" or "jpeg").
         resize: リサイズ設定 (None の場合はリサイズなし).
         save_frame: 推論実行時にフレーム画像を保存するかどうか.
         save_csv: 推論結果を CSV ファイルに出力するかどうか.
     """
 
-    url: str
-    format: str = "jpeg"
+    base_url: str
+    image_format: str = "jpeg"
     resize: ResizeConfig | None = None
     save_frame: bool = False
     save_csv: bool = False
@@ -76,13 +76,14 @@ def _build_infer_config(data: dict[str, Any]) -> InferConfig:
     Raises:
         ConfigValidationError: 設定内容が不正な場合.
     """
-    if "url" not in data:
-        raise ConfigValidationError("推論設定に 'url' が必要です")
+    if "base_url" not in data:
+        raise ConfigValidationError("推論設定に 'base_url' が必要です")
 
-    fmt = data.get("format", "jpeg")
-    if fmt not in _VALID_FORMATS:
+    image_format = data.get("image_format", "jpeg")
+    if image_format not in _VALID_FORMATS:
         raise ConfigValidationError(
-            f"'format' は {_VALID_FORMATS} のいずれかである必要があります: {fmt!r}"
+            f"'image_format' は {_VALID_FORMATS} のいずれかである必要があります: "
+            f"{image_format!r}"
         )
 
     resize = _build_resize_config(data.get("resize"))
@@ -100,8 +101,8 @@ def _build_infer_config(data: dict[str, Any]) -> InferConfig:
         )
 
     return InferConfig(
-        url=data["url"],
-        format=fmt,
+        base_url=data["base_url"],
+        image_format=image_format,
         resize=resize,
         save_frame=save_frame,
         save_csv=save_csv,

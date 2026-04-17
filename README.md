@@ -95,13 +95,15 @@ uv run pochi run --infer-config config/infer_config.json
 
 | キー | 必須 | デフォルト | 説明 |
 |------|------|-----------|------|
-| `url` | Yes | - | pochitrain 推論 API のベース URL |
-| `format` | No | `"jpeg"` | 画像送信形式 (`"raw"` / `"jpeg"`) |
+| `base_url` | Yes | - | pochitrain 推論 API のベース URL |
+| `image_format` | No | `"jpeg"` | 画像送信形式 (`"raw"` / `"jpeg"`) |
 | `resize.width` | No | なし (リサイズなし) | 送信画像の幅 |
 | `resize.height` | No | なし (リサイズなし) | 送信画像の高さ |
 | `resize.padding_color` | No | `[0, 0, 0]` | パディング色 (BGR) |
 | `save_frame` | No | `false` | 推論実行時にフレーム画像を保存するか |
 | `save_csv` | No | `false` | 推論結果を CSV ファイルに出力するか |
+
+> **Migration (0.7 → 0.8)**: キー名が `url` → `base_url`, `format` → `image_format` に変更されました. お使いの `config/infer_config.json` / `config/detect_config.json` の該当キーをリネームしてください (旧キーを含む設定は `ConfigValidationError: 'base_url' が必要です` エラーになります).
 
 ### `pochi extract` - 特徴量抽出
 

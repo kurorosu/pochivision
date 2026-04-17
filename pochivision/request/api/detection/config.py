@@ -27,16 +27,16 @@ class DetectConfig:
         responsibility として pochidetection#445 で扱う.
 
     Attributes:
-        url: pochidetection 検出 API のベース URL.
-        format: 画像送信形式 ("raw" or "jpeg"). raw は圧縮劣化なしで検出精度に有利,
+        base_url: pochidetection 検出 API のベース URL.
+        image_format: 画像送信形式 ("raw" or "jpeg"). raw は圧縮劣化なしで検出精度に有利,
             jpeg は転送量削減向き.
         score_threshold: 検出信頼度の下限しきい値 (0.0-1.0).
         timeout: リクエストタイムアウト (秒).
-        jpeg_quality: JPEG 圧縮品質 (1-100). format="jpeg" のとき使用.
+        jpeg_quality: JPEG 圧縮品質 (1-100). image_format="jpeg" のとき使用.
     """
 
-    url: str
-    format: str = DEFAULT_DETECTION_FORMAT
+    base_url: str
+    image_format: str = DEFAULT_DETECTION_FORMAT
     score_threshold: float = DEFAULT_DETECTION_SCORE_THRESHOLD
     timeout: float = DEFAULT_DETECTION_TIMEOUT
     jpeg_quality: int = DEFAULT_DETECTION_JPEG_QUALITY
@@ -74,18 +74,22 @@ def _build_detect_config(data: dict[str, Any]) -> DetectConfig:
     Raises:
         ConfigValidationError: 設定内容が不正な場合.
     """
-    if "url" not in data:
-        raise ConfigValidationError("検出設定に 'url' が必要です")
-    url = data["url"]
-    if not isinstance(url, str) or not url.startswith(("http://", "https://")):
+    if "base_url" not in data:
+        raise ConfigValidationError("検出設定に 'base_url' が必要です")
+    base_url = data["base_url"]
+    if not isinstance(base_url, str) or not base_url.startswith(
+        ("http://", "https://")
+    ):
         raise ConfigValidationError(
-            f"'url' は http:// または https:// で始まる文字列必須: {url!r}"
+            f"'base_url' は http:// または https:// で始まる文字列である必要があります: "
+            f"{base_url!r}"
         )
 
-    fmt = data.get("format", DEFAULT_DETECTION_FORMAT)
-    if fmt not in _VALID_FORMATS:
+    image_format = data.get("image_format", DEFAULT_DETECTION_FORMAT)
+    if image_format not in _VALID_FORMATS:
         raise ConfigValidationError(
-            f"'format' は {_VALID_FORMATS} のいずれかである必要があります: {fmt!r}"
+            f"'image_format' は {_VALID_FORMATS} のいずれかである必要があります: "
+            f"{image_format!r}"
         )
 
     score_threshold = data.get("score_threshold", DEFAULT_DETECTION_SCORE_THRESHOLD)
@@ -111,8 +115,8 @@ def _build_detect_config(data: dict[str, Any]) -> DetectConfig:
         )
 
     return DetectConfig(
-        url=data["url"],
-        format=fmt,
+        base_url=base_url,
+        image_format=image_format,
         score_threshold=float(score_threshold),
         timeout=float(timeout),
         jpeg_quality=jpeg_quality,

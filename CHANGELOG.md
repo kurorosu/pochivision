@@ -10,6 +10,7 @@
 - `DetectionOverlay` を追加し, `DetectionResponse` を受けてフレームに bbox / ラベル / メタ情報 (検出数, e2e_time_ms, rtt_ms, backend) を描画する. クラス ID から決定的に割り当てる 8 色パレットを内蔵. ([#407](https://github.com/kurorosu/pochivision/pull/407))
 
 ### Changed
+- **BREAKING**: API クライアント / config の命名を統一. `InferConfig` / `DetectConfig` のフィールドと JSON キーを `url` → `base_url`, `format` → `image_format` に変更してクライアント引数名と揃えた. 既存 `config/infer_config.json` / `config/detect_config.json` を使っている場合は新しいキー名への更新が必要. ([#412](https://github.com/kurorosu/pochivision/pull/412))
 - `DetectionClient` のバリデーションとレスポンスパースを堅牢化. フレーム dtype / shape / timeout / 接続先 URL / malformed JSON / detection 要素の型不一致を検知して適切な例外にマッピング. dtype 送信を `frame.dtype.name` で正規化. `inference/__init__.py` の docstring 半角スペースも統一. ([#406](https://github.com/kurorosu/pochivision/pull/406))
 - `DetectionOverlay` で bbox 異常値 (NaN / Inf / 反転 / フレーム外) をガードしてスキップし, ラベル矩形をフレーム範囲でクリップ. BGR 3 チャネル以外のフレームは描画せず返す. スレッド安全性の注意書きを docstring に追加 (lock は #402 で導入予定). ([#410](https://github.com/kurorosu/pochivision/pull/410))
 

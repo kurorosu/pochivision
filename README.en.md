@@ -104,13 +104,15 @@ uv run pochi run --infer-config config/infer_config.json
 
 | Key | Required | Default | Description |
 |-----|----------|---------|-------------|
-| `url` | Yes | - | pochitrain inference API base URL |
-| `format` | No | `"jpeg"` | Image format (`"raw"` / `"jpeg"`) |
+| `base_url` | Yes | - | pochitrain inference API base URL |
+| `image_format` | No | `"jpeg"` | Image format (`"raw"` / `"jpeg"`) |
 | `resize.width` | No | None (no resize) | Target image width |
 | `resize.height` | No | None (no resize) | Target image height |
 | `resize.padding_color` | No | `[0, 0, 0]` | Padding color (BGR) |
 | `save_frame` | No | `false` | Save inference frame image to disk |
 | `save_csv` | No | `false` | Save inference results to CSV file |
+
+> **Migration (0.7 → 0.8)**: Keys renamed: `url` → `base_url`, `format` → `image_format`. Please rename the corresponding keys in your `config/infer_config.json` / `config/detect_config.json` (old keys will cause `ConfigValidationError: 'base_url' is required`).
 
 ### `pochi extract` - Extract features from images
 
