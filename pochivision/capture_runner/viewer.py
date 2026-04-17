@@ -103,12 +103,14 @@ class LivePreviewRunner:
         # Detection runtime state.
         # `_detect_period_s` は時間経過ベースのスロットリング周期.
         # `_detection_enabled` は i キートグルで変化し, True のとき送信.
+        #   detect モードでも起動直後は False. 実際の検出開始は i キー押下が必要
+        #   (classify モードの「i で推論実行」と対称な UX).
         # `_detecting` は in-flight ガード (前リクエスト未完了なら次を送らない).
         # `_detecting_lock` は _detecting 更新の排他制御.
         # `_detection_state_lock` は _detection_enabled トグルと worker の
         # overlay 反映を直列化し, OFF 切替直後に stale な結果が反映されるレースを防ぐ.
         self._detect_period_s = 1.0 / detect_fps if detect_fps > 0 else 0.0
-        self._detection_enabled = self.detection_client is not None
+        self._detection_enabled = False
         self._last_detect_ts: float = -float("inf")
         self._detecting = False
         self._detecting_lock = threading.Lock()
@@ -229,6 +231,8 @@ class LivePreviewRunner:
         self.logger.info(
             "'s' for camera settings, 'd' to clear ROI, 'h' for help, 'q' to quit."
         )
+        if self.is_detect_mode:
+            self.logger.info("Press 'i' to start/stop detection (currently OFF)")
 
         try:
             cv2.namedWindow("Live View")
@@ -267,14 +271,6 @@ class LivePreviewRunner:
                 cv2.imshow("Live View", preview)
 
                 key = cv2.waitKey(1) & 0xFF
-                # TRACE: キー値を INFO で記録 (何も押していないのに OFF になる事象の調査用).
-                # 255 = (-1 & 0xFF) は「何も押されていない」状態なのでスキップ.
-                # 調査完了後はこのブロックを削除する.
-                if key != 255:
-                    self.logger.info(
-                        f"key event: raw={key} "
-                        f"ascii={chr(key) if 32 <= key < 127 else '?'}"
-                    )
                 if key == ord("c"):
                     # キャプチャ処理 (ROI でクロップ)
                     snapshot = self.roi_selector.crop(frame.copy())

@@ -126,7 +126,7 @@ uv run pochi run --detect --detect-config config/my_detect.json
 | `jpeg_quality` | No | `90` | JPEG 圧縮品質 (1-100, `image_format="jpeg"` のとき) |
 | `detect_fps` | No | `5.0` | `--detect` 有効時の検出リクエスト頻度 (Hz) |
 
-実行中は `i` キーで検出の ON/OFF をトグルできます. 接続失敗やタイムアウト時はキャプチャループを止めず, overlay にエラーメッセージが表示されます.
+起動直後は検出 OFF の状態で待機します. `i` キーで検出の ON/OFF をトグルできます (classify モードの「`i` で推論」と対称). 接続失敗やタイムアウト時はキャプチャループを止めず, overlay にエラーメッセージが表示されます.
 
 ### `pochi extract` - 特徴量抽出
 
