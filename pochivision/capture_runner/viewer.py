@@ -267,6 +267,13 @@ class LivePreviewRunner:
                 cv2.imshow("Live View", preview)
 
                 key = cv2.waitKey(1) & 0xFF
+                # DEBUG: キー値のトレース (何も押していないのに OFF になる事象の調査用).
+                # 255 = (-1 & 0xFF) は「何も押されていない」状態なのでスキップ.
+                if key != 255:
+                    self.logger.debug(
+                        f"key event: raw={key} "
+                        f"ascii={chr(key) if 32 <= key < 127 else '?'}"
+                    )
                 if key == ord("c"):
                     # キャプチャ処理 (ROI でクロップ)
                     snapshot = self.roi_selector.crop(frame.copy())
