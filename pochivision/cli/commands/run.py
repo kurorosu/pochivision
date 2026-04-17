@@ -12,12 +12,15 @@ from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
 from pochivision.constants import (
+    DEFAULT_DETECT_CONFIG_PATH,
+    DEFAULT_DETECTION_FPS,
     DEFAULT_INFER_CONFIG_PATH,
     DEFAULT_PREVIEW_HEIGHT,
     DEFAULT_PREVIEW_WIDTH,
 )
 from pochivision.core import PipelineExecutor
 from pochivision.exceptions.config import ConfigLoadError, ConfigValidationError
+from pochivision.request.api.detection import DetectionClient, load_detect_config
 from pochivision.request.api.inference import InferenceClient, load_infer_config
 from pochivision.workspace import OutputManager
 
@@ -36,6 +39,12 @@ from pochivision.workspace import OutputManager
     default=DEFAULT_INFER_CONFIG_PATH,
     help=f"推論設定ファイルのパス (デフォルト: {DEFAULT_INFER_CONFIG_PATH})",
 )
+@click.option(
+    "--detect-config",
+    type=str,
+    default=DEFAULT_DETECT_CONFIG_PATH,
+    help=f"検出設定ファイルのパス (デフォルト: {DEFAULT_DETECT_CONFIG_PATH})",
+)
 @click.pass_context
 def run(
     ctx: click.Context,
@@ -45,6 +54,7 @@ def run(
     config: str,
     no_recording: bool,
     infer_config: str,
+    detect_config: str,
 ) -> None:
     """ライブプレビューを起動する (従来の pochi コマンド)."""
     log_manager = LogManager()
@@ -70,6 +80,7 @@ def run(
         no_recording,
         output_manager,
         infer_config,
+        detect_config,
     )
 
 
@@ -177,6 +188,7 @@ def _run_preview(
     no_recording: bool,
     output_manager: OutputManager,
     infer_config_path: str,
+    detect_config_path: str,
 ) -> None:
     """プレビューを実行する.
 
@@ -188,6 +200,7 @@ def _run_preview(
         no_recording: 録画無効フラグ.
         output_manager: 出力ディレクトリの統一管理クラス.
         infer_config_path: 推論設定ファイルのパス.
+        detect_config_path: 検出設定ファイルのパス.
     """
     logger = log_manager.get_logger()
     try:
@@ -222,20 +235,12 @@ def _run_preview(
             preview_config.get("height", DEFAULT_PREVIEW_HEIGHT),
         )
 
+        detection_client, detect_fps = _build_detection_client(
+            detect_config_path, logger
+        )
         inference_client = None
-        if Path(infer_config_path).exists():
-            try:
-                infer_cfg = load_infer_config(infer_config_path)
-                inference_client = InferenceClient(
-                    base_url=infer_cfg.base_url,
-                    image_format=infer_cfg.image_format,
-                    resize=infer_cfg.resize,
-                    save_frame=infer_cfg.save_frame,
-                    save_csv=infer_cfg.save_csv,
-                )
-                logger.info(f"Inference API enabled: {infer_cfg.base_url}")
-            except (ConfigLoadError, ConfigValidationError, ValueError) as e:
-                logger.warning(f"Inference config not loaded, skipping: {e}")
+        if detection_client is None:
+            inference_client = _build_inference_client(infer_config_path, logger)
 
         app = LivePreviewRunner(
             cap,
@@ -244,6 +249,8 @@ def _run_preview(
             preview_size,
             inference_client,
             camera_setup=camera_setup,
+            detection_client=detection_client,
+            detect_fps=detect_fps,
         )
         app.run()
 
@@ -251,3 +258,81 @@ def _run_preview(
         logger.error(f"Error during execution: {e}")
     finally:
         logger.info("Application shutdown complete")
+
+
+def _build_inference_client(
+    infer_config_path: str, logger: logging.Logger
+) -> InferenceClient | None:
+    """分類推論クライアントを構築する.
+
+    設定ファイルが存在しない, または読み込みに失敗した場合は None を返す
+    (推論機能は無効化されるがアプリは継続起動).
+
+    Args:
+        infer_config_path: 推論設定ファイルのパス.
+        logger: ロガー.
+
+    Returns:
+        構築された InferenceClient, または None.
+    """
+    if not Path(infer_config_path).exists():
+        return None
+    try:
+        infer_cfg = load_infer_config(infer_config_path)
+        client = InferenceClient(
+            base_url=infer_cfg.base_url,
+            image_format=infer_cfg.image_format,
+            resize=infer_cfg.resize,
+            save_frame=infer_cfg.save_frame,
+            save_csv=infer_cfg.save_csv,
+        )
+        logger.info(f"Inference API enabled: {infer_cfg.base_url}")
+        return client
+    except (ConfigLoadError, ConfigValidationError, ValueError) as e:
+        logger.warning(f"Inference config not loaded, skipping: {e}")
+        return None
+
+
+def _build_detection_client(
+    detect_config_path: str, logger: logging.Logger
+) -> tuple[DetectionClient | None, float]:
+    """検出クライアントを構築する.
+
+    `mode == "detect"` の場合のみクライアントを生成する.
+    設定ファイルが存在しない, `mode == "classify"`, または読み込みに失敗した
+    場合は (None, デフォルト fps) を返す (分類モードにフォールバック).
+
+    Args:
+        detect_config_path: 検出設定ファイルのパス.
+        logger: ロガー.
+
+    Returns:
+        (DetectionClient or None, detect_fps).
+    """
+    if not Path(detect_config_path).exists():
+        return None, DEFAULT_DETECTION_FPS
+    try:
+        detect_cfg = load_detect_config(detect_config_path)
+    except (ConfigLoadError, ConfigValidationError, ValueError) as e:
+        logger.warning(f"Detect config not loaded, skipping: {e}")
+        return None, DEFAULT_DETECTION_FPS
+
+    if detect_cfg.mode != "detect":
+        return None, detect_cfg.detect_fps
+
+    try:
+        client = DetectionClient(
+            base_url=detect_cfg.base_url,
+            timeout=detect_cfg.timeout,
+            image_format=detect_cfg.image_format,
+            score_threshold=detect_cfg.score_threshold,
+            jpeg_quality=detect_cfg.jpeg_quality,
+        )
+        logger.info(
+            f"Detection API enabled: {detect_cfg.base_url} "
+            f"(fps={detect_cfg.detect_fps})"
+        )
+        return client, detect_cfg.detect_fps
+    except ValueError as e:
+        logger.warning(f"Detection client not initialized: {e}")
+        return None, detect_cfg.detect_fps

@@ -6,13 +6,16 @@ from typing import Any
 from pochivision.capturelib.config_handler import ConfigHandler
 from pochivision.constants import (
     DEFAULT_DETECTION_FORMAT,
+    DEFAULT_DETECTION_FPS,
     DEFAULT_DETECTION_JPEG_QUALITY,
+    DEFAULT_DETECTION_MODE,
     DEFAULT_DETECTION_SCORE_THRESHOLD,
     DEFAULT_DETECTION_TIMEOUT,
 )
 from pochivision.exceptions.config import ConfigValidationError
 
 _VALID_FORMATS = {"raw", "jpeg"}
+_VALID_MODES = {"classify", "detect"}
 
 
 @dataclass(frozen=True)
@@ -33,6 +36,11 @@ class DetectConfig:
         score_threshold: 検出信頼度の下限しきい値 (0.0-1.0).
         timeout: リクエストタイムアウト (秒).
         jpeg_quality: JPEG 圧縮品質 (1-100). image_format="jpeg" のとき使用.
+        mode: ランタイム統合モード ("classify" or "detect"). "detect" 指定時のみ
+            常時検出ランタイムが有効化される. "classify" (デフォルト) なら
+            従来どおり infer_config 経由の分類のみが有効.
+        detect_fps: `mode="detect"` のときの検出リクエスト頻度 (Hz). 入力 FPS より
+            低い値を設定してスロットリング. 正の数のみ.
     """
 
     base_url: str
@@ -40,6 +48,8 @@ class DetectConfig:
     score_threshold: float = DEFAULT_DETECTION_SCORE_THRESHOLD
     timeout: float = DEFAULT_DETECTION_TIMEOUT
     jpeg_quality: int = DEFAULT_DETECTION_JPEG_QUALITY
+    mode: str = DEFAULT_DETECTION_MODE
+    detect_fps: float = DEFAULT_DETECTION_FPS
 
 
 def load_detect_config(path: str) -> DetectConfig:
@@ -114,10 +124,24 @@ def _build_detect_config(data: dict[str, Any]) -> DetectConfig:
             f"'jpeg_quality' は 1-100 の整数である必要があります: {jpeg_quality!r}"
         )
 
+    mode = data.get("mode", DEFAULT_DETECTION_MODE)
+    if mode not in _VALID_MODES:
+        raise ConfigValidationError(
+            f"'mode' は {_VALID_MODES} のいずれかである必要があります: {mode!r}"
+        )
+
+    detect_fps = data.get("detect_fps", DEFAULT_DETECTION_FPS)
+    if not isinstance(detect_fps, (int, float)) or detect_fps <= 0:
+        raise ConfigValidationError(
+            f"'detect_fps' は正の数値である必要があります: {detect_fps!r}"
+        )
+
     return DetectConfig(
         base_url=base_url,
         image_format=image_format,
         score_threshold=float(score_threshold),
         timeout=float(timeout),
         jpeg_quality=jpeg_quality,
+        mode=mode,
+        detect_fps=float(detect_fps),
     )

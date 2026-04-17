@@ -9,6 +9,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from pochivision.capture_runner.detection_overlay import (
+    DetectionContext,
+    DetectionOverlay,
+)
 from pochivision.capture_runner.help_overlay import HelpOverlay
 from pochivision.capture_runner.inference_overlay import (
     InferenceContext,
@@ -19,13 +23,20 @@ from pochivision.capturelib.camera_config_saver import save_camera_config
 from pochivision.capturelib.camera_setup import CameraSetup
 from pochivision.capturelib.log_manager import LogManager
 from pochivision.capturelib.recording_manager import RecordingManager
-from pochivision.constants import DEFAULT_PREVIEW_HEIGHT, DEFAULT_PREVIEW_WIDTH
+from pochivision.constants import (
+    DEFAULT_DETECTION_FPS,
+    DEFAULT_PREVIEW_HEIGHT,
+    DEFAULT_PREVIEW_WIDTH,
+)
 from pochivision.core import PipelineExecutor
 from pochivision.exceptions import (
+    DetectionConnectionError,
+    DetectionError,
     InferenceConnectionError,
     InferenceError,
     VisionCaptureError,
 )
+from pochivision.request.api.detection.client import DetectionClient
 from pochivision.request.api.inference.client import InferenceClient
 from pochivision.request.api.inference.csv_writer import InferenceCsvWriter
 from pochivision.request.api.inference.models import PredictResponse
@@ -51,9 +62,15 @@ class LivePreviewRunner:
         preview_size: tuple[int, int] = (DEFAULT_PREVIEW_WIDTH, DEFAULT_PREVIEW_HEIGHT),
         inference_client: InferenceClient | None = None,
         camera_setup: CameraSetup | None = None,
+        detection_client: DetectionClient | None = None,
+        detect_fps: float = DEFAULT_DETECTION_FPS,
     ) -> None:
         """
         LivePreviewRunnerを初期化する.
+
+        `inference_client` と `detection_client` は排他. `detection_client` が
+        渡された場合は常時検出ランタイムが有効化され, `inference_client` は
+        無視される (ROI 選択も無効化).
 
         Args:
             cap: 初期化済みの cv2.VideoCapture オブジェクト.
@@ -62,6 +79,9 @@ class LivePreviewRunner:
             preview_size: プレビューウィンドウの表示サイズ (width, height).
             inference_client: pochitrain 推論 API クライアント（オプション）.
             camera_setup: カメラセットアップ情報（オプション）.
+            detection_client: pochidetection 検出 API クライアント（オプション）.
+                指定時は detect モードで動作.
+            detect_fps: 検出モード時のスロットリング頻度 (Hz).
         """
         self.cap = cap
         self.pipeline = pipeline
@@ -69,14 +89,27 @@ class LivePreviewRunner:
         self.preview_size = preview_size
         self.inference_client = inference_client
         self.camera_setup = camera_setup
+        self.detection_client = detection_client
         self.os_name = platform.system()
         self.logger = LogManager().get_logger()
         self.help_overlay = HelpOverlay()
         self.inference_overlay = InferenceOverlay(self._build_inference_context())
+        self.detection_overlay = DetectionOverlay(self._build_detection_context())
         self._inferring = False
         self._inferring_lock = threading.Lock()
         self._inference_thread: threading.Thread | None = None
         self.roi_selector = RoiSelector()
+
+        # Detection runtime state.
+        # `_detect_period_s` は時間経過ベースのスロットリング周期.
+        # `_detection_enabled` は i キートグルで変化し, True のとき送信.
+        # `_detecting` は in-flight ガード (前リクエスト未完了なら次を送らない).
+        self._detect_period_s = 1.0 / detect_fps if detect_fps > 0 else 0.0
+        self._detection_enabled = self.detection_client is not None
+        self._last_detect_ts: float = -float("inf")
+        self._detecting = False
+        self._detecting_lock = threading.Lock()
+        self._detection_thread: threading.Thread | None = None
 
     def _build_inference_context(self) -> InferenceContext | None:
         """推論クライアントからオーバーレイ用コンテキストを構築する.
@@ -96,6 +129,23 @@ class LivePreviewRunner:
             server_url=client.base_url,
             image_size=image_size,
         )
+
+    def _build_detection_context(self) -> DetectionContext | None:
+        """検出クライアントからオーバーレイ用コンテキストを構築する.
+
+        Returns:
+            コンテキスト情報, またはクライアントがない場合は None.
+        """
+        client = self.detection_client
+        if client is None:
+            return None
+        # DetectConfig はリサイズを持たないため image_size は常に None.
+        return DetectionContext(server_url=client.base_url)
+
+    @property
+    def is_detect_mode(self) -> bool:
+        """`detection_client` が設定されているかで detect モードかを判定する."""
+        return self.detection_client is not None
 
     def _resize_for_preview(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -159,11 +209,11 @@ class LivePreviewRunner:
         - 'r': 録画開始
         - 't': 録画停止
         - 's': カメラ設定
-        - 'i': 推論実行
-        - 'd': ROI リセット
+        - 'i': classify モードでは推論実行, detect モードでは検出 ON/OFF トグル
+        - 'd': ROI リセット (detect モードでは無効)
         - 'h': ヘルプオーバーレイ表示/非表示
         - 'q': 終了
-        - マウスドラッグ: ROI 選択
+        - マウスドラッグ: ROI 選択 (detect モードでは無効)
 
         Raises:
             VisionCaptureError: カメラ設定ダイアログが非対応のOSで呼び出された場合.
@@ -178,7 +228,9 @@ class LivePreviewRunner:
 
         try:
             cv2.namedWindow("Live View")
-            cv2.setMouseCallback("Live View", self.roi_selector.mouse_callback)
+            # detect モードでは ROI 選択を無効化. mouse callback をワイヤしない.
+            if not self.is_detect_mode:
+                cv2.setMouseCallback("Live View", self.roi_selector.mouse_callback)
 
             while True:
                 ret, frame = self.cap.read()
@@ -192,11 +244,21 @@ class LivePreviewRunner:
                 ):
                     self.recording_manager.add_frame(frame)
 
+                # detect モードではスロットリングで非同期検出を起動する.
+                # 結果は次以降の draw で overlay に反映される.
+                if self.is_detect_mode:
+                    self._maybe_detect(frame)
+
                 # プレビュー表示 (リサイズ後にオーバーレイを描画)
                 preview = self._resize_for_preview(frame)
-                self.roi_selector.set_preview_scale(frame.shape[1], preview.shape[1])
-                self.roi_selector.draw(preview)
-                self.inference_overlay.draw(preview)
+                if not self.is_detect_mode:
+                    self.roi_selector.set_preview_scale(
+                        frame.shape[1], preview.shape[1]
+                    )
+                    self.roi_selector.draw(preview)
+                    self.inference_overlay.draw(preview)
+                else:
+                    self.detection_overlay.draw(preview)
                 self.help_overlay.draw(preview)
                 cv2.imshow("Live View", preview)
 
@@ -221,12 +283,16 @@ class LivePreviewRunner:
                             f"Current OS: {self.os_name}"
                         )
                 elif key == ord("i"):
-                    # 推論実行 (ROI でクロップ)
-                    self._run_inference(self.roi_selector.crop(frame))
+                    # i キーはモード排他: detect → トグル, classify → 推論実行.
+                    if self.is_detect_mode:
+                        self._toggle_detection()
+                    else:
+                        self._run_inference(self.roi_selector.crop(frame))
                 elif key == ord("d"):
-                    # ROI リセット
-                    self.roi_selector.clear()
-                    self.logger.info("ROI cleared")
+                    # ROI リセット (detect モードでは無効)
+                    if not self.is_detect_mode:
+                        self.roi_selector.clear()
+                        self.logger.info("ROI cleared")
                 elif key == ord("h"):
                     # ヘルプオーバーレイのトグル
                     self.help_overlay.toggle()
@@ -306,6 +372,94 @@ class LivePreviewRunner:
             self.inference_overlay.set_inferring(False)
             with self._inferring_lock:
                 self._inferring = False
+
+    def _toggle_detection(self) -> None:
+        """検出の ON / OFF をトグルする.
+
+        OFF 時は overlay をクリアし, 次フレーム以降のリクエスト送信を停止する.
+        In-flight 中のリクエストはキャンセルせず, 結果が返っても overlay に
+        反映されない (OFF 側で clear 済み) ため UI 上は消える.
+        """
+        self._detection_enabled = not self._detection_enabled
+        if not self._detection_enabled:
+            self.detection_overlay.clear()
+            self.detection_overlay.set_inferring(False)
+            self.logger.info("Detection: OFF")
+        else:
+            self.logger.info("Detection: ON")
+
+    def _maybe_detect(self, frame: np.ndarray, now: float | None = None) -> bool:
+        """スロットリング + in-flight ガードを判定し, 検出ワーカーを起動する.
+
+        以下のすべてを満たすときに限りワーカーを起動する:
+        - 検出有効 (`_detection_enabled`)
+        - 前回送信から `_detect_period_s` 以上経過
+        - 前回リクエストが完了している (`_detecting is False`)
+
+        スロットリング周期より API の応答が遅いケースでは, in-flight ガードで
+        リクエストが重ならないよう自動的に実効レートが下がる.
+
+        Args:
+            frame: 送信候補のフレーム.
+            now: 現在時刻 (テスト用). None のとき `time.perf_counter()` を使用.
+
+        Returns:
+            ワーカーを起動したら True, スキップしたら False.
+        """
+        if self.detection_client is None or not self._detection_enabled:
+            return False
+
+        current = now if now is not None else time.perf_counter()
+        if current - self._last_detect_ts < self._detect_period_s:
+            return False
+
+        # check-then-act を lock で保護
+        with self._detecting_lock:
+            if self._detecting:
+                return False
+            self._detecting = True
+
+        self._last_detect_ts = current
+        self.detection_overlay.set_inferring(True)
+        snapshot = frame.copy()
+        self._detection_thread = threading.Thread(
+            target=self._detection_worker,
+            args=(snapshot,),
+            daemon=True,
+        )
+        self._detection_thread.start()
+        return True
+
+    def _detection_worker(self, frame: np.ndarray) -> None:
+        """バックグラウンドで検出 API を呼び出すワーカー.
+
+        Args:
+            frame: 検出対象のフレーム.
+        """
+        try:
+            client = self.detection_client
+            assert client is not None  # _maybe_detect で None チェック済み
+            result = client.detect(frame)
+            # OFF に切り替わった後は描画に使わないよう overlay.clear() 済みだが,
+            # update で再設定されるのを避けるため enabled を確認してから反映.
+            if self._detection_enabled:
+                self.detection_overlay.update(result)
+        except DetectionConnectionError as e:
+            if self._detection_enabled:
+                self.detection_overlay.set_error("Connection failed")
+            self.logger.error(f"Detection failed: {e}")
+        except DetectionError as e:
+            if self._detection_enabled:
+                self.detection_overlay.set_error("Detection failed")
+            self.logger.error(f"Detection failed: {e}")
+        except Exception as e:
+            if self._detection_enabled:
+                self.detection_overlay.set_error("Unexpected error")
+            self.logger.error(f"Unexpected detection error: {e}")
+        finally:
+            self.detection_overlay.set_inferring(False)
+            with self._detecting_lock:
+                self._detecting = False
 
     def _save_inference_frame(self, frame: np.ndarray) -> str | None:
         """リサイズ済みフレームを画像ファイルとして保存する.
@@ -434,9 +588,17 @@ class LivePreviewRunner:
         if self._inference_thread is not None:
             self._inference_thread.join(timeout=5.0)
 
+        # 検出ワーカースレッドの完了待機
+        if self._detection_thread is not None:
+            self._detection_thread.join(timeout=5.0)
+
         # 推論クライアントのクリーンアップ
         if self.inference_client:
             self.inference_client.close()
+
+        # 検出クライアントのクリーンアップ
+        if self.detection_client:
+            self.detection_client.close()
 
         # カメラ設定を結果フォルダに保存 (cap.release() の前に実行)
         self._save_camera_config()
