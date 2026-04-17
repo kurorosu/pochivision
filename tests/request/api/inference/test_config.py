@@ -26,8 +26,8 @@ class TestLoadInferConfigSuccess:
         path = _write_config(
             tmp_path,
             {
-                "url": "http://192.168.1.100:8000",
-                "format": "raw",
+                "base_url": "http://192.168.1.100:8000",
+                "image_format": "raw",
                 "resize": {
                     "width": 224,
                     "height": 224,
@@ -37,26 +37,26 @@ class TestLoadInferConfigSuccess:
         )
         config = load_infer_config(path)
 
-        assert config.url == "http://192.168.1.100:8000"
-        assert config.format == "raw"
+        assert config.base_url == "http://192.168.1.100:8000"
+        assert config.image_format == "raw"
         assert config.resize is not None
         assert config.resize.width == 224
         assert config.resize.height == 224
         assert config.resize.padding_color == (128, 128, 128)
 
     def test_minimal_config(self, tmp_path):
-        path = _write_config(tmp_path, {"url": "http://localhost:8000"})
+        path = _write_config(tmp_path, {"base_url": "http://localhost:8000"})
         config = load_infer_config(path)
 
-        assert config.url == "http://localhost:8000"
-        assert config.format == "jpeg"
+        assert config.base_url == "http://localhost:8000"
+        assert config.image_format == "jpeg"
         assert config.resize is None
         assert config.save_frame is False
 
     def test_save_frame_enabled(self, tmp_path):
         path = _write_config(
             tmp_path,
-            {"url": "http://localhost:8000", "save_frame": True},
+            {"base_url": "http://localhost:8000", "save_frame": True},
         )
         config = load_infer_config(path)
         assert config.save_frame is True
@@ -64,13 +64,13 @@ class TestLoadInferConfigSuccess:
     def test_save_csv_enabled(self, tmp_path):
         path = _write_config(
             tmp_path,
-            {"url": "http://localhost:8000", "save_csv": True},
+            {"base_url": "http://localhost:8000", "save_csv": True},
         )
         config = load_infer_config(path)
         assert config.save_csv is True
 
     def test_save_csv_default_false(self, tmp_path):
-        path = _write_config(tmp_path, {"url": "http://localhost:8000"})
+        path = _write_config(tmp_path, {"base_url": "http://localhost:8000"})
         config = load_infer_config(path)
         assert config.save_csv is False
 
@@ -78,7 +78,7 @@ class TestLoadInferConfigSuccess:
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
+                "base_url": "http://localhost:8000",
                 "resize": {"width": 320, "height": 240},
             },
         )
@@ -93,7 +93,7 @@ class TestLoadInferConfigSuccess:
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
+                "base_url": "http://localhost:8000",
                 "resize": {
                     "width": 224,
                     "height": 224,
@@ -109,7 +109,7 @@ class TestLoadInferConfigSuccess:
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
+                "base_url": "http://localhost:8000",
                 "resize": {
                     "width": 224,
                     "height": 224,
@@ -125,23 +125,23 @@ class TestLoadInferConfigSuccess:
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
-                "format": "jpeg",
+                "base_url": "http://localhost:8000",
+                "image_format": "jpeg",
             },
         )
         config = load_infer_config(path)
-        assert config.format == "jpeg"
+        assert config.image_format == "jpeg"
 
     def test_format_raw(self, tmp_path):
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
-                "format": "raw",
+                "base_url": "http://localhost:8000",
+                "image_format": "raw",
             },
         )
         config = load_infer_config(path)
-        assert config.format == "raw"
+        assert config.image_format == "raw"
 
 
 class TestLoadInferConfigError:
@@ -158,26 +158,26 @@ class TestLoadInferConfigError:
             load_infer_config(str(path))
 
     def test_missing_url(self, tmp_path):
-        path = _write_config(tmp_path, {"format": "jpeg"})
-        with pytest.raises(ConfigValidationError, match="url"):
+        path = _write_config(tmp_path, {"image_format": "jpeg"})
+        with pytest.raises(ConfigValidationError, match="base_url"):
             load_infer_config(path)
 
     def test_invalid_format(self, tmp_path):
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
-                "format": "png",
+                "base_url": "http://localhost:8000",
+                "image_format": "png",
             },
         )
-        with pytest.raises(ConfigValidationError, match="format"):
+        with pytest.raises(ConfigValidationError, match="image_format"):
             load_infer_config(path)
 
     def test_resize_missing_width(self, tmp_path):
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
+                "base_url": "http://localhost:8000",
                 "resize": {"height": 224},
             },
         )
@@ -188,7 +188,7 @@ class TestLoadInferConfigError:
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
+                "base_url": "http://localhost:8000",
                 "resize": {"width": 224},
             },
         )
@@ -199,7 +199,7 @@ class TestLoadInferConfigError:
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
+                "base_url": "http://localhost:8000",
                 "resize": {"width": 0, "height": 224},
             },
         )
@@ -210,7 +210,7 @@ class TestLoadInferConfigError:
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
+                "base_url": "http://localhost:8000",
                 "resize": {"width": -1, "height": 224},
             },
         )
@@ -221,7 +221,7 @@ class TestLoadInferConfigError:
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
+                "base_url": "http://localhost:8000",
                 "resize": {"width": 224, "height": 0},
             },
         )
@@ -232,7 +232,7 @@ class TestLoadInferConfigError:
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
+                "base_url": "http://localhost:8000",
                 "resize": {
                     "width": 224,
                     "height": 224,
@@ -246,7 +246,7 @@ class TestLoadInferConfigError:
     def test_save_frame_invalid_type(self, tmp_path):
         path = _write_config(
             tmp_path,
-            {"url": "http://localhost:8000", "save_frame": "yes"},
+            {"base_url": "http://localhost:8000", "save_frame": "yes"},
         )
         with pytest.raises(ConfigValidationError, match="save_frame"):
             load_infer_config(path)
@@ -254,7 +254,7 @@ class TestLoadInferConfigError:
     def test_save_csv_invalid_type(self, tmp_path):
         path = _write_config(
             tmp_path,
-            {"url": "http://localhost:8000", "save_csv": "yes"},
+            {"base_url": "http://localhost:8000", "save_csv": "yes"},
         )
         with pytest.raises(ConfigValidationError, match="save_csv"):
             load_infer_config(path)
@@ -263,7 +263,7 @@ class TestLoadInferConfigError:
         path = _write_config(
             tmp_path,
             {
-                "url": "http://localhost:8000",
+                "base_url": "http://localhost:8000",
                 "resize": {
                     "width": 224,
                     "height": 224,
@@ -279,10 +279,10 @@ class TestDataclassFrozen:
     """frozen dataclass のテスト."""
 
     def test_infer_config_frozen(self, tmp_path):
-        path = _write_config(tmp_path, {"url": "http://localhost:8000"})
+        path = _write_config(tmp_path, {"base_url": "http://localhost:8000"})
         config = load_infer_config(path)
         with pytest.raises(AttributeError):
-            config.url = "http://other:8000"  # type: ignore[misc]
+            config.base_url = "http://other:8000"  # type: ignore[misc]
 
     def test_resize_config_frozen(self):
         resize = ResizeConfig(width=224, height=224)

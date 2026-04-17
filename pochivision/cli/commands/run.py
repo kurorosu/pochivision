@@ -227,13 +227,13 @@ def _run_preview(
             try:
                 infer_cfg = load_infer_config(infer_config_path)
                 inference_client = InferenceClient(
-                    base_url=infer_cfg.url,
-                    image_format=infer_cfg.format,
+                    base_url=infer_cfg.base_url,
+                    image_format=infer_cfg.image_format,
                     resize=infer_cfg.resize,
                     save_frame=infer_cfg.save_frame,
                     save_csv=infer_cfg.save_csv,
                 )
-                logger.info(f"Inference API enabled: {infer_cfg.url}")
+                logger.info(f"Inference API enabled: {infer_cfg.base_url}")
             except (ConfigLoadError, ConfigValidationError, ValueError) as e:
                 logger.warning(f"Inference config not loaded, skipping: {e}")
 
