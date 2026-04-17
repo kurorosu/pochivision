@@ -115,11 +115,12 @@ class DetectionOverlay:
         BGR 3 チャネル以外のフレームは描画せずそのまま返す.
 
         Note:
-            本メソッドは `self.result` / `self.error_message` / `self._inferring`
-            を読み取るため, 複数スレッドから `update()` / `set_error()` /
-            `set_inferring()` と並行呼び出しすると TOCTOU 競合の可能性がある.
-            呼び出し側でシリアライズすること (ランタイム統合で lock を導入予定:
-            #402).
+            スレッド安全性: 本メソッドは `self.result` / `self.error_message` /
+            `self._inferring` を読み取る. 複数スレッドからの `update()` /
+            `set_error()` / `set_inferring()` と並行実行すると TOCTOU 競合の
+            可能性あり. 呼び出し側でシリアライズすること. ランタイム統合で
+            lock を導入予定
+            ([#402](https://github.com/kurorosu/pochivision/issues/402)).
 
         Args:
             frame: 描画先のフレーム. このフレームを直接変更する.
