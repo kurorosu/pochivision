@@ -91,6 +91,8 @@ class DetectionClient:
             raise ValueError(f"frame は uint8 dtype 必須 (サーバー仕様): {frame.dtype}")
         if frame.ndim != 3 or frame.shape[2] != 3:
             raise ValueError(f"frame は (H, W, 3) の 3 チャネル画像必須: {frame.shape}")
+        # Why: detect() の呼び出し全体時間 (画像エンコード + RTT + JSON parse) を計測する.
+        total_start = time.perf_counter()
         payload = self._build_payload(frame)
         url = f"{self.base_url}/api/v1/detect"
 
@@ -122,7 +124,8 @@ class DetectionClient:
         except ValueError as e:
             raise DetectionError("検出レスポンスの JSON パースに失敗しました") from e
 
-        return self._parse_response(data, rtt_ms)
+        total_ms = (time.perf_counter() - total_start) * 1000
+        return self._parse_response(data, rtt_ms, total_ms)
 
     def _build_payload(self, frame: np.ndarray) -> dict[str, Any]:
         """API リクエストのペイロードを構築する.
@@ -182,12 +185,16 @@ class DetectionClient:
             "format": "jpeg",
         }
 
-    def _parse_response(self, data: dict[str, Any], rtt_ms: float) -> DetectionResponse:
+    def _parse_response(
+        self, data: dict[str, Any], rtt_ms: float, total_ms: float
+    ) -> DetectionResponse:
         """レスポンス JSON を DetectionResponse に変換する.
 
         Args:
             data: レスポンス JSON.
             rtt_ms: クライアント側で計測した RTT (ミリ秒).
+            total_ms: クライアント側で計測した detect() 全体時間 (ミリ秒).
+                画像エンコード + RTT + JSON parse を含む.
 
         Returns:
             検出結果.
@@ -219,6 +226,7 @@ class DetectionClient:
                 e2e_time_ms=data["e2e_time_ms"],
                 backend=data["backend"],
                 rtt_ms=round(rtt_ms, 3),
+                total_ms=round(total_ms, 3),
                 phase_times_ms=dict(phase_times_ms),
                 gpu_clock_mhz=data.get("gpu_clock_mhz"),
                 gpu_vram_used_mb=data.get("gpu_vram_used_mb"),

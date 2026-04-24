@@ -1,6 +1,7 @@
 """DetectionClient のテスト."""
 
 import base64
+import time
 
 import cv2
 import httpx
@@ -418,3 +419,40 @@ class TestDetect:
         assert response.gpu_clock_mhz is None
         assert response.gpu_vram_used_mb is None
         assert response.gpu_temperature_c is None
+
+    def test_total_ms_greater_than_rtt_ms(self):
+        """total_ms は RTT に encode + JSON parse を含むため rtt_ms 以上になる.
+
+        MockTransport で固定遅延 (perf_counter ベース) を入れて RTT 計測区間を
+        引き延ばし, total_ms が rtt_ms 以上であることを検証する.
+        """
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            # Why: handler 内で busy-wait し RTT 計測区間に確実な遅延を載せる.
+            # (time.sleep より perf_counter ベースの方がテスト計測と整合する)
+            target = time.perf_counter() + 0.005
+            while time.perf_counter() < target:
+                pass
+            return httpx.Response(200, json=_VALID_RESPONSE)
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        # 画像エンコード時間を確保するためそこそこ大きいフレームを使う.
+        response = client.detect(_make_frame(height=480, width=640))
+
+        assert response.rtt_ms > 0
+        assert response.total_ms >= response.rtt_ms
+
+    def test_total_ms_recorded_on_default_response(self):
+        """既定のレスポンスでも total_ms が 0 より大きい値で記録される."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_VALID_RESPONSE)
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        response = client.detect(_make_frame())
+
+        assert response.total_ms > 0

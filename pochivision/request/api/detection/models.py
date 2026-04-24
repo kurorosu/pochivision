@@ -29,6 +29,9 @@ class DetectionResponse:
         e2e_time_ms: サーバー側エンドツーエンド処理時間 (ミリ秒).
         backend: 使用バックエンド.
         rtt_ms: クライアント側ネットワーク往復時間 (ミリ秒).
+        total_ms: クライアント側で計測した detect() 呼び出し全体の所要時間 (ミリ秒).
+            画像エンコード + RTT + JSON parse を含むため, 必ず ``total_ms >= rtt_ms``
+            が成立する.
         phase_times_ms: Pipeline 内のフェーズ別タイミング (ms). サーバー未提供時は空 dict.
             想定キー: api_preprocess_ms / pipeline_preprocess_ms / pipeline_inference_ms /
             pipeline_postprocess_ms / pipeline_inference_gpu_ms / api_postprocess_ms.
@@ -42,6 +45,7 @@ class DetectionResponse:
     e2e_time_ms: float
     backend: str
     rtt_ms: float
+    total_ms: float = 0.0
     phase_times_ms: dict[str, float] = field(default_factory=dict)
     gpu_clock_mhz: int | None = None
     gpu_vram_used_mb: int | None = None
