@@ -190,6 +190,9 @@ class LivePreviewRunner:
         """
         実際のフレームレートを測定します.
 
+        経過時間の計測には, NTP 同期や時刻調整の影響を受けない
+        `time.perf_counter()` を使用する.
+
         Args:
             duration (float): 測定時間（秒）
 
@@ -199,10 +202,10 @@ class LivePreviewRunner:
         self.logger.info(f"Measuring actual FPS for {duration} seconds...")
 
         frame_count = 0
-        start_time = time.time()
+        start_time = time.perf_counter()
         end_time = start_time + duration
 
-        while time.time() < end_time:
+        while time.perf_counter() < end_time:
             ret, frame = self.cap.read()
             if ret:
                 frame_count += 1
@@ -210,7 +213,7 @@ class LivePreviewRunner:
                 cv2.imshow("Live View", self._resize_for_preview(frame))
                 cv2.waitKey(1)
 
-        actual_duration = time.time() - start_time
+        actual_duration = time.perf_counter() - start_time
         measured_fps = frame_count / actual_duration if actual_duration > 0 else 0.0
 
         self.logger.info(
