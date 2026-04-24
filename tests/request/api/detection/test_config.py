@@ -160,6 +160,27 @@ class TestLoadDetectConfig:
         with pytest.raises(ConfigValidationError, match="detect_fps"):
             load_detect_config(str(path))
 
+    def test_metrics_interval_default_disabled(self, tmp_path):
+        path = _write_config(tmp_path, {"base_url": "http://localhost:8000"})
+        config = load_detect_config(str(path))
+        assert config.metrics_interval_s == 0.0
+
+    def test_metrics_interval_custom(self, tmp_path):
+        path = _write_config(
+            tmp_path,
+            {"base_url": "http://localhost:8000", "metrics_interval_s": 2.5},
+        )
+        config = load_detect_config(str(path))
+        assert config.metrics_interval_s == 2.5
+
+    def test_metrics_interval_negative_raises(self, tmp_path):
+        path = _write_config(
+            tmp_path,
+            {"base_url": "http://localhost:8000", "metrics_interval_s": -1.0},
+        )
+        with pytest.raises(ConfigValidationError, match="metrics_interval_s"):
+            load_detect_config(str(path))
+
 
 class TestDetectConfig:
     """DetectConfig のテスト."""

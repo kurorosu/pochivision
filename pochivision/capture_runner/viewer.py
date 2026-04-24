@@ -18,6 +18,7 @@ from pochivision.capture_runner.inference_overlay import (
     InferenceContext,
     InferenceOverlay,
 )
+from pochivision.capture_runner.metrics_recorder import MetricsRecorder
 from pochivision.capture_runner.roi_selector import RoiSelector
 from pochivision.capturelib.camera_config_saver import save_camera_config
 from pochivision.capturelib.camera_setup import CameraSetup
@@ -64,6 +65,7 @@ class LivePreviewRunner:
         camera_setup: CameraSetup | None = None,
         detection_client: DetectionClient | None = None,
         detect_fps: float = DEFAULT_DETECTION_FPS,
+        metrics_interval_s: float = 0.0,
     ) -> None:
         """
         LivePreviewRunnerを初期化する.
@@ -82,6 +84,8 @@ class LivePreviewRunner:
             detection_client: pochidetection 検出 API クライアント（オプション）.
                 指定時は detect モードで動作.
             detect_fps: 検出モード時のスロットリング頻度 (Hz).
+            metrics_interval_s: 検出メトリクスのサンプリング間隔 (秒). 0 以下で無効.
+                出力は `pipeline.output_dir / "detection_metrics.csv"`.
         """
         self.cap = cap
         self.pipeline = pipeline
@@ -116,6 +120,15 @@ class LivePreviewRunner:
         self._detecting_lock = threading.Lock()
         self._detection_state_lock = threading.Lock()
         self._detection_thread: threading.Thread | None = None
+
+        # detect モードでメトリクス間隔が設定されていれば recorder を生成する.
+        # 出力先は pipeline.output_dir に固定 (他の成果物と同じ run ディレクトリ).
+        self._metrics_recorder: MetricsRecorder | None = None
+        if self.is_detect_mode and metrics_interval_s > 0:
+            self._metrics_recorder = MetricsRecorder(
+                interval_s=metrics_interval_s,
+                out_path=Path(pipeline.output_dir) / "detection_metrics.csv",
+            )
 
     def _build_inference_context(self) -> InferenceContext | None:
         """推論クライアントからオーバーレイ用コンテキストを構築する.
@@ -455,6 +468,8 @@ class LivePreviewRunner:
             with self._detection_state_lock:
                 if self._detection_enabled:
                     self.detection_overlay.update(result)
+            if self._metrics_recorder is not None:
+                self._metrics_recorder.maybe_record(result)
         except DetectionConnectionError as e:
             with self._detection_state_lock:
                 if self._detection_enabled:
@@ -605,6 +620,11 @@ class LivePreviewRunner:
         # 検出ワーカースレッドの完了待機
         if self._detection_thread is not None:
             self._detection_thread.join(timeout=5.0)
+
+        # メトリクス CSV の書き出し (検出 worker 完了後に行うことで
+        # 最後のサンプルが取り込まれた状態で flush される).
+        if self._metrics_recorder is not None:
+            self._metrics_recorder.flush()
 
         # 推論クライアントのクリーンアップ
         if self.inference_client:

@@ -39,6 +39,9 @@ class DetectConfig:
         jpeg_quality: JPEG 圧縮品質 (1-100). image_format="jpeg" のとき使用.
         detect_fps: 検出モードが CLI `--detect` で有効化された際の検出リクエスト頻度
             (Hz). 入力 FPS より低い値を設定してスロットリング. 正の数のみ.
+        metrics_interval_s: 処理時間メトリクス (e2e / phase / RTT / GPU) を
+            サンプリングする間隔 (秒). 0 以下で無効. 出力先は実行ごとの
+            `capture/.../detection_metrics.csv`.
     """
 
     base_url: str
@@ -47,6 +50,7 @@ class DetectConfig:
     timeout: float = DEFAULT_DETECTION_TIMEOUT
     jpeg_quality: int = DEFAULT_DETECTION_JPEG_QUALITY
     detect_fps: float = DEFAULT_DETECTION_FPS
+    metrics_interval_s: float = 0.0
 
 
 def load_detect_config(path: str) -> DetectConfig:
@@ -133,6 +137,13 @@ def _build_detect_config(data: dict[str, Any]) -> DetectConfig:
             f"'detect_fps' は正の数値である必要があります: {detect_fps!r}"
         )
 
+    metrics_interval_s = data.get("metrics_interval_s", 0.0)
+    if not isinstance(metrics_interval_s, (int, float)) or metrics_interval_s < 0:
+        raise ConfigValidationError(
+            f"'metrics_interval_s' は 0 以上の数値である必要があります: "
+            f"{metrics_interval_s!r}"
+        )
+
     return DetectConfig(
         base_url=base_url,
         image_format=image_format,
@@ -140,4 +151,5 @@ def _build_detect_config(data: dict[str, Any]) -> DetectConfig:
         timeout=float(timeout),
         jpeg_quality=jpeg_quality,
         detect_fps=float(detect_fps),
+        metrics_interval_s=float(metrics_interval_s),
     )

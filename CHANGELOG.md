@@ -9,9 +9,11 @@
 - pochidetection 検出 API クライアント (`DetectionClient`) を追加. `DetectConfig` / 専用例外 / サンプル `config/detect_config.json` 同梱. ([#403](https://github.com/kurorosu/pochivision/pull/403))
 - `DetectionOverlay` を追加. `DetectionResponse` を受けて bbox / ラベル / メタ情報 (検出数 / e2e_time_ms / rtt_ms / backend) を描画. class ID からの決定的 8 色パレット内蔵. ([#407](https://github.com/kurorosu/pochivision/pull/407))
 - 常時検出ランタイムを `CaptureRunner` に統合. `time.perf_counter()` ベースのスロットリング + 非同期スレッドで検出し `DetectionOverlay` に反映. `i` キーで ON/OFF トグル, detect モードは ROI 無効化. `DetectionOverlay` の state 更新 / draw を `threading.Lock` で保護. ([#414](https://github.com/kurorosu/pochivision/pull/414))
+- 検出 API の処理時間メトリクス (`e2e_time_ms` / `phase_times_ms` / `rtt_ms` / GPU clock・VRAM・温度) を `metrics_interval_s` 間隔でサンプリングし `capture/<run>/detection_metrics.csv` に pandas 経由で保存する `MetricsRecorder` を追加. 設定は `detect_config.json` の `metrics_interval_s` で制御. ((NA.))
 
 ### Changed
-- **BREAKING**: 検出モードの有効化を `DetectConfig.mode` から CLI フラグ `--detect` に変更. 既存 JSON の `mode` キーは warning を出して無視 (後方互換). ((NA.))
+- **BREAKING**: 検出モードの有効化を `DetectConfig.mode` から CLI フラグ `--detect` に変更. 既存 JSON の `mode` キーは warning を出して無視 (後方互換). ([#416](https://github.com/kurorosu/pochivision/pull/416))
+- `DetectionResponse` に `phase_times_ms` / `gpu_clock_mhz` / `gpu_vram_used_mb` / `gpu_temperature_c` フィールドを追加. サーバー未提供時は空 dict / None で補う. ((NA.))
 - **BREAKING**: API クライアント / config のキー名を `url` → `base_url`, `format` → `image_format` に統一. 既存 `config/*.json` は要更新. ([#412](https://github.com/kurorosu/pochivision/pull/412))
 - `DetectionClient` のバリデーション / レスポンスパースを堅牢化. frame dtype / shape / timeout / URL / JSON / 型不一致を適切な例外にマッピング. ([#406](https://github.com/kurorosu/pochivision/pull/406))
 - `DetectionOverlay` で bbox 異常値 (NaN / Inf / 反転 / フレーム外) をガード, ラベル矩形をフレーム範囲でクリップ. 非 BGR 3ch フレームは描画しない. ([#410](https://github.com/kurorosu/pochivision/pull/410))

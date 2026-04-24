@@ -125,8 +125,11 @@ uv run pochi run --detect --detect-config config/my_detect.json
 | `timeout` | No | `5.0` | リクエストタイムアウト (秒) |
 | `jpeg_quality` | No | `90` | JPEG 圧縮品質 (1-100, `image_format="jpeg"` のとき) |
 | `detect_fps` | No | `5.0` | `--detect` 有効時の検出リクエスト頻度 (Hz) |
+| `metrics_interval_s` | No | `0.0` | 処理時間メトリクスのサンプリング間隔 (秒). 0 以下で無効 |
 
 起動直後は検出 OFF の状態で待機します. `i` キーで検出の ON/OFF をトグルできます (classify モードの「`i` で推論」と対称). 接続失敗やタイムアウト時はキャプチャループを止めず, overlay にエラーメッセージが表示されます.
+
+`metrics_interval_s` を正の値 (例: `1.0`) に設定すると, 指定間隔ごとに検出 API のレスポンスから処理時間メトリクス (`e2e_time_ms` / phase 別 / RTT / GPU clock / VRAM / 温度) を採取し, 終了時に `capture/<timestamp>/detection_metrics.csv` へ pandas 経由で書き出します. 毎フレームではなくダウンサンプリングするため, 高 FPS 運用でもファイル肥大化しません.
 
 ### `pochi extract` - 特徴量抽出
 

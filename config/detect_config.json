@@ -4,5 +4,6 @@
     "score_threshold": 0.5,
     "timeout": 5.0,
     "jpeg_quality": 90,
-    "detect_fps": 5.0
+    "detect_fps": 5.0,
+    "metrics_interval_s": 0.0
 }

@@ -211,11 +211,16 @@ class DetectionClient:
                 )
                 for d in raw_detections
             )
+            phase_times_ms = data.get("phase_times_ms") or {}
             return DetectionResponse(
                 detections=detections,
                 e2e_time_ms=data["e2e_time_ms"],
                 backend=data["backend"],
                 rtt_ms=round(rtt_ms, 3),
+                phase_times_ms=dict(phase_times_ms),
+                gpu_clock_mhz=data.get("gpu_clock_mhz"),
+                gpu_vram_used_mb=data.get("gpu_vram_used_mb"),
+                gpu_temperature_c=data.get("gpu_temperature_c"),
             )
         except (KeyError, IndexError, TypeError) as e:
             raise DetectionError(f"検出レスポンスのフォーマットが不正です: {e}") from e
