@@ -29,7 +29,8 @@ class DetectionOverlay:
     各検出を bbox + `"class_name conf"` のラベルで描画し,
     画面左上に以下を表示する:
     - 検出数
-    - サーバー側推論時間 (e2e_time_ms)
+    - E2E 時間 (e2e_time_ms: サーバー内エンドツーエンド. 前処理+推論+後処理込み)
+    - 純粋な推論時間 (phase_times_ms.pipeline_inference_ms, wall-clock)
     - RTT (rtt_ms)
     - バックエンド
     - 送信画像サイズ (context 経由, 任意)
@@ -166,21 +167,46 @@ class DetectionOverlay:
         for det in result.detections:
             self._draw_bbox(frame, det)
 
+        y = 30
+        for text, c in self._build_meta_lines(result):
+            self._draw_text(frame, text, c, y=y)
+            y += 25
+
+    def _build_meta_lines(
+        self, result: DetectionResponse
+    ) -> list[tuple[str, tuple[int, int, int]]]:
+        """メタ情報行を組み立てる (text, color) のリストを返す.
+
+        表示順は固定: Detections → E2E → Infer (phase あれば) → RTT → Backend →
+        ImageSize (context あれば) → Server (context あれば).
+
+        Args:
+            result: 検出結果.
+
+        Returns:
+            (表示テキスト, BGR 色) のリスト.
+        """
         lines: list[tuple[str, tuple[int, int, int]]] = [
             (f"Detections: {len(result.detections)}", self.META_COLOR),
-            (f"Inference: {result.e2e_time_ms:.1f}ms", self.META_COLOR),
-            (f"RTT: {result.rtt_ms:.1f}ms", self.META_COLOR),
-            (f"Backend: {result.backend}", self.META_COLOR),
+            (f"E2E: {result.e2e_time_ms:.1f}ms", self.META_COLOR),
         ]
+        # phase_times_ms が返っていれば純粋な推論時間を個別表示 (E2E とは別物).
+        # pipeline_inference_gpu_ms (CUDA Event 計測) は画面では省略し, 詳細解析は
+        # CSV 出力側に委ねる (画面の情報量を抑えるため).
+        infer_ms = result.phase_times_ms.get("pipeline_inference_ms")
+        if infer_ms is not None:
+            lines.append((f"Infer: {infer_ms:.1f}ms", self.META_COLOR))
+        lines.extend(
+            [
+                (f"RTT: {result.rtt_ms:.1f}ms", self.META_COLOR),
+                (f"Backend: {result.backend}", self.META_COLOR),
+            ]
+        )
         if self.context and self.context.image_size:
             lines.append((f"ImageSize: {self.context.image_size}", self.META_COLOR))
         if self.context:
             lines.append((f"Server: {self.context.server_url}", self.META_COLOR))
-
-        y = 30
-        for text, c in lines:
-            self._draw_text(frame, text, c, y=y)
-            y += 25
+        return lines
 
     def _draw_bbox(self, frame: np.ndarray, det: Detection) -> None:
         """1 つの検出を bbox + ラベルで描画する.

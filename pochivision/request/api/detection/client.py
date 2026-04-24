@@ -211,6 +211,8 @@ class DetectionClient:
                 )
                 for d in raw_detections
             )
+            # 旧バージョンの pochidetection (phase_times_ms 未対応) や, サーバー側で
+            # null を返すケースに備え, 空 dict に正規化する.
             phase_times_ms = data.get("phase_times_ms") or {}
             return DetectionResponse(
                 detections=detections,
