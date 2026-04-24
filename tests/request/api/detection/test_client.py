@@ -367,3 +367,54 @@ class TestDetect:
         client.detect(_make_frame())
 
         assert '"score_threshold":0.25' in captured_payload[0].replace(" ", "")
+
+    def test_phase_times_and_gpu_metrics_parsed(self):
+        """phase_times_ms / GPU メトリクスをレスポンスから取り込むことを確認."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "detections": [],
+                    "e2e_time_ms": 5.0,
+                    "backend": "onnx-cuda",
+                    "phase_times_ms": {
+                        "pipeline_preprocess_ms": 1.2,
+                        "pipeline_inference_ms": 2.5,
+                        "pipeline_inference_gpu_ms": 2.1,
+                        "pipeline_postprocess_ms": 0.8,
+                    },
+                    "gpu_clock_mhz": 1770,
+                    "gpu_vram_used_mb": 2048,
+                    "gpu_temperature_c": 55,
+                },
+            )
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        response = client.detect(_make_frame())
+
+        assert response.phase_times_ms["pipeline_preprocess_ms"] == 1.2
+        assert response.phase_times_ms["pipeline_inference_ms"] == 2.5
+        assert response.phase_times_ms["pipeline_inference_gpu_ms"] == 2.1
+        assert response.phase_times_ms["pipeline_postprocess_ms"] == 0.8
+        assert response.gpu_clock_mhz == 1770
+        assert response.gpu_vram_used_mb == 2048
+        assert response.gpu_temperature_c == 55
+
+    def test_phase_times_and_gpu_metrics_default_when_missing(self):
+        """phase_times_ms / GPU メトリクスが欠落していても既存クライアントが壊れない."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_VALID_RESPONSE)
+
+        client = DetectionClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        response = client.detect(_make_frame())
+
+        assert response.phase_times_ms == {}
+        assert response.gpu_clock_mhz is None
+        assert response.gpu_vram_used_mb is None
+        assert response.gpu_temperature_c is None

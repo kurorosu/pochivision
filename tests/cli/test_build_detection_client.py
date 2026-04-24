@@ -31,23 +31,27 @@ class TestBuildDetectionClient:
         path = _write_valid_config(tmp_path)
         logger = logging.getLogger("test")
 
-        client, fps = _build_detection_client(str(path), False, logger)
+        client, fps, metrics_interval = _build_detection_client(
+            str(path), False, logger
+        )
 
         assert client is None
         # fps はデフォルト値 (config を読まないため)
         assert fps == 5.0
+        assert metrics_interval == 0.0
 
     def test_detect_flag_on_builds_client(self, tmp_path):
         """`--detect` 指定 + 有効 config で DetectionClient が構築される."""
         path = _write_valid_config(tmp_path, detect_fps=10.0)
         logger = logging.getLogger("test")
 
-        client, fps = _build_detection_client(str(path), True, logger)
+        client, fps, metrics_interval = _build_detection_client(str(path), True, logger)
 
         try:
             assert isinstance(client, DetectionClient)
             assert client.base_url == "http://localhost:8000"
             assert fps == 10.0
+            assert metrics_interval == 0.0
         finally:
             if client is not None:
                 client.close()
@@ -58,10 +62,13 @@ class TestBuildDetectionClient:
         logger = logging.getLogger("test")
 
         with caplog.at_level("WARNING"):
-            client, fps = _build_detection_client(str(missing_path), True, logger)
+            client, fps, metrics_interval = _build_detection_client(
+                str(missing_path), True, logger
+            )
 
         assert client is None
         assert fps == 5.0  # デフォルト
+        assert metrics_interval == 0.0
         assert any(
             "--detect" in rec.message and "missing" in rec.message
             for rec in caplog.records
@@ -74,10 +81,13 @@ class TestBuildDetectionClient:
         logger = logging.getLogger("test")
 
         with caplog.at_level("WARNING"):
-            client, fps = _build_detection_client(str(path), True, logger)
+            client, fps, metrics_interval = _build_detection_client(
+                str(path), True, logger
+            )
 
         assert client is None
         assert fps == 5.0
+        assert metrics_interval == 0.0
 
     def test_legacy_mode_key_does_not_affect_behavior(self, tmp_path):
         """廃止された `mode` フィールドが JSON に残っていても `--detect` 無効なら構築しない."""
@@ -94,5 +104,27 @@ class TestBuildDetectionClient:
         logger = logging.getLogger("test")
 
         # --detect 未指定: mode="detect" が残っていても classify のまま
-        client, _ = _build_detection_client(str(path), False, logger)
+        client, _, _ = _build_detection_client(str(path), False, logger)
         assert client is None
+
+    def test_metrics_interval_propagated(self, tmp_path):
+        """`metrics_interval_s` が config から読まれて返り値に含まれる."""
+        path = tmp_path / "detect_config.json"
+        path.write_text(
+            json.dumps(
+                {
+                    "base_url": "http://localhost:8000",
+                    "metrics_interval_s": 2.0,
+                }
+            ),
+            encoding="utf-8",
+        )
+        logger = logging.getLogger("test")
+
+        client, _, metrics_interval = _build_detection_client(str(path), True, logger)
+
+        try:
+            assert metrics_interval == 2.0
+        finally:
+            if client is not None:
+                client.close()

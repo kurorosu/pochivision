@@ -246,7 +246,7 @@ def _run_preview(
             preview_config.get("height", DEFAULT_PREVIEW_HEIGHT),
         )
 
-        detection_client, detect_fps = _build_detection_client(
+        detection_client, detect_fps, metrics_interval_s = _build_detection_client(
             detect_config_path, detect_enabled, logger
         )
         inference_client = None
@@ -262,6 +262,7 @@ def _run_preview(
             camera_setup=camera_setup,
             detection_client=detection_client,
             detect_fps=detect_fps,
+            metrics_interval_s=metrics_interval_s,
         )
         app.run()
 
@@ -306,12 +307,12 @@ def _build_inference_client(
 
 def _build_detection_client(
     detect_config_path: str, detect_enabled: bool, logger: logging.Logger
-) -> tuple[DetectionClient | None, float]:
+) -> tuple[DetectionClient | None, float, float]:
     """検出クライアントを構築する.
 
     `detect_enabled=True` (CLI の `--detect` フラグ指定) のときのみクライアントを
     生成する. 設定ファイルが存在しない, または読み込みに失敗した場合は
-    (None, デフォルト fps) を返す (分類モードにフォールバック).
+    (None, デフォルト fps, 0.0) を返す (分類モードにフォールバック).
 
     Args:
         detect_config_path: 検出設定ファイルのパス.
@@ -319,22 +320,22 @@ def _build_detection_client(
         logger: ロガー.
 
     Returns:
-        (DetectionClient or None, detect_fps).
+        (DetectionClient or None, detect_fps, metrics_interval_s).
     """
     if not detect_enabled:
-        return None, DEFAULT_DETECTION_FPS
+        return None, DEFAULT_DETECTION_FPS, 0.0
 
     if not Path(detect_config_path).exists():
         logger.warning(
             f"--detect is set but config file is missing: {detect_config_path} "
             f"(falling back to classify mode)"
         )
-        return None, DEFAULT_DETECTION_FPS
+        return None, DEFAULT_DETECTION_FPS, 0.0
     try:
         detect_cfg = load_detect_config(detect_config_path)
     except (ConfigLoadError, ConfigValidationError, ValueError) as e:
         logger.warning(f"Detect config not loaded, skipping: {e}")
-        return None, DEFAULT_DETECTION_FPS
+        return None, DEFAULT_DETECTION_FPS, 0.0
 
     try:
         client = DetectionClient(
@@ -348,7 +349,12 @@ def _build_detection_client(
             f"Detection API enabled: {detect_cfg.base_url} "
             f"(fps={detect_cfg.detect_fps})"
         )
-        return client, detect_cfg.detect_fps
+        if detect_cfg.metrics_interval_s > 0:
+            logger.info(
+                f"Detection metrics sampling enabled: "
+                f"interval={detect_cfg.metrics_interval_s}s"
+            )
+        return client, detect_cfg.detect_fps, detect_cfg.metrics_interval_s
     except ValueError as e:
         logger.warning(f"Detection client not initialized: {e}")
-        return None, detect_cfg.detect_fps
+        return None, detect_cfg.detect_fps, detect_cfg.metrics_interval_s
