@@ -71,10 +71,12 @@ class TestMaybeRecord:
             rtt_ms=3.4,
             backend="trt",
             phase_times_ms={
+                "api_preprocess_ms": 1.4,
                 "pipeline_preprocess_ms": 1.1,
                 "pipeline_inference_ms": 8.2,
                 "pipeline_inference_gpu_ms": 7.9,
                 "pipeline_postprocess_ms": 0.5,
+                "api_postprocess_ms": 0.9,
             },
             gpu_clock_mhz=1800,
             gpu_vram_used_mb=3000,
@@ -89,10 +91,12 @@ class TestMaybeRecord:
         assert row["e2e_time_ms"] == 12.3
         assert row["rtt_ms"] == 3.4
         assert row["backend"] == "trt"
+        assert row["api_preprocess_ms"] == 1.4
         assert row["phase_preprocess_ms"] == 1.1
         assert row["phase_inference_ms"] == 8.2
         assert row["phase_inference_gpu_ms"] == 7.9
         assert row["phase_postprocess_ms"] == 0.5
+        assert row["api_postprocess_ms"] == 0.9
         assert row["gpu_clock_mhz"] == 1800
         assert row["gpu_vram_used_mb"] == 3000
         assert row["gpu_temperature_c"] == 62
@@ -139,10 +143,22 @@ class TestFlush:
 
         df = pd.read_csv(tmp_path / "m.csv")
         # 欠損値は NaN として読み込まれる
+        assert pd.isna(df.iloc[0]["api_preprocess_ms"])
         assert pd.isna(df.iloc[0]["phase_inference_ms"])
+        assert pd.isna(df.iloc[0]["api_postprocess_ms"])
         assert pd.isna(df.iloc[0]["gpu_clock_mhz"])
         assert pd.isna(df.iloc[0]["gpu_vram_used_mb"])
         assert pd.isna(df.iloc[0]["gpu_temperature_c"])
+
+    def test_csv_columns_include_api_phase_keys(self, tmp_path):
+        """CSV ヘッダに api_preprocess_ms / api_postprocess_ms カラムが存在する."""
+        recorder = MetricsRecorder(interval_s=0.5, out_path=tmp_path / "m.csv")
+        recorder.maybe_record(_make_response(), now_monotonic=10.0)
+        recorder.flush()
+
+        df = pd.read_csv(tmp_path / "m.csv")
+        assert "api_preprocess_ms" in df.columns
+        assert "api_postprocess_ms" in df.columns
 
     def test_creates_parent_directory(self, tmp_path):
         """存在しない親ディレクトリも自動作成される."""

@@ -30,8 +30,9 @@ class DetectionResponse:
         backend: 使用バックエンド.
         rtt_ms: クライアント側ネットワーク往復時間 (ミリ秒).
         phase_times_ms: Pipeline 内のフェーズ別タイミング (ms). サーバー未提供時は空 dict.
-            想定キー: pipeline_preprocess_ms / pipeline_inference_ms /
-            pipeline_postprocess_ms / pipeline_inference_gpu_ms.
+            想定キー: api_preprocess_ms / pipeline_preprocess_ms / pipeline_inference_ms /
+            pipeline_postprocess_ms / pipeline_inference_gpu_ms / api_postprocess_ms.
+            api_* は API 境界 (deserialize + cvtColor / response 組立) のコスト.
         gpu_clock_mhz: GPU graphics clock (MHz). サーバーが取得できない場合 None.
         gpu_vram_used_mb: GPU VRAM 使用量 (MB). サーバーが取得できない場合 None.
         gpu_temperature_c: GPU 温度 (℃). サーバーが取得できない場合 None.
