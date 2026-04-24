@@ -29,6 +29,7 @@ def _make_response(
     e2e_time_ms: float = 12.3,
     rtt_ms: float = 65.1,
     backend: str = "onnx",
+    phase_times_ms: dict[str, float] | None = None,
 ) -> DetectionResponse:
     """テスト用の DetectionResponse を生成する.
 
@@ -45,6 +46,7 @@ def _make_response(
         e2e_time_ms=e2e_time_ms,
         backend=backend,
         rtt_ms=rtt_ms,
+        phase_times_ms=phase_times_ms or {},
     )
 
 
@@ -316,3 +318,69 @@ class TestDraw:
             & (result[..., 2] > r // 2)
         )
         assert bright_mask.any()
+
+
+class TestBuildMetaLines:
+    """`_build_meta_lines` のテスト (表示テキスト組み立て)."""
+
+    def _texts(self, overlay: DetectionOverlay, result: DetectionResponse) -> list[str]:
+        return [text for text, _ in overlay._build_meta_lines(result)]
+
+    def test_e2e_label_replaces_inference_label(self):
+        """旧 `Inference:` ラベルは使われず `E2E:` で e2e_time_ms を表示する."""
+        overlay = DetectionOverlay()
+        texts = self._texts(overlay, _make_response(detections=(), e2e_time_ms=12.3))
+
+        assert "E2E: 12.3ms" in texts
+        assert not any(t.startswith("Inference:") for t in texts)
+
+    def test_infer_line_absent_when_phase_times_empty(self):
+        """phase_times_ms が空なら `Infer:` 行は出さない."""
+        overlay = DetectionOverlay()
+        texts = self._texts(overlay, _make_response(detections=()))
+        assert not any(t.startswith("Infer:") for t in texts)
+
+    def test_infer_line_shown_when_phase_times_present(self):
+        """`pipeline_inference_ms` があれば `Infer:` 行が追加される."""
+        overlay = DetectionOverlay()
+        texts = self._texts(
+            overlay,
+            _make_response(
+                detections=(),
+                phase_times_ms={"pipeline_inference_ms": 8.2},
+            ),
+        )
+        assert "Infer: 8.2ms" in texts
+
+    def test_infer_line_ignores_gpu_phase_field(self):
+        """`pipeline_inference_gpu_ms` が併せて返っても画面には併記しない."""
+        overlay = DetectionOverlay()
+        texts = self._texts(
+            overlay,
+            _make_response(
+                detections=(),
+                phase_times_ms={
+                    "pipeline_inference_ms": 8.2,
+                    "pipeline_inference_gpu_ms": 7.9,
+                },
+            ),
+        )
+        assert "Infer: 8.2ms" in texts
+        assert not any("GPU" in t for t in texts)
+
+    def test_order_is_detections_e2e_infer_rtt_backend(self):
+        """表示順が Detections → E2E → Infer → RTT → Backend になっている."""
+        overlay = DetectionOverlay()
+        texts = self._texts(
+            overlay,
+            _make_response(
+                detections=(),
+                phase_times_ms={"pipeline_inference_ms": 8.2},
+            ),
+        )
+        # 先頭 5 行の順序を検証
+        assert texts[0].startswith("Detections:")
+        assert texts[1].startswith("E2E:")
+        assert texts[2].startswith("Infer:")
+        assert texts[3].startswith("RTT:")
+        assert texts[4].startswith("Backend:")
