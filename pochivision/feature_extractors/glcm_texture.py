@@ -203,13 +203,17 @@ class GLCMTextureExtractor(BaseFeatureExtractor):
                             # 特徴量値を取得
                             feature_value = float(prop_values[d_idx, a_idx])
 
-                            # NaN/Inf は未定義を示す (例: 均一画像の correlation)
-                            if np.isnan(feature_value) or np.isinf(feature_value):
+                            # 単色 / 均一画像では correlation のみ σ_x σ_y = 0 で
+                            # skimage が NaN を返す. 学習モデル入力で NaN 伝播を避ける
+                            # ため 1.0 (完全相関) に置換する.
+                            if prop == "correlation" and (
+                                np.isnan(feature_value) or np.isinf(feature_value)
+                            ):
                                 LogManager().get_logger().warning(
                                     f"GLCM {feature_name} is {feature_value}, "
-                                    "replacing with NaN"
+                                    "replacing with 1.0 (fallback for uniform image)"
                                 )
-                                feature_value = float("nan")
+                                feature_value = 1.0
 
                             results[feature_name] = feature_value
 
