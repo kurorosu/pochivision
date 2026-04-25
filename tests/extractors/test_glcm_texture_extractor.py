@@ -595,6 +595,16 @@ class TestGLCMBehavior:
         for angle in [0, 45, 90, 135]:
             assert f[f"dissimilarity_1_{angle}"] == 0.0
 
+    def test_uniform_correlation_is_one_not_nan(self):
+        """均一画像の correlation は NaN ではなく 1.0 (fallback)."""
+        # skimage は σ_x σ_y = 0 の不定形で NaN を返すが, 学習モデル入力で
+        # NaN 伝播を避けるため 1.0 (完全相関) に置換される.
+        f = self.ext.extract(DummyImages.uniform())
+        for angle in [0, 45, 90, 135]:
+            value = f[f"correlation_1_{angle}"]
+            assert not np.isnan(value), f"correlation_1_{angle} is NaN"
+            assert value == 1.0
+
     # --- チェッカーボード ---
 
     def test_checker_contrast_high_in_axis_directions(self):
