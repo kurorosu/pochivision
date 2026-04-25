@@ -28,6 +28,7 @@ def _make_response(
     detections: tuple[Detection, ...] | None = None,
     e2e_time_ms: float = 12.3,
     rtt_ms: float = 65.1,
+    total_ms: float = 70.0,
     backend: str = "onnx",
     phase_times_ms: dict[str, float] | None = None,
 ) -> DetectionResponse:
@@ -46,6 +47,7 @@ def _make_response(
         e2e_time_ms=e2e_time_ms,
         backend=backend,
         rtt_ms=rtt_ms,
+        total_ms=total_ms,
         phase_times_ms=phase_times_ms or {},
     )
 
@@ -415,7 +417,7 @@ class TestBuildMetaLines:
         assert "- APIpost: 0.9ms" in texts
 
     def test_order_is_chronological_breakdown(self):
-        """内訳サブ行は時系列順: Detections → E2E → -APIpre → -Pre → -Infer → -Post → -APIpost → RTT → Backend."""
+        """内訳サブ行は時系列順: Detections → Total → E2E → -APIpre → -Pre → -Infer → -Post → -APIpost → RTT → Backend."""
         overlay = DetectionOverlay()
         texts = self._texts(
             overlay,
@@ -430,19 +432,20 @@ class TestBuildMetaLines:
                 },
             ),
         )
-        # 先頭 9 行の順序を検証
+        # 先頭 10 行の順序を検証 (Total が E2E の直前に固定で挿入される)
         assert texts[0].startswith("Detections:")
-        assert texts[1].startswith("E2E:")
-        assert texts[2].startswith("- APIpre:")
-        assert texts[3].startswith("- Pre:")
-        assert texts[4].startswith("- Infer:")
-        assert texts[5].startswith("- Post:")
-        assert texts[6].startswith("- APIpost:")
-        assert texts[7].startswith("RTT:")
-        assert texts[8].startswith("Backend:")
+        assert texts[1].startswith("Total:")
+        assert texts[2].startswith("E2E:")
+        assert texts[3].startswith("- APIpre:")
+        assert texts[4].startswith("- Pre:")
+        assert texts[5].startswith("- Infer:")
+        assert texts[6].startswith("- Post:")
+        assert texts[7].startswith("- APIpost:")
+        assert texts[8].startswith("RTT:")
+        assert texts[9].startswith("Backend:")
 
     def test_order_with_only_infer_breakdown(self):
-        """内訳が Infer のみ存在: Detections → E2E → -Infer → RTT → Backend."""
+        """内訳が Infer のみ存在: Detections → Total → E2E → -Infer → RTT → Backend."""
         overlay = DetectionOverlay()
         texts = self._texts(
             overlay,
@@ -451,9 +454,29 @@ class TestBuildMetaLines:
                 phase_times_ms={"pipeline_inference_ms": 8.2},
             ),
         )
-        # 先頭 5 行の順序を検証
+        # 先頭 6 行の順序を検証
         assert texts[0].startswith("Detections:")
-        assert texts[1].startswith("E2E:")
-        assert texts[2].startswith("- Infer:")
-        assert texts[3].startswith("RTT:")
-        assert texts[4].startswith("Backend:")
+        assert texts[1].startswith("Total:")
+        assert texts[2].startswith("E2E:")
+        assert texts[3].startswith("- Infer:")
+        assert texts[4].startswith("RTT:")
+        assert texts[5].startswith("Backend:")
+
+    def test_total_line_displayed_before_e2e(self):
+        """`Total: X.Xms` 行が E2E の直前に固定で表示される."""
+        overlay = DetectionOverlay()
+        texts = self._texts(
+            overlay, _make_response(detections=(), total_ms=15.0, e2e_time_ms=10.0)
+        )
+
+        assert "Total: 15.0ms" in texts
+        total_idx = texts.index("Total: 15.0ms")
+        e2e_idx = next(i for i, t in enumerate(texts) if t.startswith("E2E:"))
+        assert total_idx + 1 == e2e_idx
+
+    def test_total_line_shown_even_without_phase_times(self):
+        """phase_times_ms が空でも Total 行は固定で表示される."""
+        overlay = DetectionOverlay()
+        texts = self._texts(overlay, _make_response(detections=(), total_ms=20.5))
+
+        assert any(t.startswith("Total: 20.5") for t in texts)

@@ -11,6 +11,7 @@ def _make_response(
     detections: tuple[Detection, ...] = (),
     e2e_time_ms: float = 10.0,
     rtt_ms: float = 2.0,
+    total_ms: float = 5.0,
     backend: str = "onnx-cuda",
     phase_times_ms: dict[str, float] | None = None,
     gpu_clock_mhz: int | None = 1770,
@@ -23,6 +24,7 @@ def _make_response(
         e2e_time_ms=e2e_time_ms,
         backend=backend,
         rtt_ms=rtt_ms,
+        total_ms=total_ms,
         phase_times_ms=phase_times_ms or {},
         gpu_clock_mhz=gpu_clock_mhz,
         gpu_vram_used_mb=gpu_vram_used_mb,
@@ -69,6 +71,7 @@ class TestMaybeRecord:
             ),
             e2e_time_ms=12.3,
             rtt_ms=3.4,
+            total_ms=15.6,
             backend="trt",
             phase_times_ms={
                 "api_preprocess_ms": 1.4,
@@ -88,6 +91,7 @@ class TestMaybeRecord:
         df = pd.read_csv(tmp_path / "m.csv")
         row = df.iloc[0]
         assert row["num_detections"] == 2
+        assert row["total_ms"] == 15.6
         assert row["e2e_time_ms"] == 12.3
         assert row["rtt_ms"] == 3.4
         assert row["backend"] == "trt"
@@ -159,6 +163,18 @@ class TestFlush:
         df = pd.read_csv(tmp_path / "m.csv")
         assert "api_preprocess_ms" in df.columns
         assert "api_postprocess_ms" in df.columns
+
+    def test_csv_columns_include_total_ms_before_e2e(self, tmp_path):
+        """CSV ヘッダに total_ms が e2e_time_ms の直前に並んで存在する."""
+        recorder = MetricsRecorder(interval_s=0.5, out_path=tmp_path / "m.csv")
+        recorder.maybe_record(_make_response(total_ms=7.7), now_monotonic=10.0)
+        recorder.flush()
+
+        df = pd.read_csv(tmp_path / "m.csv")
+        assert "total_ms" in df.columns
+        columns = list(df.columns)
+        assert columns.index("total_ms") + 1 == columns.index("e2e_time_ms")
+        assert df.iloc[0]["total_ms"] == 7.7
 
     def test_creates_parent_directory(self, tmp_path):
         """存在しない親ディレクトリも自動作成される."""

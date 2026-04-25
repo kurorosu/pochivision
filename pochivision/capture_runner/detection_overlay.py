@@ -29,6 +29,7 @@ class DetectionOverlay:
     各検出を bbox + `"class_name conf"` のラベルで描画し,
     画面左上に以下を表示する:
     - 検出数
+    - Total 時間 (total_ms: クライアント側 detect() 全体. encode+RTT+JSON parse 込み)
     - E2E 時間 (e2e_time_ms: サーバー内エンドツーエンド. 前処理+推論+後処理込み)
         - `- APIpre`: API 境界の前処理 (phase_times_ms.api_preprocess_ms, 任意)
         - `- Pre`: pipeline 前処理 (phase_times_ms.pipeline_preprocess_ms, 任意)
@@ -185,7 +186,10 @@ class DetectionOverlay:
         サブ行として時系列順に表示する: APIpre → Pre → Infer → Post → APIpost.
         各キー欠損時はその行を出さない.
 
-        表示順: Detections → E2E → (内訳サブ行) → RTT → Backend →
+        Total ⊃ RTT ⊃ E2E の階層関係が縦並びで分かるよう, Total 行は E2E の
+        直前に固定で表示する.
+
+        表示順: Detections → Total → E2E → (内訳サブ行) → RTT → Backend →
         ImageSize (context あれば) → Server (context あれば).
 
         Args:
@@ -196,6 +200,7 @@ class DetectionOverlay:
         """
         lines: list[tuple[str, tuple[int, int, int]]] = [
             (f"Detections: {len(result.detections)}", self.META_COLOR),
+            (f"Total: {result.total_ms:.1f}ms", self.META_COLOR),
             (f"E2E: {result.e2e_time_ms:.1f}ms", self.META_COLOR),
         ]
         # E2E の内訳サブ行 (phase_times_ms 由来). 時系列順にキーが揃ったものだけ表示.
