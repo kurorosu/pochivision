@@ -25,7 +25,8 @@
 
 ### Fixed
 - 経過時間計測に `time.time()` (wall-clock) を使用していた 9 箇所を `time.perf_counter()` に置換 (`capture_runner/viewer._measure_actual_fps`, `core/image_saver`, `core/pipeline_executor`). NTP 同期 / 時刻調整で計測値が歪む問題を解消. ([#431](https://github.com/kurorosu/pochivision/pull/431))
-- `GLCMTextureExtractor` で単色 / 均一画像時に `correlation` が NaN (σ_x σ_y = 0 の不定形) となり後段の集計で全体が NaN に汚染される問題を修正. correlation の NaN を 1.0 (完全相関) にフォールバックし, warning ログは従来通り出力. 他 5 特徴量 (contrast / dissimilarity / homogeneity / energy / ASM) は skimage が単色画像で正常な値 (0 / 1) を返すため影響なし. ((NA.))
+- `GLCMTextureExtractor` で単色 / 均一画像時に `correlation` が NaN (σ_x σ_y = 0 の不定形) となり後段の集計で全体が NaN に汚染される問題を修正. correlation の NaN を 1.0 (完全相関) にフォールバックし, warning ログは従来通り出力. 他 5 特徴量 (contrast / dissimilarity / homogeneity / energy / ASM) は skimage が単色画像で正常な値 (0 / 1) を返すため影響なし. ([#432](https://github.com/kurorosu/pochivision/pull/432))
+- `DetectionOverlay` で送信フレーム (オリジナル) 座標系の bbox をリサイズ済みプレビューにスケール補正なしで描画していた問題を修正. `ROIRectSelector` と同じパターンで `set_preview_scale(frame_w, preview_w)` を追加し, `_draw_bbox` 内で bbox を縮小描画する. `viewer.py` の detect モード分岐から毎フレーム scale を設定. 静止物体の bbox がキャプチャ画像とずれる現象を解消. ((NA.))
 
 ### Removed
 - 無し

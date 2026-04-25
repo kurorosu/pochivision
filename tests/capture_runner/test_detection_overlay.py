@@ -480,3 +480,47 @@ class TestBuildMetaLines:
         texts = self._texts(overlay, _make_response(detections=(), total_ms=20.5))
 
         assert any(t.startswith("Total: 20.5") for t in texts)
+
+
+class TestPreviewScale:
+    """`set_preview_scale` による bbox 描画位置の補正テスト."""
+
+    def test_default_scale_is_one(self):
+        """初期値はスケール 1.0 (補正なし) で従来動作を維持."""
+        overlay = DetectionOverlay()
+        # bbox 50-150, 60-180 をそのまま描画する.
+        det = _make_detection(bbox=(50.0, 60.0, 150.0, 180.0))
+        overlay.update(_make_response(detections=(det,)))
+        frame = np.zeros((240, 320, 3), dtype=np.uint8)
+        result = overlay.draw(frame)
+        # オリジナル位置に bbox が描画される.
+        assert result[60:180, 50:150].sum() > 0
+
+    def test_scale_shrinks_bbox_to_preview(self):
+        """frame_w=400 / preview_w=200 のとき bbox が 1/2 に縮小描画される."""
+        overlay = DetectionOverlay()
+        # 送信フレーム座標 bbox: (100, 80, 300, 160).
+        det = _make_detection(bbox=(100.0, 80.0, 300.0, 160.0))
+        overlay.update(_make_response(detections=(det,)))
+        # frame_w=400, preview_w=200 → scale=0.5.
+        overlay.set_preview_scale(frame_w=400, preview_w=200)
+        # preview サイズ (200x100) に描画.
+        preview = np.zeros((100, 200, 3), dtype=np.uint8)
+        result = overlay.draw(preview)
+        # 縮小後の bbox: (50, 40, 150, 80) 領域に描画.
+        assert result[40:80, 50:150].sum() > 0
+        # 縮小前の元位置 (300 など) は preview 範囲外なので描画されない.
+        # 念のため 0-50 / 150-200 の bbox 周辺ではない領域に矩形辺がないことは
+        # 厳密検証しない (色パレット衝突を避ける).
+
+    def test_scale_zero_frame_w_keeps_previous_scale(self):
+        """frame_w=0 を渡された場合は scale を更新せず従来値を維持."""
+        overlay = DetectionOverlay()
+        overlay.set_preview_scale(frame_w=400, preview_w=200)  # scale=0.5
+        overlay.set_preview_scale(frame_w=0, preview_w=100)  # 無視される
+        # scale=0.5 のままなので bbox が 1/2 に縮小描画されることを確認.
+        det = _make_detection(bbox=(100.0, 80.0, 300.0, 160.0))
+        overlay.update(_make_response(detections=(det,)))
+        preview = np.zeros((100, 200, 3), dtype=np.uint8)
+        result = overlay.draw(preview)
+        assert result[40:80, 50:150].sum() > 0
