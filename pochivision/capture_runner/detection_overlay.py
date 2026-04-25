@@ -73,6 +73,24 @@ class DetectionOverlay:
         self.context = context
         self._inferring = False
         self._lock = threading.Lock()
+        # サーバー応答の bbox は送信フレーム (オリジナル) 座標系のため,
+        # プレビューにリサイズ描画する際は preview / frame の比率で縮小する.
+        # 1.0 = 同サイズ (補正不要).
+        self._preview_scale: float = 1.0
+
+    def set_preview_scale(self, frame_w: int, preview_w: int) -> None:
+        """プレビュー座標系への bbox 縮小スケールを設定する.
+
+        送信フレーム (オリジナル) で計算された bbox を, リサイズ済みプレビュー
+        画像に正しい位置で描画するための縮小率を保持する. アスペクト比保持
+        リサイズを前提として width 比のみで scale を決定する.
+
+        Args:
+            frame_w: 送信フレーム (オリジナル) の幅.
+            preview_w: プレビュー表示の幅.
+        """
+        if frame_w > 0:
+            self._preview_scale = preview_w / frame_w
 
     def update(self, result: DetectionResponse) -> None:
         """検出結果を更新する.
@@ -244,7 +262,9 @@ class DetectionOverlay:
             return
 
         h, w = frame.shape[:2]
-        x1, y1, x2, y2 = (int(v) for v in bbox)
+        # 送信フレーム座標系の bbox をプレビュー座標系に縮小する.
+        s = self._preview_scale
+        x1, y1, x2, y2 = (int(v * s) for v in bbox)
         if x2 <= x1 or y2 <= y1:
             return
         if x2 < 0 or y2 < 0 or x1 >= w or y1 >= h:

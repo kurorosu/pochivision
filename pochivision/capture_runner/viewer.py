@@ -282,6 +282,11 @@ class LivePreviewRunner:
                     self.roi_selector.draw(preview)
                     self.inference_overlay.draw(preview)
                 else:
+                    # 送信フレーム座標系の bbox を preview に正しく描画するため
+                    # スケールを設定する.
+                    self.detection_overlay.set_preview_scale(
+                        frame.shape[1], preview.shape[1]
+                    )
                     self.detection_overlay.draw(preview)
                 self.help_overlay.draw(preview)
                 cv2.imshow("Live View", preview)
