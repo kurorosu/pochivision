@@ -141,7 +141,7 @@ class PipelineExecutor:
         Args:
             image: 入力画像.
         """
-        start_time = time.time()
+        start_time = time.perf_counter()
 
         self.saver.save(image, "original")
 
@@ -151,12 +151,12 @@ class PipelineExecutor:
         if self.mode == "parallel":
             for processor in self.processors:
                 try:
-                    proc_start = time.time()
+                    proc_start = time.perf_counter()
                     # parallel モードでは複数プロセッサが同一フレームを
                     # 共有するため, in-place 変更による相互干渉を防ぐため
                     # 各プロセッサに独立した copy を渡す.
                     result = processor.process(image.copy())
-                    proc_time = time.time() - proc_start
+                    proc_time = time.perf_counter() - proc_start
                     self.logger.info(
                         f"Processing time ({processor.name}): {proc_time:.3f} sec"
                     )
@@ -193,7 +193,7 @@ class PipelineExecutor:
                     continue
 
                 try:
-                    proc_start = time.time()
+                    proc_start = time.perf_counter()
 
                     if hasattr(processor, "target_image_name") and hasattr(
                         processor, "set_target_image"
@@ -213,7 +213,7 @@ class PipelineExecutor:
                             )  # type: ignore
 
                     result = processor.process(result)
-                    proc_time = time.time() - proc_start
+                    proc_time = time.perf_counter() - proc_start
                     self.logger.info(
                         f"Processing time ({processor.name}): {proc_time:.3f} sec"
                     )
@@ -240,5 +240,5 @@ class PipelineExecutor:
                     "final result not saved"
                 )
 
-        total_time = time.time() - start_time
+        total_time = time.perf_counter() - start_time
         self.logger.info(f"Total processing time: {total_time:.3f} sec")

@@ -15,15 +15,16 @@
 - **BREAKING**: 検出モードの有効化を `DetectConfig.mode` から CLI フラグ `--detect` に変更. 既存 JSON の `mode` キーは warning を出して無視 (後方互換). ([#416](https://github.com/kurorosu/pochivision/pull/416))
 - `DetectionResponse` に `phase_times_ms` / `gpu_clock_mhz` / `gpu_vram_used_mb` / `gpu_temperature_c` フィールドを追加. サーバー未提供時は空 dict / None で補う. ([#418](https://github.com/kurorosu/pochivision/pull/418))
 - `DetectionOverlay` の `Inference: X.Xms` 表示を実体に合わせ `E2E: X.Xms` に変更. `phase_times_ms.pipeline_inference_ms` が返る場合は純粋な推論時間を `Infer: X.Xms` として別行に追加. ([#420](https://github.com/kurorosu/pochivision/pull/420))
-- `DetectionOverlay` の E2E 内訳表示を拡張. `phase_times_ms` の `api_preprocess_ms` / `pipeline_preprocess_ms` / `pipeline_inference_ms` / `pipeline_postprocess_ms` / `api_postprocess_ms` を `- ` プレフィックス付きサブ行で時系列順に表示 (例: `- APIpre: 1.4ms` / `- Pre: 1.1ms` / `- Infer: 8.2ms` / `- Post: 0.5ms` / `- APIpost: 0.9ms`). キー欠損時はその行を出さない. ((NA.))
-- `MetricsRecorder` に `api_preprocess_ms` / `api_postprocess_ms` カラムを追加し, `detection_metrics.csv` の phase 群を時系列順 (api_pre → pipeline_* → api_post) に整理. キー欠損時は空セル. ((NA.))
+- `DetectionOverlay` の E2E 内訳表示を拡張. `phase_times_ms` の `api_preprocess_ms` / `pipeline_preprocess_ms` / `pipeline_inference_ms` / `pipeline_postprocess_ms` / `api_postprocess_ms` を `- ` プレフィックス付きサブ行で時系列順に表示 (例: `- APIpre: 1.4ms` / `- Pre: 1.1ms` / `- Infer: 8.2ms` / `- Post: 0.5ms` / `- APIpost: 0.9ms`). キー欠損時はその行を出さない. ([#422](https://github.com/kurorosu/pochivision/pull/422))
+- `MetricsRecorder` に `api_preprocess_ms` / `api_postprocess_ms` カラムを追加し, `detection_metrics.csv` の phase 群を時系列順 (api_pre → pipeline_* → api_post) に整理. キー欠損時は空セル. ([#422](https://github.com/kurorosu/pochivision/pull/422))
+- `DetectionClient.detect()` の全体所要時間 (画像エンコード + RTT + JSON parse) を `DetectionResponse.total_ms` として計測・返却. オーバーレイに `Total: X.Xms` 行を追加 (Total ⊃ RTT ⊃ E2E の階層が縦並びで表示). `detection_metrics.csv` にも `total_ms` カラムを追加. ((NA.))
 - **BREAKING**: API クライアント / config のキー名を `url` → `base_url`, `format` → `image_format` に統一. 既存 `config/*.json` は要更新. ([#412](https://github.com/kurorosu/pochivision/pull/412))
 - `DetectionClient` のバリデーション / レスポンスパースを堅牢化. frame dtype / shape / timeout / URL / JSON / 型不一致を適切な例外にマッピング. ([#406](https://github.com/kurorosu/pochivision/pull/406))
 - `DetectionOverlay` で bbox 異常値 (NaN / Inf / 反転 / フレーム外) をガード, ラベル矩形をフレーム範囲でクリップ. 非 BGR 3ch フレームは描画しない. ([#410](https://github.com/kurorosu/pochivision/pull/410))
 - `DetectionOverlay` / `InferenceOverlay` の色定数定義を統一. 共通色 (`META_COLOR` / `ERROR_COLOR`) を `capture_runner/_overlay_colors.py` に抽出. ([#413](https://github.com/kurorosu/pochivision/pull/413))
 
 ### Fixed
-- 無し
+- 経過時間計測に `time.time()` (wall-clock) を使用していた 9 箇所を `time.perf_counter()` に置換 (`capture_runner/viewer._measure_actual_fps`, `core/image_saver`, `core/pipeline_executor`). NTP 同期 / 時刻調整で計測値が歪む問題を解消. ((NA.))
 
 ### Removed
 - 無し

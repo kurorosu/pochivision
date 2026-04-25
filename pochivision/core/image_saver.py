@@ -66,10 +66,10 @@ class ImageSaver:
             )
             path = save_dir / filename
 
-            save_start = time.time()
+            save_start = time.perf_counter()
             try:
                 success = cv2.imwrite(str(path), image)
-                save_time = time.time() - save_start
+                save_time = time.perf_counter() - save_start
                 if success:
                     height, width = image.shape[:2]
                     self.logger.info(
