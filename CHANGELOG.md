@@ -6,6 +6,7 @@
 ## [Unreleased]
 
 ### Added
+- mkdocs + Material テーマ + mkdocstrings によるドキュメントサイト基盤を導入. `docs/index.md` / `docs/getting-started/{installation,quickstart}.md` を新設し, `uv run mkdocs serve` でローカル閲覧可能. user-guide / API リファレンスの内容移行は後続 PR で対応. ((NA.))
 - pochidetection 検出 API クライアント (`DetectionClient`) を追加. `DetectConfig` / 専用例外 / サンプル `config/detect_config.json` 同梱. ([#403](https://github.com/kurorosu/pochivision/pull/403))
 - `DetectionOverlay` を追加. `DetectionResponse` を受けて bbox / ラベル / メタ情報 (検出数 / e2e_time_ms / rtt_ms / backend) を描画. class ID からの決定的 8 色パレット内蔵. ([#407](https://github.com/kurorosu/pochivision/pull/407))
 - 常時検出ランタイムを `CaptureRunner` に統合. `time.perf_counter()` ベースのスロットリング + 非同期スレッドで検出し `DetectionOverlay` に反映. `i` キーで ON/OFF トグル, detect モードは ROI 無効化. `DetectionOverlay` の state 更新 / draw を `threading.Lock` で保護. ([#414](https://github.com/kurorosu/pochivision/pull/414))
