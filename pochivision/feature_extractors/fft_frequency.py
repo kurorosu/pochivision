@@ -49,7 +49,7 @@ class FFTFrequencyExtractor(BaseFeatureExtractor):
       短辺方向の Nyquist 周波数は 0.5 に達しない.
       最終帯域は上限なしで対角線分を含め, 帯域合計 ~1.0 を保証する.
 
-    詳細は docs/fft_features.md を参照.
+    詳細は docs/user-guide/features/fft.md を参照.
     """
 
     # 特徴量の単位定義

@@ -6,7 +6,8 @@
 ## [Unreleased]
 
 ### Added
-- mkdocs + Material テーマ + mkdocstrings によるドキュメントサイト基盤を導入. `docs/index.md` / `docs/getting-started/{installation,quickstart}.md` を新設し, `uv run mkdocs serve` でローカル閲覧可能. user-guide / API リファレンスの内容移行は後続 PR で対応. ((NA.))
+- mkdocs + Material テーマ + mkdocstrings によるドキュメントサイト基盤を導入. `docs/index.md` / `docs/getting-started/{installation,quickstart}.md` を新設し, `uv run mkdocs serve` でローカル閲覧可能. user-guide / API リファレンスの内容移行は後続 PR で対応. ([#438](https://github.com/kurorosu/pochivision/pull/438))
+- README に集中していた機能解説を `docs/user-guide/*.md` に分割移行. `pochi run` / `pochi extract` / `pochi process` / `pochi aggregate` / `pochi fft` / 検出モード / 推論モード / 設定ファイル / 利用可能なプロセッサ / 利用可能な Feature Extractor を独立ページ化し, 既存 `docs/{fft,glcm,hlac,lbp,swt}_features.md` を `docs/user-guide/features/` 配下へ `git mv` で移動. mkdocs.yml の nav に「ユーザーガイド」セクションを追加. README は概要 + クイックスタート + ドキュメント誘導に圧縮. ((NA.))
 - pochidetection 検出 API クライアント (`DetectionClient`) を追加. `DetectConfig` / 専用例外 / サンプル `config/detect_config.json` 同梱. ([#403](https://github.com/kurorosu/pochivision/pull/403))
 - `DetectionOverlay` を追加. `DetectionResponse` を受けて bbox / ラベル / メタ情報 (検出数 / e2e_time_ms / rtt_ms / backend) を描画. class ID からの決定的 8 色パレット内蔵. ([#407](https://github.com/kurorosu/pochivision/pull/407))
 - 常時検出ランタイムを `CaptureRunner` に統合. `time.perf_counter()` ベースのスロットリング + 非同期スレッドで検出し `DetectionOverlay` に反映. `i` キーで ON/OFF トグル, detect モードは ROI 無効化. `DetectionOverlay` の state 更新 / draw を `threading.Lock` で保護. ([#414](https://github.com/kurorosu/pochivision/pull/414))
@@ -27,7 +28,7 @@
 ### Fixed
 - 経過時間計測に `time.time()` (wall-clock) を使用していた 9 箇所を `time.perf_counter()` に置換 (`capture_runner/viewer._measure_actual_fps`, `core/image_saver`, `core/pipeline_executor`). NTP 同期 / 時刻調整で計測値が歪む問題を解消. ([#431](https://github.com/kurorosu/pochivision/pull/431))
 - `GLCMTextureExtractor` で単色 / 均一画像時に `correlation` が NaN (σ_x σ_y = 0 の不定形) となり後段の集計で全体が NaN に汚染される問題を修正. correlation の NaN を 1.0 (完全相関) にフォールバックし, warning ログは従来通り出力. 他 5 特徴量 (contrast / dissimilarity / homogeneity / energy / ASM) は skimage が単色画像で正常な値 (0 / 1) を返すため影響なし. ([#432](https://github.com/kurorosu/pochivision/pull/432))
-- `DetectionOverlay` で送信フレーム (オリジナル) 座標系の bbox をリサイズ済みプレビューにスケール補正なしで描画していた問題を修正. `ROIRectSelector` と同じパターンで `set_preview_scale(frame_w, preview_w)` を追加し, `_draw_bbox` 内で bbox を縮小描画する. `viewer.py` の detect モード分岐から毎フレーム scale を設定. 静止物体の bbox がキャプチャ画像とずれる現象を解消. ((NA.))
+- `DetectionOverlay` で送信フレーム (オリジナル) 座標系の bbox をリサイズ済みプレビューにスケール補正なしで描画していた問題を修正. `ROIRectSelector` と同じパターンで `set_preview_scale(frame_w, preview_w)` を追加し, `_draw_bbox` 内で bbox を縮小描画する. `viewer.py` の detect モード分岐から毎フレーム scale を設定. 静止物体の bbox がキャプチャ画像とずれる現象を解消. ([#434](https://github.com/kurorosu/pochivision/pull/434))
 
 ### Removed
 - 無し

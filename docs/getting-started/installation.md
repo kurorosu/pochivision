@@ -1,10 +1,10 @@
 # インストール
 
-## 要件
+## 1. 要件
 
 - Python 3.12+
 
-## uv を使用する場合 (推奨)
+## 2. uv を使用する場合 (推奨)
 
 uv のインストール (未インストールの場合):
 
@@ -27,7 +27,7 @@ uv sync
 source .venv/bin/activate   # Linux / Mac
 ```
 
-## 開発者向けセットアップ
+## 3. 開発者向けセットアップ
 
 開発・テスト・Lint・ドキュメント (mkdocs) も含めてインストールする場合:
 
@@ -41,7 +41,7 @@ uv sync --group dev
 - `mkdocs-material`: Material テーマ.
 - `mkdocstrings[python]`: Python docstring からの API リファレンス自動生成.
 
-## ドキュメントのローカル閲覧
+## 4. ドキュメントのローカル閲覧
 
 依存関係インストール後, 以下のコマンドでローカルサーバーが起動します.
 

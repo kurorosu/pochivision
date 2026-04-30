@@ -62,3 +62,20 @@ nav:
   - はじめに:
       - インストール: getting-started/installation.md
       - クイックスタート: getting-started/quickstart.md
+  - ユーザーガイド:
+      - ライブプレビュー (pochi run): user-guide/run.md
+      - 特徴量抽出 (pochi extract): user-guide/extract.md
+      - プロファイル適用 (pochi process): user-guide/process.md
+      - 画像集約 (pochi aggregate): user-guide/aggregate.md
+      - FFT ビジュアライザー (pochi fft): user-guide/fft.md
+      - 検出モード (--detect): user-guide/detection.md
+      - 推論モード: user-guide/inference.md
+      - 設定ファイル: user-guide/configuration.md
+      - 利用可能なプロセッサ: user-guide/processors.md
+      - 利用可能な Feature Extractor: user-guide/feature-extractors.md
+      - 特徴量リファレンス:
+          - FFT: user-guide/features/fft.md
+          - GLCM: user-guide/features/glcm.md
+          - HLAC: user-guide/features/hlac.md
+          - LBP: user-guide/features/lbp.md
+          - SWT: user-guide/features/swt.md
