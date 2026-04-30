@@ -84,6 +84,8 @@ uv run pochi aggregate --input ./data
 uv run pochi fft --input image.png
 ```
 
-## 次のステップ
+## 7. 次のステップ
 
-- 各サブコマンドの詳細, 設定ファイル構造, プロセッサ / 特徴量一覧は今後 user-guide ドキュメントとして整備予定です. 現状はリポジトリ root の README を参照してください.
+- 各サブコマンドの詳細・設定ファイル構造・プロセッサ / 特徴量一覧は [ユーザーガイド](../user-guide/run.md) を参照してください.
+- 設定ファイル全体の構造は [設定ファイル](../user-guide/configuration.md) を参照してください.
+- 特徴量の詳細は [利用可能な Feature Extractor](../user-guide/feature-extractors.md) と特徴量リファレンス ([FFT](../user-guide/features/fft.md) / [GLCM](../user-guide/features/glcm.md) / [HLAC](../user-guide/features/hlac.md) / [LBP](../user-guide/features/lbp.md) / [SWT](../user-guide/features/swt.md)) を参照してください.

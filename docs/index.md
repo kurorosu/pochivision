@@ -2,7 +2,7 @@
 
 プラグイン方式でプロセッサを拡張可能な AI ビジョンアプリケーション向けリアルタイム画像キャプチャ・前処理エンジン.
 
-## 特徴
+## 1. 特徴
 
 - **複数カメラ対応**: 設定可能なカメラプロファイルで複数デバイスをサポート.
 - **リアルタイム処理**: ライブプレビューに対する画像キャプチャと処理.
@@ -13,15 +13,19 @@
 - **推論 API 連携**: pochitrain 推論 API と連携したリアルタイム分類 (`i` キートグル).
 - **録画機能**: コーデック選択可能な録画 (mp4v / xvid / mjpg / ffv1 等).
 
-## ドキュメントの構成
+## 2. ドキュメントの構成
 
 - [はじめに](getting-started/installation.md): インストールとクイックスタート.
+- [ユーザーガイド](user-guide/run.md): CLI サブコマンド・設定ファイル・利用可能なプロセッサ / Feature Extractor.
+- [特徴量リファレンス](user-guide/features/fft.md): FFT / GLCM / HLAC / LBP / SWT の特徴量詳細.
 
-## クイックリンク
+## 3. クイックリンク
 
 - [インストール手順](getting-started/installation.md)
 - [最短実行フロー](getting-started/quickstart.md)
+- [ライブプレビュー (`pochi run`)](user-guide/run.md)
+- [設定ファイル](user-guide/configuration.md)
 
-## ライセンス
+## 4. ライセンス
 
 このプロジェクトは MIT ライセンスの下で公開されています.
