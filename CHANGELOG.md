@@ -7,13 +7,14 @@
 
 ### Added
 - mkdocs + Material テーマ + mkdocstrings によるドキュメントサイト基盤を導入. `docs/index.md` / `docs/getting-started/{installation,quickstart}.md` を新設し, `uv run mkdocs serve` でローカル閲覧可能. user-guide / API リファレンスの内容移行は後続 PR で対応. ([#438](https://github.com/kurorosu/pochivision/pull/438))
-- README に集中していた機能解説を `docs/user-guide/*.md` に分割移行. `pochi run` / `pochi extract` / `pochi process` / `pochi aggregate` / `pochi fft` / 検出モード / 推論モード / 設定ファイル / 利用可能なプロセッサ / 利用可能な Feature Extractor を独立ページ化し, 既存 `docs/{fft,glcm,hlac,lbp,swt}_features.md` を `docs/user-guide/features/` 配下へ `git mv` で移動. mkdocs.yml の nav に「ユーザーガイド」セクションを追加. README は概要 + クイックスタート + ドキュメント誘導に圧縮. ((NA.))
+- README に集中していた機能解説を `docs/user-guide/*.md` に分割移行. `pochi run` / `pochi extract` / `pochi process` / `pochi aggregate` / `pochi fft` / 検出モード / 推論モード / 設定ファイル / 利用可能なプロセッサ / 利用可能な Feature Extractor を独立ページ化し, 既存 `docs/{fft,glcm,hlac,lbp,swt}_features.md` を `docs/user-guide/features/` 配下へ `git mv` で移動. mkdocs.yml の nav に「ユーザーガイド」セクションを追加. README は概要 + クイックスタート + ドキュメント誘導に圧縮. ([#439](https://github.com/kurorosu/pochivision/pull/439))
 - pochidetection 検出 API クライアント (`DetectionClient`) を追加. `DetectConfig` / 専用例外 / サンプル `config/detect_config.json` 同梱. ([#403](https://github.com/kurorosu/pochivision/pull/403))
 - `DetectionOverlay` を追加. `DetectionResponse` を受けて bbox / ラベル / メタ情報 (検出数 / e2e_time_ms / rtt_ms / backend) を描画. class ID からの決定的 8 色パレット内蔵. ([#407](https://github.com/kurorosu/pochivision/pull/407))
 - 常時検出ランタイムを `CaptureRunner` に統合. `time.perf_counter()` ベースのスロットリング + 非同期スレッドで検出し `DetectionOverlay` に反映. `i` キーで ON/OFF トグル, detect モードは ROI 無効化. `DetectionOverlay` の state 更新 / draw を `threading.Lock` で保護. ([#414](https://github.com/kurorosu/pochivision/pull/414))
 - 検出 API の処理時間メトリクス (`e2e_time_ms` / `phase_times_ms` / `rtt_ms` / GPU clock・VRAM・温度) を `metrics_interval_s` 間隔でサンプリングし `capture/<run>/detection_metrics.csv` に pandas 経由で保存する `MetricsRecorder` を追加. 設定は `detect_config.json` の `metrics_interval_s` で制御. ([#418](https://github.com/kurorosu/pochivision/pull/418))
 
 ### Changed
+- `PredictResponse` に `total_ms` / `phase_times_ms` / `gpu_clock_mhz` / `gpu_vram_used_mb` / `gpu_temperature_c` フィールドを追加. `InferenceClient.predict()` で `total_ms` を計測し, レスポンスの phase / GPU フィールドを防御的に取り込む (旧サーバ互換: 欠落 / null は空 dict / None). `InferenceCsvWriter` の `inference_results.csv` に `total_ms` / phase 群 (api_pre → pipeline_* → api_post) / GPU メトリクス 3 列を追加. pochitrain WebAPI が pochidetection と揃った形式 (phase_times_ms / GPU メトリクス) を返すようになった上流変更に追従. ((NA.))
 - **BREAKING**: 検出モードの有効化を `DetectConfig.mode` から CLI フラグ `--detect` に変更. 既存 JSON の `mode` キーは warning を出して無視 (後方互換). ([#416](https://github.com/kurorosu/pochivision/pull/416))
 - `DetectionResponse` に `phase_times_ms` / `gpu_clock_mhz` / `gpu_vram_used_mb` / `gpu_temperature_c` フィールドを追加. サーバー未提供時は空 dict / None で補う. ([#418](https://github.com/kurorosu/pochivision/pull/418))
 - `DetectionOverlay` の `Inference: X.Xms` 表示を実体に合わせ `E2E: X.Xms` に変更. `phase_times_ms.pipeline_inference_ms` が返る場合は純粋な推論時間を `Infer: X.Xms` として別行に追加. ([#420](https://github.com/kurorosu/pochivision/pull/420))

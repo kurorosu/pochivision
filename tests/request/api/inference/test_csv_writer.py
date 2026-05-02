@@ -127,3 +127,69 @@ class TestInferenceCsvWriter:
         """CSV ファイル名が inference_results.csv である."""
         writer = InferenceCsvWriter(tmp_path)
         assert writer.csv_path.name == "inference_results.csv"
+
+    def test_phase_and_gpu_columns_present(self, tmp_path):
+        """phase / GPU カラムがヘッダに含まれる."""
+        writer = InferenceCsvWriter(tmp_path)
+        writer.write_row(_make_result())
+
+        rows = _read_csv(writer.csv_path)
+        row = rows[0]
+        for column in (
+            "total_ms",
+            "api_preprocess_ms",
+            "phase_preprocess_ms",
+            "phase_inference_ms",
+            "phase_inference_gpu_ms",
+            "phase_postprocess_ms",
+            "api_postprocess_ms",
+            "gpu_clock_mhz",
+            "gpu_vram_used_mb",
+            "gpu_temperature_c",
+        ):
+            assert column in row
+
+    def test_phase_and_gpu_values_written(self, tmp_path):
+        """phase_times_ms / GPU メトリクスの値が CSV に書き出される."""
+        result = _make_result(
+            total_ms=12.5,
+            phase_times_ms={
+                "api_preprocess_ms": 0.4,
+                "pipeline_preprocess_ms": 1.2,
+                "pipeline_inference_ms": 2.5,
+                "pipeline_inference_gpu_ms": 2.1,
+                "pipeline_postprocess_ms": 0.8,
+                "api_postprocess_ms": 0.1,
+            },
+            gpu_clock_mhz=1770,
+            gpu_vram_used_mb=2048,
+            gpu_temperature_c=55,
+        )
+        writer = InferenceCsvWriter(tmp_path)
+        writer.write_row(result)
+
+        rows = _read_csv(writer.csv_path)
+        row = rows[0]
+        assert row["total_ms"] == "12.5"
+        assert row["api_preprocess_ms"] == "0.4"
+        assert row["phase_preprocess_ms"] == "1.2"
+        assert row["phase_inference_ms"] == "2.5"
+        assert row["phase_inference_gpu_ms"] == "2.1"
+        assert row["phase_postprocess_ms"] == "0.8"
+        assert row["api_postprocess_ms"] == "0.1"
+        assert row["gpu_clock_mhz"] == "1770"
+        assert row["gpu_vram_used_mb"] == "2048"
+        assert row["gpu_temperature_c"] == "55"
+
+    def test_phase_and_gpu_empty_when_missing(self, tmp_path):
+        """phase_times_ms 空 / GPU None のとき該当セルが空文字になる."""
+        writer = InferenceCsvWriter(tmp_path)
+        writer.write_row(_make_result())
+
+        rows = _read_csv(writer.csv_path)
+        row = rows[0]
+        assert row["api_preprocess_ms"] == ""
+        assert row["phase_inference_ms"] == ""
+        assert row["gpu_clock_mhz"] == ""
+        assert row["gpu_vram_used_mb"] == ""
+        assert row["gpu_temperature_c"] == ""

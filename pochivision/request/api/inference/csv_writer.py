@@ -11,9 +11,20 @@ _CSV_COLUMNS = [
     "class_id",
     "class_name",
     "confidence",
+    "total_ms",
     "e2e_time_ms",
     "rtt_ms",
     "backend",
+    # 時系列順: api_preprocess → pipeline_* → api_postprocess.
+    "api_preprocess_ms",
+    "phase_preprocess_ms",
+    "phase_inference_ms",
+    "phase_inference_gpu_ms",
+    "phase_postprocess_ms",
+    "api_postprocess_ms",
+    "gpu_clock_mhz",
+    "gpu_vram_used_mb",
+    "gpu_temperature_c",
     "image_file",
 ]
 
@@ -50,6 +61,7 @@ class InferenceCsvWriter:
         """
         self.csv_path.parent.mkdir(parents=True, exist_ok=True)
 
+        phases = result.phase_times_ms
         with open(self.csv_path, "a", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=_CSV_COLUMNS)
             # exists() と open() の間のレースコンディションを避けるため,
@@ -62,9 +74,19 @@ class InferenceCsvWriter:
                     "class_id": result.class_id,
                     "class_name": result.class_name,
                     "confidence": result.confidence,
+                    "total_ms": result.total_ms,
                     "e2e_time_ms": result.e2e_time_ms,
                     "rtt_ms": result.rtt_ms,
                     "backend": result.backend,
+                    "api_preprocess_ms": phases.get("api_preprocess_ms"),
+                    "phase_preprocess_ms": phases.get("pipeline_preprocess_ms"),
+                    "phase_inference_ms": phases.get("pipeline_inference_ms"),
+                    "phase_inference_gpu_ms": phases.get("pipeline_inference_gpu_ms"),
+                    "phase_postprocess_ms": phases.get("pipeline_postprocess_ms"),
+                    "api_postprocess_ms": phases.get("api_postprocess_ms"),
+                    "gpu_clock_mhz": result.gpu_clock_mhz,
+                    "gpu_vram_used_mb": result.gpu_vram_used_mb,
+                    "gpu_temperature_c": result.gpu_temperature_c,
                     "image_file": image_file or "",
                 }
             )
