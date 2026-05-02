@@ -28,10 +28,17 @@ class InferenceOverlay:
     左上に以下を表示する:
     - 推論結果 (クラス名)
     - 信頼度 (%)
-    - 推論時間 (e2e_time_ms)
-    - RTT 込時間 (rtt_ms)
-    - 推論画像サイズ
-    - サーバー URL
+    - Total 時間 (total_ms: クライアント側 predict() 全体. encode+RTT+JSON parse 込み)
+    - E2E 時間 (e2e_time_ms: サーバー内エンドツーエンド. 前処理+推論+後処理込み)
+        - `- APIpre`: API 境界の前処理 (phase_times_ms.api_preprocess_ms, 任意)
+        - `- Pre`: pipeline 前処理 (phase_times_ms.pipeline_preprocess_ms, 任意)
+        - `- Infer`: 純粋な推論 (phase_times_ms.pipeline_inference_ms, wall-clock, 任意)
+        - `- Post`: pipeline 後処理 (phase_times_ms.pipeline_postprocess_ms, 任意)
+        - `- APIpost`: API 境界の後処理 (phase_times_ms.api_postprocess_ms, 任意)
+    - RTT (rtt_ms)
+    - バックエンド
+    - 推論画像サイズ (context 経由, 任意)
+    - サーバー URL (context 経由, 任意)
 
     推論失敗時はエラーメッセージを表示する.
     """
@@ -126,23 +133,64 @@ class InferenceOverlay:
             frame: 描画先のフレーム.
             result: 推論結果.
         """
+        y = 30
+        for text, c in self._build_meta_lines(result):
+            self._draw_text(frame, text, c, y=y)
+            y += 25
+
+    def _build_meta_lines(
+        self, result: PredictResponse
+    ) -> list[tuple[str, tuple[int, int, int]]]:
+        """メタ情報行を組み立てる (text, color) のリストを返す.
+
+        E2E の内訳 (phase_times_ms 由来) は ``- `` プレフィックス付きの
+        サブ行として時系列順に表示する: APIpre → Pre → Infer → Post → APIpost.
+        各キー欠損時はその行を出さない.
+
+        Total ⊃ RTT ⊃ E2E の階層関係が縦並びで分かるよう, Total 行は E2E の
+        直前に固定で表示する.
+
+        表示順: Result → Confidence → Total → E2E → (内訳サブ行) → RTT →
+        Backend → ImageSize (context あれば) → Server (context あれば).
+
+        Args:
+            result: 推論結果.
+
+        Returns:
+            (表示テキスト, BGR 色) のリスト.
+        """
         color = self._get_color(result.confidence)
         lines: list[tuple[str, tuple[int, int, int]]] = [
             (f"Result: {result.class_name}", color),
             (f"Confidence: {result.confidence * 100:.1f}%", color),
-            (f"Inference: {result.e2e_time_ms:.1f}ms", self.META_COLOR),
-            (f"RTT: {result.rtt_ms:.1f}ms", self.META_COLOR),
+            (f"Total: {result.total_ms:.1f}ms", self.META_COLOR),
+            (f"E2E: {result.e2e_time_ms:.1f}ms", self.META_COLOR),
         ]
-
+        # E2E の内訳サブ行 (phase_times_ms 由来). 時系列順にキーが揃ったものだけ表示.
+        # pipeline_inference_gpu_ms (CUDA Event 計測) は画面では省略し, 詳細解析は
+        # CSV 出力側に委ねる (画面の情報量を抑えるため).
+        breakdown: list[tuple[str, str]] = [
+            ("APIpre", "api_preprocess_ms"),
+            ("Pre", "pipeline_preprocess_ms"),
+            ("Infer", "pipeline_inference_ms"),
+            ("Post", "pipeline_postprocess_ms"),
+            ("APIpost", "api_postprocess_ms"),
+        ]
+        for label, key in breakdown:
+            value = result.phase_times_ms.get(key)
+            if value is not None:
+                lines.append((f"- {label}: {value:.1f}ms", self.META_COLOR))
+        lines.extend(
+            [
+                (f"RTT: {result.rtt_ms:.1f}ms", self.META_COLOR),
+                (f"Backend: {result.backend}", self.META_COLOR),
+            ]
+        )
         if self.context and self.context.image_size:
             lines.append((f"ImageSize: {self.context.image_size}", self.META_COLOR))
         if self.context:
             lines.append((f"Server: {self.context.server_url}", self.META_COLOR))
-
-        y = 30
-        for text, c in lines:
-            self._draw_text(frame, text, c, y=y)
-            y += 25
+        return lines
 
     def _draw_error(self, frame: np.ndarray, error: str) -> None:
         """エラーメッセージを描画する.

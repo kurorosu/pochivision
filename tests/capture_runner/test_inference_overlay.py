@@ -10,7 +10,10 @@ from pochivision.request.api.inference.models import PredictResponse
 
 
 def _make_result(
-    confidence: float = 0.95, class_name: str = "class_a"
+    confidence: float = 0.95,
+    class_name: str = "class_a",
+    total_ms: float = 70.0,
+    phase_times_ms: dict[str, float] | None = None,
 ) -> PredictResponse:
     """テスト用の PredictResponse を生成する."""
     return PredictResponse(
@@ -21,6 +24,8 @@ def _make_result(
         e2e_time_ms=12.3,
         backend="onnx",
         rtt_ms=65.1,
+        total_ms=total_ms,
+        phase_times_ms=phase_times_ms if phase_times_ms is not None else {},
     )
 
 
@@ -197,6 +202,69 @@ class TestInferenceOverlay:
         frame = np.zeros((200, 400, 3), dtype=np.uint8)
         overlay.draw(frame)
         assert frame.sum() > 0
+
+    def test_meta_lines_basic_order(self):
+        """phase_times_ms 空のときは Result/Confidence/Total/E2E/RTT/Backend が含まれる."""
+        overlay = InferenceOverlay(_make_context())
+        result = _make_result()
+        lines = overlay._build_meta_lines(result)
+        texts = [text for text, _ in lines]
+
+        assert any(t.startswith("Result:") for t in texts)
+        assert any(t.startswith("Confidence:") for t in texts)
+        assert any(t.startswith("Total:") for t in texts)
+        assert any(t.startswith("E2E:") for t in texts)
+        assert any(t.startswith("RTT:") for t in texts)
+        assert any(t.startswith("Backend:") for t in texts)
+        # phase 内訳行は phase_times_ms が空なので出ない.
+        assert not any(t.startswith("- ") for t in texts)
+
+    def test_meta_lines_phase_breakdown_order(self):
+        """phase_times_ms の値が揃うと APIpre→Pre→Infer→Post→APIpost の順で表示される."""
+        result = _make_result(
+            phase_times_ms={
+                "api_preprocess_ms": 0.4,
+                "pipeline_preprocess_ms": 1.2,
+                "pipeline_inference_ms": 2.5,
+                "pipeline_postprocess_ms": 0.8,
+                "api_postprocess_ms": 0.1,
+            }
+        )
+        overlay = InferenceOverlay()
+        lines = overlay._build_meta_lines(result)
+        breakdown_texts = [t for t, _ in lines if t.startswith("- ")]
+
+        assert breakdown_texts == [
+            "- APIpre: 0.4ms",
+            "- Pre: 1.2ms",
+            "- Infer: 2.5ms",
+            "- Post: 0.8ms",
+            "- APIpost: 0.1ms",
+        ]
+
+    def test_meta_lines_partial_breakdown_skipped(self):
+        """phase_times_ms に欠損キーがあるとそのサブ行は出ない."""
+        result = _make_result(
+            phase_times_ms={
+                "pipeline_inference_ms": 2.5,
+            }
+        )
+        overlay = InferenceOverlay()
+        lines = overlay._build_meta_lines(result)
+        breakdown_texts = [t for t, _ in lines if t.startswith("- ")]
+
+        assert breakdown_texts == ["- Infer: 2.5ms"]
+
+    def test_meta_lines_total_e2e_values(self):
+        """Total / E2E の値が PredictResponse から正しく反映される."""
+        result = _make_result(total_ms=80.5)
+        overlay = InferenceOverlay()
+        lines = overlay._build_meta_lines(result)
+        texts = [t for t, _ in lines]
+
+        assert "Total: 80.5ms" in texts
+        assert "E2E: 12.3ms" in texts
+        assert "Backend: onnx" in texts
 
     def test_error_then_success_clears_error(self):
         overlay = InferenceOverlay(_make_context())
