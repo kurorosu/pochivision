@@ -2,6 +2,7 @@
 
 import base64
 import json
+import time
 
 import cv2
 import httpx
@@ -195,6 +196,119 @@ class TestPredict:
 
         with pytest.raises(InferenceError, match="フィールドがありません"):
             client.predict(_make_frame())
+        client.close()
+
+    def test_phase_times_and_gpu_metrics_parsed(self):
+        """phase_times_ms / GPU メトリクスをレスポンスから取り込むことを確認."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "class_id": 0,
+                    "class_name": "class_a",
+                    "confidence": 0.9,
+                    "probabilities": [0.9, 0.1],
+                    "e2e_time_ms": 5.0,
+                    "backend": "onnx-cuda",
+                    "phase_times_ms": {
+                        "api_preprocess_ms": 0.4,
+                        "pipeline_preprocess_ms": 1.2,
+                        "pipeline_inference_ms": 2.5,
+                        "pipeline_inference_gpu_ms": 2.1,
+                        "pipeline_postprocess_ms": 0.8,
+                        "api_postprocess_ms": 0.1,
+                    },
+                    "gpu_clock_mhz": 1770,
+                    "gpu_vram_used_mb": 2048,
+                    "gpu_temperature_c": 55,
+                },
+            )
+
+        client = InferenceClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        response = client.predict(_make_frame())
+
+        assert response.phase_times_ms["api_preprocess_ms"] == 0.4
+        assert response.phase_times_ms["pipeline_preprocess_ms"] == 1.2
+        assert response.phase_times_ms["pipeline_inference_ms"] == 2.5
+        assert response.phase_times_ms["pipeline_inference_gpu_ms"] == 2.1
+        assert response.phase_times_ms["pipeline_postprocess_ms"] == 0.8
+        assert response.phase_times_ms["api_postprocess_ms"] == 0.1
+        assert response.gpu_clock_mhz == 1770
+        assert response.gpu_vram_used_mb == 2048
+        assert response.gpu_temperature_c == 55
+        client.close()
+
+    def test_phase_times_and_gpu_metrics_default_when_missing(self):
+        """phase_times_ms / GPU メトリクスが欠落していても既存クライアントが壊れない."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_VALID_RESPONSE)
+
+        client = InferenceClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        response = client.predict(_make_frame())
+
+        assert response.phase_times_ms == {}
+        assert response.gpu_clock_mhz is None
+        assert response.gpu_vram_used_mb is None
+        assert response.gpu_temperature_c is None
+        client.close()
+
+    def test_phase_times_null_falls_back_to_empty_dict(self):
+        """phase_times_ms が null のとき空 dict に正規化される."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            payload = dict(_VALID_RESPONSE)
+            payload["phase_times_ms"] = None
+            return httpx.Response(200, json=payload)
+
+        client = InferenceClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        response = client.predict(_make_frame())
+
+        assert response.phase_times_ms == {}
+        client.close()
+
+    def test_total_ms_greater_than_rtt_ms(self):
+        """total_ms は RTT に encode + JSON parse を含むため rtt_ms 以上になる.
+
+        MockTransport で固定遅延 (perf_counter ベース) を入れて RTT 計測区間を
+        引き延ばし, total_ms が rtt_ms 以上であることを検証する.
+        """
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            # Why: handler 内で busy-wait し RTT 計測区間に確実な遅延を載せる.
+            target = time.perf_counter() + 0.005
+            while time.perf_counter() < target:
+                pass
+            return httpx.Response(200, json=_VALID_RESPONSE)
+
+        client = InferenceClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        response = client.predict(_make_frame(height=480, width=640))
+
+        assert response.rtt_ms > 0
+        assert response.total_ms >= response.rtt_ms
+        client.close()
+
+    def test_total_ms_recorded_on_default_response(self):
+        """既定のレスポンスでも total_ms が 0 より大きい値で記録される."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(200, json=_VALID_RESPONSE)
+
+        client = InferenceClient(base_url="http://localhost:8000")
+        client._client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        response = client.predict(_make_frame())
+
+        assert response.total_ms > 0
         client.close()
 
 

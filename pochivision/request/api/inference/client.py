@@ -77,6 +77,8 @@ class InferenceClient:
             InferenceConnectionError: API サーバーへの接続に失敗した場合.
             InferenceError: 推論リクエストが失敗した場合.
         """
+        # Why: predict() の呼び出し全体時間 (画像エンコード + RTT + JSON parse) を計測する.
+        total_start = time.perf_counter()
         payload = self._build_payload(frame)
         url = f"{self.base_url}/api/v1/predict"
 
@@ -102,7 +104,30 @@ class InferenceClient:
         except ValueError as e:
             raise InferenceError("推論レスポンスの JSON パースに失敗しました") from e
 
+        total_ms = (time.perf_counter() - total_start) * 1000
+        return self._parse_response(data, rtt_ms, total_ms)
+
+    def _parse_response(
+        self, data: dict[str, Any], rtt_ms: float, total_ms: float
+    ) -> PredictResponse:
+        """レスポンス JSON を PredictResponse に変換する.
+
+        Args:
+            data: レスポンス JSON.
+            rtt_ms: クライアント側で計測した RTT (ミリ秒).
+            total_ms: クライアント側で計測した predict() 全体時間 (ミリ秒).
+                画像エンコード + RTT + JSON parse を含む.
+
+        Returns:
+            推論結果.
+
+        Raises:
+            InferenceError: 必須フィールドが欠落している場合.
+        """
         try:
+            # 旧バージョンの pochitrain (phase_times_ms / gpu_* 未対応) や,
+            # サーバー側で null を返すケースに備え, 防御的に取り込む.
+            phase_times_ms = data.get("phase_times_ms") or {}
             return PredictResponse(
                 class_id=data["class_id"],
                 class_name=data["class_name"],
@@ -111,6 +136,11 @@ class InferenceClient:
                 e2e_time_ms=data["e2e_time_ms"],
                 backend=data["backend"],
                 rtt_ms=round(rtt_ms, 3),
+                total_ms=round(total_ms, 3),
+                phase_times_ms=dict(phase_times_ms),
+                gpu_clock_mhz=data.get("gpu_clock_mhz"),
+                gpu_vram_used_mb=data.get("gpu_vram_used_mb"),
+                gpu_temperature_c=data.get("gpu_temperature_c"),
             )
         except KeyError as e:
             raise InferenceError(
